@@ -1,6 +1,10 @@
 {
   "stage": "prepared_data_finalize",
-  "status": "running",
+  "status": "error",
+  "ended_at_utc": "2026-08-17T23:09:33Z",
+  "runtime_seconds_from_log": 27.9,
+  "result_eligible": false,
+  "error": "Kaggle mounted kernel-source outputs under generated input directory names, so the runner's fixed source paths were not present.",
   "launched_at_utc": "2026-08-17T23:09:05Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-finalize-prepared-data",
   "kaggle_version": 1,
