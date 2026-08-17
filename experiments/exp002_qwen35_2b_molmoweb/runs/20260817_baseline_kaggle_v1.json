@@ -1,6 +1,8 @@
 {
   "stage": "official_baseline",
-  "status": "running",
+  "status": "stop_requested",
+  "stop_requested_at_utc": "2026-08-17T19:07:32Z",
+  "stop_reason": "Monolithic data preparation plus evaluation was not safely bounded below the Kaggle session timeout.",
   "launched_at_utc": "2026-08-17T17:27:35Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-qwen3-5-baseline",
   "kaggle_version": 1,

@@ -1,0 +1,15 @@
+{
+  "stage": "prepared_data_qa",
+  "status": "running",
+  "launched_at_utc": "2026-08-17T19:16:04Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-prepare-qa",
+  "kaggle_version": 1,
+  "source_commit": "181d7c3",
+  "config": "configs/experiment2.yaml",
+  "config_sha256": "9d45244cceb681147421675b7343214a071edf26fa69f1ed9ada53bb1455f816",
+  "runner_sha256": "c9ee46f7582a1bf73a0392099190addab950c6fe263fef38935ebd73682bf615",
+  "requirements_sha256": "855e0527bc6c4171321f3948d29cd326b8c91f563e50882439b52afafb39a5f2",
+  "accelerator": "CPU",
+  "timeout_seconds": 21600,
+  "intended_output": "15K train, 1K validation, and 2K test MolmoWeb ScreenshotQA examples plus resized images"
+}
