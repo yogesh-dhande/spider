@@ -46,7 +46,7 @@ def restore_run(previous_root: str | Path | None, repository_root: str | Path = 
     return restored
 
 
-def find_prepared_data(search_root: str | Path) -> Path:
+def find_prepared_data_paths(search_root: str | Path) -> list[Path]:
     search_root = Path(search_root)
     direct_candidates = (
         search_root / PREPARED_DATA_NAME,
@@ -55,10 +55,15 @@ def find_prepared_data(search_root: str | Path) -> Path:
     )
     for candidate in direct_candidates:
         if candidate.is_dir():
-            return candidate
+            return [candidate]
     matches = [
         path for path in search_root.rglob(PREPARED_DATA_NAME) if path.is_dir()
     ] if search_root.is_dir() else []
+    return sorted(set(matches))
+
+
+def find_prepared_data(search_root: str | Path) -> Path:
+    matches = find_prepared_data_paths(search_root)
     if len(matches) != 1:
         raise FileNotFoundError(
             f"Expected one {PREPARED_DATA_NAME} directory under {search_root}, found {matches}"
@@ -70,8 +75,14 @@ def restore_prepared_data(
     search_roots: list[str | Path], repository_root: str | Path = "."
 ) -> Path:
     target = Path(repository_root) / "data" / PREPARED_DATA_NAME
+    sources: list[Path] = []
     for search_root in search_roots:
-        source = find_prepared_data(search_root)
+        sources.extend(find_prepared_data_paths(search_root))
+    if not sources:
+        raise FileNotFoundError(
+            f"No {PREPARED_DATA_NAME} directories found under {search_roots}"
+        )
+    for source in sources:
         shutil.copytree(source, target, dirs_exist_ok=True)
     return target
 

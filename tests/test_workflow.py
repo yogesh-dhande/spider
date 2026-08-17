@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from spider.workflow import find_prepared_data, mount_prepared_data, restore_prepared_data
+from spider.workflow import (
+    find_prepared_data,
+    find_prepared_data_paths,
+    mount_prepared_data,
+    restore_prepared_data,
+)
 
 
 def test_restore_and_mount_prepared_data(tmp_path: Path) -> None:
@@ -27,3 +32,20 @@ def test_restore_and_mount_prepared_data(tmp_path: Path) -> None:
     mounted = mount_prepared_data(tmp_path / "first", mounted_root)
     assert mounted.is_symlink()
     assert (mounted / "qa.txt").read_text(encoding="utf-8") == "qa"
+
+
+def test_restore_discovers_multiple_notebook_sources_under_one_root(tmp_path: Path) -> None:
+    notebooks = tmp_path / "notebooks" / "owner"
+    qa = notebooks / "prepare-qa" / "spider" / "data" / "molmoweb_30k_domain17"
+    grounding = (
+        notebooks / "prepare-grounding" / "spider" / "data" / "molmoweb_30k_domain17"
+    )
+    qa.mkdir(parents=True)
+    grounding.mkdir(parents=True)
+    (qa / "qa.txt").write_text("qa", encoding="utf-8")
+    (grounding / "grounding.txt").write_text("grounding", encoding="utf-8")
+    assert find_prepared_data_paths(tmp_path / "notebooks") == sorted([qa, grounding])
+
+    target = restore_prepared_data([tmp_path / "notebooks"], tmp_path / "restored")
+    assert (target / "qa.txt").exists()
+    assert (target / "grounding.txt").exists()
