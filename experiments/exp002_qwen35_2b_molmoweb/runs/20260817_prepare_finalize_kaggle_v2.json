@@ -1,6 +1,10 @@
 {
   "stage": "prepared_data_finalize",
-  "status": "queued",
+  "status": "error",
+  "ended_at_utc": "2026-08-17T23:11:34Z",
+  "runtime_seconds_from_log": 32.4,
+  "result_eligible": false,
+  "error": "Both prepared artifacts were discovered under one generated /kaggle/input/notebooks root, but the restoration helper required exactly one artifact per root.",
   "launched_at_utc": "2026-08-17T23:11:01Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-finalize-prepared-data",
   "kaggle_version": 2,
