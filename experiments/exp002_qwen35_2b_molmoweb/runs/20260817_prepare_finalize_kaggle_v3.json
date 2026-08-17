@@ -1,6 +1,8 @@
 {
   "stage": "prepared_data_finalize",
-  "status": "queued",
+  "status": "complete",
+  "observed_complete_at_utc": "2026-08-17T23:29:13Z",
+  "runtime_seconds_from_log": 263.5,
   "launched_at_utc": "2026-08-17T23:20:40Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-finalize-prepared-data",
   "kaggle_version": 3,
@@ -17,5 +19,14 @@
     "yogeshkd/spider-exp002-prepare-grounding/1"
   ],
   "change_from_v2": "Restore every prepared-data artifact discovered beneath a shared Kaggle notebook-input root.",
-  "intended_output": "Merged frozen manifests and images, ScreenSpot evaluation data, summary, exact config, and SHA-256 file checksums"
+  "intended_output": "Merged frozen manifests and images, ScreenSpot evaluation data, summary, exact config, and SHA-256 file checksums",
+  "validated_output": {
+    "molmoweb_train_examples": 30000,
+    "molmoweb_validation_examples": 2000,
+    "molmoweb_test_examples": 4000,
+    "screenspot_test_examples": 1272,
+    "unique_images": 5231,
+    "checksummed_files": 5243,
+    "downloaded_metadata_checksum_errors": 0
+  }
 }

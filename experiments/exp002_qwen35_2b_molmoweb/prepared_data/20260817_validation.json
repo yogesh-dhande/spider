@@ -1,0 +1,40 @@
+{
+  "artifact_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "validated_at_utc": "2026-08-17T23:42:15Z",
+  "manifests": {
+    "qa_train.jsonl": 15000,
+    "qa_validation.jsonl": 1000,
+    "qa_test.jsonl": 2000,
+    "grounding_train.jsonl": 15000,
+    "grounding_validation.jsonl": 1000,
+    "grounding_test.jsonl": 2000,
+    "combined_train.jsonl": 30000,
+    "combined_validation.jsonl": 2000,
+    "combined_test.jsonl": 4000,
+    "screenspot_test.jsonl": 1272
+  },
+  "unique_example_ids": 37272,
+  "unique_image_paths": 5231,
+  "image_checksum_entries": 5231,
+  "all_example_ids_unique_within_source_manifests": true,
+  "cross_split_domain_overlaps": {
+    "train_validation": 0,
+    "train_test": 0,
+    "validation_test": 0
+  },
+  "downloaded_metadata_checksum_errors": 0,
+  "sample_images": [
+    {
+      "task": "qa",
+      "dimensions": [1280, 708],
+      "mode": "RGB",
+      "decoded": true
+    },
+    {
+      "task": "grounding",
+      "dimensions": [1280, 708],
+      "mode": "RGB",
+      "decoded": true
+    }
+  ]
+}
