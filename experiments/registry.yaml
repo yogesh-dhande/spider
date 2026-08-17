@@ -18,6 +18,7 @@ experiments:
     status: local_pipeline_ready_gpu_smoke_pending
     config: configs/experiment2.yaml
     record: experiments/exp002_qwen35_2b_molmoweb/README.md
+    implementation_commit: df765eb
     parent: exp001
     interpretation: descriptive_no_preregistered_threshold
     hypothesis: >-

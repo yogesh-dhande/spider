@@ -4,6 +4,8 @@ Status: local pipeline ready; Kaggle GPU compatibility smoke test and official r
 
 Parent: EXP001, superseded before any official baseline or training run.
 
+Initial implementation commit: `df765eb`.
+
 ## Question
 
 Can `Qwen/Qwen3.5-2B` acquire strong browser screenshot understanding and precise GUI
