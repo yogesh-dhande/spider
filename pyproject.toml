@@ -37,6 +37,7 @@ spider-train = "spider.train:main"
 spider-evaluate = "spider.evaluate:main"
 spider-compare = "spider.compare:main"
 spider-archive = "spider.archive:main"
+spider-smoke = "spider.smoke:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spider"]
