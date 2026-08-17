@@ -4,7 +4,8 @@ accelerate==1.14.0
 bitsandbytes==0.50.1
 datasets==5.0.1
 peft==0.20.0
-pillow==12.3.0
+# Keep Kaggle's already-imported compatible Pillow build to avoid mixed modules in notebooks.
+pillow>=10.4,<12
 pyyaml==6.0.3
 tldextract==5.3.2
 transformers==5.15.0
