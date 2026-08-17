@@ -1,0 +1,12 @@
+experiments:
+  - id: exp001
+    name: qwen3_vl_2b_molmoweb_exp1
+    title: Qwen3-VL-2B browser screenshot understanding and GUI grounding
+    status: pipeline_ready
+    config: configs/experiment1.yaml
+    record: experiments/exp001_qwen3vl2b_molmoweb/README.md
+    parent: null
+    hypothesis: >-
+      A 2B Qwen3-VL model can acquire materially stronger browser ScreenshotQA and GUI
+      grounding from 30K balanced, domain-disjoint MolmoWeb examples using QLoRA.
+
