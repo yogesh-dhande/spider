@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,8 @@ def load_config(path: str | Path) -> dict[str, Any]:
 
 
 def experiment_path(config: dict[str, Any], key: str) -> Path:
-    return Path(config["experiment"][key]).expanduser().resolve()
+    override = os.environ.get(f"SPIDER_{key.upper()}")
+    return Path(override or config["experiment"][key]).expanduser().resolve()
 
 
 def runtime_versions() -> dict[str, str]:
