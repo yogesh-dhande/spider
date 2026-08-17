@@ -1,5 +1,5 @@
 {
-  "id": "yogeshkd/spider-exp002-qwen35-gpu-smoke",
+  "id": "yogeshkd/spider-exp002-qwen3-5-gpu-smoke",
   "title": "Spider EXP002 Qwen3.5 GPU smoke",
   "code_file": "exp002_smoke.ipynb",
   "language": "python",
