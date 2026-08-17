@@ -2,6 +2,8 @@
 
 Status: pipeline ready; official Kaggle run not started.
 
+Initial implementation commit: `4b608ee`.
+
 ## Question
 
 Can `Qwen/Qwen3-VL-2B-Instruct` acquire strong browser screenshot understanding and precise
@@ -39,4 +41,3 @@ committed. Raw predictions and failure galleries are retained as Kaggle artifact
 
 Record any change made after the official baseline begins here, including its reason and the
 first affected run ID. Never silently replace a completed run's configuration or result files.
-
