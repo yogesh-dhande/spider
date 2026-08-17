@@ -1,0 +1,12 @@
+# Pinned 2026-08-17 compatibility stack for Qwen/Qwen3.5-2B on Kaggle.
+# Torch is intentionally supplied by Kaggle to preserve CUDA compatibility.
+accelerate==1.14.0
+bitsandbytes==0.50.1
+datasets==5.0.1
+peft==0.20.0
+pillow==12.3.0
+pyyaml==6.0.3
+tldextract==5.3.2
+transformers==5.15.0
+trl==1.10.0
+tqdm==4.70.0

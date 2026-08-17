@@ -1,14 +1,16 @@
 experiment:
-  id: exp001
-  name: qwen3_vl_2b_molmoweb_exp1
+  id: exp002
+  name: qwen35_2b_molmoweb_exp2
   interpretation: descriptive_no_preregistered_threshold
-  record_dir: experiments/exp001_qwen3vl2b_molmoweb
+  record_dir: experiments/exp002_qwen35_2b_molmoweb
   seed: 17
-  model_name: Qwen/Qwen3-VL-2B-Instruct
-  model_revision: 89644892e4d85e24eaac8bacfd4f463576704203
-  model_loader: qwen3_vl
-  data_dir: data/experiment1
-  output_dir: outputs/experiment1
+  model_name: Qwen/Qwen3.5-2B
+  model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  model_loader: auto_multimodal
+  chat_template_kwargs:
+    enable_thinking: false
+  data_dir: data/molmoweb_30k_domain17
+  output_dir: outputs/experiment2
 
 data:
   qa:
@@ -57,7 +59,18 @@ training:
   lora_alpha: 32
   lora_dropout: 0.05
   lora_target_modules:
-    [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+    - in_proj_qkv
+    - in_proj_z
+    - in_proj_b
+    - in_proj_a
+    - out_proj
   gradient_checkpointing: true
   logging_steps: 10
   eval_steps: 250
@@ -66,6 +79,7 @@ training:
   save_total_limit: 3
   dataloader_num_workers: 2
   report_to: none
+  loss_type: chunked_nll
 
 evaluation:
   max_new_tokens_qa: 96

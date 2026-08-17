@@ -1,8 +1,11 @@
 # EXP001 — Qwen3-VL-2B + MolmoWeb perception foundation
 
-Status: pipeline ready; official Kaggle run not started.
+Status: superseded without an official run by EXP002 (Qwen3.5-2B).
 
 Initial implementation commit: `4b608ee`.
+
+No baseline, training, or post-SFT results were produced. The design and implementation are
+retained as provenance for the backbone decision.
 
 ## Question
 

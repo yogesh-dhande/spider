@@ -2,12 +2,25 @@ experiments:
   - id: exp001
     name: qwen3_vl_2b_molmoweb_exp1
     title: Qwen3-VL-2B browser screenshot understanding and GUI grounding
-    status: pipeline_ready
+    status: superseded_unrun
     config: configs/experiment1.yaml
     record: experiments/exp001_qwen3vl2b_molmoweb/README.md
     implementation_commit: 4b608ee
     interpretation: descriptive_no_preregistered_threshold
+    successor: exp002
     parent: null
     hypothesis: >-
       A 2B Qwen3-VL model can acquire materially stronger browser ScreenshotQA and GUI
       grounding from 30K balanced, domain-disjoint MolmoWeb examples using QLoRA.
+  - id: exp002
+    name: qwen35_2b_molmoweb_exp2
+    title: Qwen3.5-2B browser screenshot understanding and GUI grounding
+    status: local_pipeline_ready_gpu_smoke_pending
+    config: configs/experiment2.yaml
+    record: experiments/exp002_qwen35_2b_molmoweb/README.md
+    parent: exp001
+    interpretation: descriptive_no_preregistered_threshold
+    hypothesis: >-
+      The newer unified Qwen3.5-2B multimodal backbone can acquire materially stronger browser
+      ScreenshotQA and GUI grounding from 30K balanced, domain-disjoint MolmoWeb examples using
+      QLoRA.

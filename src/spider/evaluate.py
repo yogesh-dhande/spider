@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 
 from spider.config import experiment_path, load_config, runtime_versions
 from spider.metrics import score_records
+from spider.modeling import load_quantized_model
 from spider.prepare import read_jsonl, write_jsonl
 from spider.prompts import inference_messages
 from spider.reports import create_failure_report
@@ -47,36 +48,27 @@ def evaluation_signature(
     return signature, payload
 
 
-def load_model(model_name: str, adapter: str | None = None, revision: str | None = None):
+def load_model(experiment: dict[str, Any], adapter: str | None = None):
     import torch
-    from transformers import AutoProcessor, BitsAndBytesConfig, Qwen3VLForConditionalGeneration
 
     if not torch.cuda.is_available():
         raise RuntimeError("Evaluation requires a CUDA GPU for this experiment")
-    compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-    model = Qwen3VLForConditionalGeneration.from_pretrained(
-        model_name,
-        revision=revision,
-        dtype=compute_dtype,
-        device_map="auto",
-        quantization_config=BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=compute_dtype,
-        ),
-    )
+    model, processor, _ = load_quantized_model(experiment, "auto")
     if adapter:
         from peft import PeftModel
 
         model = PeftModel.from_pretrained(model, adapter)
     model.eval()
-    processor = AutoProcessor.from_pretrained(model_name, revision=revision)
     return model, processor
 
 
 def generate_prediction(
-    record: dict[str, Any], image_path: Path, model: Any, processor: Any, max_new_tokens: int
+    record: dict[str, Any],
+    image_path: Path,
+    model: Any,
+    processor: Any,
+    max_new_tokens: int,
+    chat_template_kwargs: dict[str, Any] | None = None,
 ) -> str:
     import torch
 
@@ -89,6 +81,7 @@ def generate_prediction(
         add_generation_prompt=True,
         return_dict=True,
         return_tensors="pt",
+        **(chat_template_kwargs or {}),
     ).to(model.device)
     with torch.inference_mode():
         generated = model.generate(
@@ -137,9 +130,8 @@ def evaluate(
     run_metadata["package_versions"] = runtime_versions()
     records: list[dict[str, Any]] = []
     for path in manifest_paths:
-        records.extend(read_jsonl(path))
-    if limit is not None:
-        records = records[:limit]
+        manifest_records = read_jsonl(path)
+        records.extend(manifest_records[:limit] if limit is not None else manifest_records)
     existing = (
         {record["id"]: record for record in read_jsonl(raw_path)} if raw_path.exists() else {}
     )
@@ -150,11 +142,7 @@ def evaluate(
             "Use a new evaluation label."
         )
 
-    model, processor = load_model(
-        config["experiment"]["model_name"],
-        adapter,
-        config["experiment"].get("model_revision"),
-    )
+    model, processor = load_model(config["experiment"], adapter)
     with raw_path.open("a", encoding="utf-8") as handle:
         for record in tqdm(records, desc=f"Evaluating {label}"):
             if record["id"] in existing:
@@ -165,7 +153,12 @@ def evaluate(
                 ]
             )
             prediction = generate_prediction(
-                record, data_dir / record["image"], model, processor, max_tokens
+                record,
+                data_dir / record["image"],
+                model,
+                processor,
+                max_tokens,
+                config["experiment"].get("chat_template_kwargs"),
             )
             output = {
                 **record,
@@ -204,7 +197,7 @@ def main() -> None:
         "--datasets", default="molmoweb,screenspot", help="Comma-separated: molmoweb,screenspot"
     )
     parser.add_argument("--split", default="test", choices=["validation", "test"])
-    parser.add_argument("--limit", type=int, default=None, help="Smoke-test limit")
+    parser.add_argument("--limit", type=int, default=None, help="Smoke-test limit per manifest")
     args = parser.parse_args()
     _, metrics = evaluate(
         args.config,

@@ -9,11 +9,16 @@ from pathlib import Path
 from typing import Any
 
 from spider.config import experiment_path, load_config, runtime_versions
+from spider.modeling import load_quantized_model, validate_model_config
 from spider.prepare import read_jsonl
 from spider.prompts import training_conversation
 
 
-def build_training_dataset(manifest_path: Path, data_dir: Path):
+def build_training_dataset(
+    manifest_path: Path,
+    data_dir: Path,
+    chat_template_kwargs: dict[str, Any] | None = None,
+):
     from datasets import Dataset, Sequence
     from datasets import Image as DatasetImage
 
@@ -22,13 +27,14 @@ def build_training_dataset(manifest_path: Path, data_dir: Path):
         prompt, completion = training_conversation(
             record["task"], record["prompt"], record["answer"]
         )
-        rows.append(
-            {
-                "prompt": prompt,
-                "completion": completion,
-                "images": [str((data_dir / record["image"]).resolve())],
-            }
-        )
+        row = {
+            "prompt": prompt,
+            "completion": completion,
+            "images": [str((data_dir / record["image"]).resolve())],
+        }
+        if chat_template_kwargs:
+            row["chat_template_kwargs"] = chat_template_kwargs
+        rows.append(row)
     dataset = Dataset.from_list(rows)
     return dataset.cast_column("images", Sequence(DatasetImage(decode=True)))
 
@@ -72,12 +78,7 @@ def train(
 ) -> Path:
     import torch
     from peft import LoraConfig
-    from transformers import (
-        AutoProcessor,
-        BitsAndBytesConfig,
-        Qwen3VLForConditionalGeneration,
-        TrainerCallback,
-    )
+    from transformers import TrainerCallback
     from trl import SFTConfig, SFTTrainer
 
     if not torch.cuda.is_available():
@@ -86,37 +87,30 @@ def train(
     config = load_config(config_path)
     experiment = config["experiment"]
     training = config["training"]
+    validate_model_config(experiment, training)
     data_dir = experiment_path(config, "data_dir")
     output_root = experiment_path(config, "output_dir")
     output_dir = output_root / "adapter"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_dir = data_dir / "manifests"
-    train_dataset = build_training_dataset(manifest_dir / "combined_train.jsonl", data_dir)
-    eval_dataset = build_training_dataset(manifest_dir / "combined_validation.jsonl", data_dir)
+    train_dataset = build_training_dataset(
+        manifest_dir / "combined_train.jsonl",
+        data_dir,
+        experiment.get("chat_template_kwargs"),
+    )
+    eval_dataset = build_training_dataset(
+        manifest_dir / "combined_validation.jsonl",
+        data_dir,
+        experiment.get("chat_template_kwargs"),
+    )
     eval_count = min(int(training.get("eval_examples", 256)), len(eval_dataset))
     eval_dataset = eval_dataset.select(range(eval_count))
 
-    compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
     device_map: str | dict[str, int] = {"": local_rank}
-    quantization = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=compute_dtype,
-    )
-    model = Qwen3VLForConditionalGeneration.from_pretrained(
-        experiment["model_name"],
-        revision=experiment.get("model_revision"),
-        dtype=compute_dtype,
-        quantization_config=quantization,
-        device_map=device_map,
-    )
+    model, processor, compute_dtype = load_quantized_model(experiment, device_map)
     model.config.use_cache = False
-    processor = AutoProcessor.from_pretrained(
-        experiment["model_name"], revision=experiment.get("model_revision")
-    )
 
     peft_config = LoraConfig(
         r=int(training["lora_rank"]),
@@ -124,15 +118,7 @@ def train(
         lora_dropout=float(training["lora_dropout"]),
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
-            "gate_proj",
-            "up_proj",
-            "down_proj",
-        ],
+        target_modules=list(training["lora_target_modules"]),
     )
 
     sft_kwargs: dict[str, Any] = {
@@ -150,6 +136,7 @@ def train(
         "gradient_checkpointing_kwargs": {"use_reentrant": False},
         "max_length": None,
         "completion_only_loss": True,
+        "loss_type": training.get("loss_type", "chunked_nll"),
         "eval_strategy": "steps",
         "eval_steps": int(training["eval_steps"]),
         "save_strategy": "steps",
@@ -221,7 +208,7 @@ def train(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run QLoRA SFT for Experiment 1")
+    parser = argparse.ArgumentParser(description="Run resumable QLoRA SFT")
     parser.add_argument("--config", default="configs/experiment1.yaml")
     parser.add_argument(
         "--resume",

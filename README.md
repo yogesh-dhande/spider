@@ -1,9 +1,12 @@
-# Spider: Experiment 1
+# Spider browser VLM experiments
 
-This repository tests whether `Qwen/Qwen3-VL-2B-Instruct` can learn browser screenshot
+The active experiment tests whether `Qwen/Qwen3.5-2B` can learn browser screenshot
 understanding and precise GUI grounding from a small, balanced slice of MolmoWeb data.
 It is deliberately limited to visual perception. Browser actions, trajectories, custom action
 tokens, planning, and reinforcement learning are later increments.
+
+EXP001 (`Qwen3-VL-2B-Instruct`) was superseded before running. EXP002 uses the stronger,
+newer Qwen3.5-2B multimodal backbone while preserving EXP001's design history.
 
 ## Experiment design
 
@@ -27,39 +30,40 @@ responsible-use terms before redistributing prepared artifacts.
 
 ## Kaggle workflow
 
-The primary interface is [the Kaggle notebook](notebooks/experiment1_kaggle.ipynb). Enable
+The primary interface is [the EXP002 Kaggle notebook](notebooks/experiment2_kaggle.ipynb). Enable
 Internet access and a GPU accelerator. The default configuration targets one 16 GB T4/P100;
 QLoRA uses NF4 weights, FP16 computation on T4/P100, batch size 1, and gradient accumulation.
 
 From a terminal or notebook cell:
 
 ```bash
-pip install -e ".[train]"
-spider-prepare --config configs/experiment1.yaml
+pip install -r requirements/experiment2-kaggle.txt
+pip install -e . --no-deps
+spider-prepare --config configs/experiment2.yaml
 
 # Measure the untouched base model first. This resumes at the prediction level.
-spider-evaluate --config configs/experiment1.yaml --label baseline
+spider-evaluate --config configs/experiment2.yaml --label baseline
 
 # Train in a bounded Kaggle session. Re-running adds another chunk and resumes checkpoints.
-spider-train --config configs/experiment1.yaml --additional-steps 500
+spider-train --config configs/experiment2.yaml --additional-steps 500
 
 # After the configured one-epoch target has completed:
 spider-evaluate \
-  --config configs/experiment1.yaml \
+  --config configs/experiment2.yaml \
   --label sft \
-  --adapter outputs/experiment1/adapter/final
+  --adapter outputs/experiment2/adapter/final
 
 spider-compare \
-  --baseline outputs/experiment1/evaluation/baseline/metrics.json \
-  --sft outputs/experiment1/evaluation/sft/metrics.json \
-  --output outputs/experiment1/comparison.md
+  --baseline outputs/experiment2/evaluation/baseline/metrics.json \
+  --sft outputs/experiment2/evaluation/sft/metrics.json \
+  --output outputs/experiment2/comparison.md
 
 # Create a small immutable archive suitable for Git/publication provenance.
-spider-archive --config configs/experiment1.yaml
+spider-archive --config configs/experiment2.yaml
 ```
 
-Save each completed Kaggle notebook version with `data/experiment1` and
-`outputs/experiment1` as outputs. In the next session, attach that version's output and copy
+Save each completed Kaggle notebook version with `data/molmoweb_30k_domain17` and
+`outputs/experiment2` as outputs. In the next session, attach that version's output and copy
 both directories back into the repository before resuming. The notebook contains a cell for
 this. A 500-step chunk is intentionally conservative; adjust it once measured throughput is
 known.
@@ -68,7 +72,7 @@ For two T4s, launch training through Accelerate:
 
 ```bash
 accelerate launch --num_processes 2 -m spider.train \
-  --config configs/experiment1.yaml --additional-steps 500
+  --config configs/experiment2.yaml --additional-steps 500
 ```
 
 The effective batch size scales with GPU count, and the chunk logic caps training at the
@@ -79,7 +83,7 @@ configured one-epoch target.
 Preparation creates compact JSONL manifests and deduplicated resized JPEGs:
 
 ```text
-data/experiment1/
+data/molmoweb_30k_domain17/
   dataset_summary.json
   experiment_config.json
   images/{qa,grounding,screenspot}/
@@ -90,7 +94,7 @@ data/experiment1/
 Each evaluation label produces:
 
 ```text
-outputs/experiment1/evaluation/<label>/
+outputs/experiment2/evaluation/<label>/
   predictions.raw.jsonl   # append-only resume state
   predictions.jsonl       # predictions plus per-example scores/error category
   metrics.json
