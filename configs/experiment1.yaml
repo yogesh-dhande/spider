@@ -1,6 +1,7 @@
 experiment:
   id: exp001
   name: qwen3_vl_2b_molmoweb_exp1
+  interpretation: descriptive_no_preregistered_threshold
   record_dir: experiments/exp001_qwen3vl2b_molmoweb
   seed: 17
   model_name: Qwen/Qwen3-VL-2B-Instruct

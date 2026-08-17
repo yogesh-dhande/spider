@@ -13,8 +13,10 @@ GUI grounding from a relatively small amount of MolmoWeb-style training data?
 
 A balanced 30K-example QLoRA SFT run will materially improve domain-held-out ScreenshotQA
 answer accuracy and click-inside-element accuracy, with transfer to evaluation-only ScreenSpot.
-The numerical threshold for calling the result "strong" remains to be preregistered before the
-official run.
+
+The result will be interpreted descriptively, with no preregistered pass/fail threshold. The
+report will present baseline and post-SFT estimates, absolute changes, task/category breakdowns,
+and representative failures without selecting a success cutoff after observing the results.
 
 ## Frozen design
 

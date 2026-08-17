@@ -6,6 +6,7 @@ experiments:
     config: configs/experiment1.yaml
     record: experiments/exp001_qwen3vl2b_molmoweb/README.md
     implementation_commit: 4b608ee
+    interpretation: descriptive_no_preregistered_threshold
     parent: null
     hypothesis: >-
       A 2B Qwen3-VL model can acquire materially stronger browser ScreenshotQA and GUI
