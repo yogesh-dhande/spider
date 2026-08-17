@@ -392,14 +392,34 @@ def verify_domain_isolation(data_dir: Path) -> dict[str, list[str]]:
     return {split: sorted(values) for split, values in domains.items()}
 
 
-def prepare_all(config_path: str | Path, overwrite: bool = False) -> dict[str, Any]:
-    config = load_config(config_path)
-    data_dir = experiment_path(config, "data_dir")
-    data_dir.mkdir(parents=True, exist_ok=True)
+def write_data_checksums(data_dir: Path) -> Path:
+    checksum_path = data_dir / "file_checksums.json"
+    checksums: dict[str, str] = {}
+    for path in sorted(data_dir.rglob("*")):
+        if not path.is_file() or path == checksum_path:
+            continue
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        checksums[str(path.relative_to(data_dir))] = digest.hexdigest()
+    checksum_path.write_text(
+        json.dumps({"algorithm": "sha256", "files": checksums}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return checksum_path
+
+
+def finalize_prepared_data(config: dict[str, Any], data_dir: Path) -> dict[str, Any]:
+    manifest_dir = data_dir / "manifests"
     summary = {
-        "qa": prepare_molmoweb_task("qa", config, data_dir, overwrite),
-        "grounding": prepare_molmoweb_task("grounding", config, data_dir, overwrite),
-        "screenspot": prepare_screenspot(config, data_dir, overwrite),
+        "qa": summarize_manifests(
+            {split: manifest_dir / f"qa_{split}.jsonl" for split in SPLITS}
+        ),
+        "grounding": summarize_manifests(
+            {split: manifest_dir / f"grounding_{split}.jsonl" for split in SPLITS}
+        ),
+        "screenspot": {"examples": len(read_jsonl(manifest_dir / "screenspot_test.jsonl"))},
     }
     combine_task_manifests(data_dir, int(config["experiment"]["seed"]))
     domains = verify_domain_isolation(data_dir)
@@ -408,15 +428,49 @@ def prepare_all(config_path: str | Path, overwrite: bool = False) -> dict[str, A
         json.dump(summary, handle, indent=2)
     with (data_dir / "experiment_config.json").open("w", encoding="utf-8") as handle:
         json.dump(config, handle, indent=2)
+    write_data_checksums(data_dir)
     return summary
+
+
+def prepare_stage(
+    config_path: str | Path, stage: str = "all", overwrite: bool = False
+) -> dict[str, Any]:
+    config = load_config(config_path)
+    data_dir = experiment_path(config, "data_dir")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    if stage == "qa":
+        return {"qa": prepare_molmoweb_task("qa", config, data_dir, overwrite)}
+    if stage == "grounding":
+        return {
+            "grounding": prepare_molmoweb_task("grounding", config, data_dir, overwrite)
+        }
+    if stage == "screenspot":
+        return {"screenspot": prepare_screenspot(config, data_dir, overwrite)}
+    if stage == "finalize":
+        return finalize_prepared_data(config, data_dir)
+    if stage != "all":
+        raise ValueError(f"Unknown preparation stage: {stage}")
+    prepare_molmoweb_task("qa", config, data_dir, overwrite)
+    prepare_molmoweb_task("grounding", config, data_dir, overwrite)
+    prepare_screenspot(config, data_dir, overwrite)
+    return finalize_prepared_data(config, data_dir)
+
+
+def prepare_all(config_path: str | Path, overwrite: bool = False) -> dict[str, Any]:
+    return prepare_stage(config_path, "all", overwrite)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare Experiment 1 datasets")
     parser.add_argument("--config", default="configs/experiment1.yaml")
+    parser.add_argument(
+        "--stage",
+        default="all",
+        choices=["qa", "grounding", "screenspot", "finalize", "all"],
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
-    summary = prepare_all(args.config, overwrite=args.overwrite)
+    summary = prepare_stage(args.config, args.stage, overwrite=args.overwrite)
     print(json.dumps(summary, indent=2))
 
 

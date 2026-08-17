@@ -1,6 +1,14 @@
+import json
+
 from PIL import Image
 
-from spider.prepare import bbox_to_xyxy_pixels, canonical_domain, domain_split, resize_screenshot
+from spider.prepare import (
+    bbox_to_xyxy_pixels,
+    canonical_domain,
+    domain_split,
+    resize_screenshot,
+    write_data_checksums,
+)
 
 
 def test_domain_is_derived_from_url() -> None:
@@ -31,3 +39,11 @@ def test_screenspot_normalized_bbox_becomes_pixels() -> None:
         960.0,
         144.0,
     ]
+
+
+def test_write_data_checksums_excludes_its_own_output(tmp_path) -> None:
+    (tmp_path / "manifest.jsonl").write_text("one\n", encoding="utf-8")
+    checksum_path = write_data_checksums(tmp_path)
+    payload = json.loads(checksum_path.read_text(encoding="utf-8"))
+    assert payload["algorithm"] == "sha256"
+    assert set(payload["files"]) == {"manifest.jsonl"}

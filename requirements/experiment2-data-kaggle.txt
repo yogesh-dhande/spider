@@ -1,0 +1,6 @@
+# Pinned 2026-08-17 stack for CPU-only EXP002 data preparation on Kaggle.
+datasets==5.0.1
+pillow>=10.4,<12
+pyyaml==6.0.3
+tldextract==5.3.2
+tqdm==4.70.0
