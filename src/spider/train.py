@@ -70,6 +70,25 @@ def training_step_plan(
     return planned_steps, stop_step
 
 
+def cast_trainable_parameters_to_fp32(model: Any, torch: Any) -> dict[str, Any]:
+    before: dict[str, int] = {}
+    converted = 0
+    for parameter in model.parameters():
+        if not parameter.requires_grad:
+            continue
+        dtype = str(parameter.dtype)
+        before[dtype] = before.get(dtype, 0) + parameter.numel()
+        if parameter.dtype in {torch.float16, torch.bfloat16}:
+            parameter.data = parameter.data.float()
+            converted += parameter.numel()
+    after: dict[str, int] = {}
+    for parameter in model.parameters():
+        if parameter.requires_grad:
+            dtype = str(parameter.dtype)
+            after[dtype] = after.get(dtype, 0) + parameter.numel()
+    return {"before": before, "after": after, "converted_parameters": converted}
+
+
 def train(
     config_path: str | Path,
     resume: str | None = "auto",
@@ -189,6 +208,22 @@ def train(
         peft_config=peft_config,
         callbacks=callbacks,
     )
+    if training.get("lora_trainable_dtype", "float32") != "float32":
+        raise ValueError("Only float32 LoRA trainable parameters are currently supported")
+    trainable_dtypes = cast_trainable_parameters_to_fp32(trainer.model, torch)
+    if trainer.is_world_process_zero():
+        with (output_root / "training_setup.json").open("w", encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "model": experiment["model_name"],
+                    "model_revision": experiment.get("model_revision"),
+                    "base_compute_dtype": str(compute_dtype),
+                    "trainable_parameter_dtypes": trainable_dtypes,
+                    "package_versions": runtime_versions(),
+                },
+                handle,
+                indent=2,
+            )
 
     result = trainer.train(resume_from_checkpoint=checkpoint)
     trainer.save_model(str(output_dir / "final"))

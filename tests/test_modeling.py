@@ -37,6 +37,7 @@ def test_experiment2_pins_qwen35_and_delta_targets() -> None:
     validate_model_config(experiment, training)
     assert experiment["model_name"] == "Qwen/Qwen3.5-2B"
     assert experiment["chat_template_kwargs"] == {"enable_thinking": False}
+    assert training["lora_trainable_dtype"] == "float32"
     assert {"in_proj_qkv", "in_proj_z", "in_proj_b", "in_proj_a", "out_proj"} <= set(
         training["lora_target_modules"]
     )

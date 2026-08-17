@@ -35,7 +35,8 @@ representative failures.
 - Aspect-preserving screenshots fit within 1280 x 720, without padding or upscaling.
 - Grounding target: annotated element center, serialized as JSON `point_2d` on 0–1000.
 - Qwen3.5 non-thinking mode for training and evaluation.
-- Language-model QLoRA targets cover full attention, MLP, and Gated DeltaNet projections.
+- Language-model QLoRA targets cover full attention, MLP, and Gated DeltaNet projections;
+  trainable adapter parameters remain FP32 while the frozen base uses 4-bit/FP16 on T4.
 - The Kaggle compatibility stack is pinned in `requirements/experiment2-kaggle.txt`; a
   two-step GPU training smoke test is required before the official baseline or SFT run.
 - No action tokens, trajectories, planning, or RL.
