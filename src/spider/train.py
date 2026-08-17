@@ -128,7 +128,8 @@ def train(
         "per_device_eval_batch_size": int(training["per_device_eval_batch_size"]),
         "gradient_accumulation_steps": int(training["gradient_accumulation_steps"]),
         "learning_rate": float(training["learning_rate"]),
-        "warmup_ratio": float(training["warmup_ratio"]),
+        # Transformers 5.x accepts ratios as floats below 1 through warmup_steps.
+        "warmup_steps": float(training["warmup_ratio"]),
         "weight_decay": float(training["weight_decay"]),
         "optim": "paged_adamw_8bit",
         "lr_scheduler_type": "cosine",
