@@ -97,6 +97,39 @@ def mount_prepared_data(search_root: str | Path, repository_root: str | Path = "
     return target
 
 
+def restore_packaged_data(
+    search_root: str | Path, repository_root: str | Path = "."
+) -> Path:
+    search_root = Path(search_root)
+    candidates = [search_root]
+    candidates.extend(path.parent for path in search_root.rglob("file_checksums.json"))
+    package_root = next(
+        (
+            path
+            for path in candidates
+            if (path / "images.zip").is_file() and (path / "manifests.zip").is_file()
+        ),
+        None,
+    )
+    if package_root is None:
+        raise FileNotFoundError(f"Packaged prepared data not found under {search_root}")
+
+    target = Path(repository_root) / "data" / PREPARED_DATA_NAME
+    if target.exists() or target.is_symlink():
+        raise FileExistsError(f"Prepared data target already exists: {target}")
+    target.mkdir(parents=True)
+    (target / "images").mkdir()
+    (target / "manifests").mkdir()
+    shutil.unpack_archive(package_root / "images.zip", target / "images")
+    shutil.unpack_archive(package_root / "manifests.zip", target / "manifests")
+    for name in ("dataset_summary.json", "experiment_config.json", "file_checksums.json"):
+        source = package_root / name
+        if not source.is_file():
+            raise FileNotFoundError(f"Missing packaged metadata: {source}")
+        shutil.copy2(source, target / name)
+    return target
+
+
 def compare_run_outputs(
     config_path: str | Path,
     baseline_label: str = "baseline",
