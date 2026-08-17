@@ -1,8 +1,18 @@
 {
   "stage": "official_baseline",
-  "status": "stop_requested",
+  "status": "cancel_acknowledged",
   "stop_requested_at_utc": "2026-08-17T19:07:32Z",
   "stop_reason": "Monolithic data preparation plus evaluation was not safely bounded below the Kaggle session timeout.",
+  "ended_at_utc": "2026-08-17T19:24:22Z",
+  "terminal_status": "KernelWorkerStatus.CANCEL_ACKNOWLEDGED",
+  "result_eligible": false,
+  "output_files_reported_by_kaggle_cli": 0,
+  "gpu_quota_snapshot_at_end": {
+    "used": "2.17h",
+    "remaining": "42.83h",
+    "total": "45.00h",
+    "includes_prior_smoke_runs": true
+  },
   "launched_at_utc": "2026-08-17T17:27:35Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-qwen3-5-baseline",
   "kaggle_version": 1,
