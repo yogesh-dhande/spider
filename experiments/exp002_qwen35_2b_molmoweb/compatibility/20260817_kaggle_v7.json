@@ -1,0 +1,44 @@
+{
+  "purpose": "compatibility_smoke_not_scientific_result",
+  "completed_at_utc": "2026-08-17T17:23:00Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-qwen3-5-gpu-smoke",
+  "kaggle_version": 7,
+  "source_commit": "6cc023e",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "train_steps": 2,
+  "gpu": {
+    "count": 2,
+    "name": "Tesla T4",
+    "memory_gib_each": 14.56,
+    "compute_capability": "7.5"
+  },
+  "base_compute_dtype": "torch.float16",
+  "trainable_parameter_dtypes": {
+    "before": {"torch.bfloat16": 33638400},
+    "after": {"torch.float32": 33638400},
+    "converted_parameters": 33638400
+  },
+  "package_versions": {
+    "torch": "2.10.0+cu128",
+    "transformers": "5.15.0",
+    "trl": "1.10.0",
+    "peft": "0.20.0",
+    "accelerate": "1.14.0",
+    "bitsandbytes": "0.50.1",
+    "datasets": "5.0.1"
+  },
+  "training": {
+    "train_runtime_seconds": 12.6919,
+    "train_steps_per_second": 0.158,
+    "train_loss": 1.0484411716461182
+  },
+  "checks": {
+    "base_qa_generation": "passed",
+    "base_grounding_generation": "passed",
+    "qlora_two_optimizer_steps": "passed",
+    "adapter_save_reload": "passed",
+    "adapter_qa_generation": "passed",
+    "adapter_grounding_generation": "passed"
+  }
+}

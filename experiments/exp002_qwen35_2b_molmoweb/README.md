@@ -1,6 +1,6 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: local pipeline ready; Kaggle GPU compatibility smoke test and official run not started.
+Status: Kaggle GPU compatibility smoke passed; official baseline not started.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -52,6 +52,13 @@ Exact model and dataset revisions are pinned in
 
 Pending. Completed runs will be archived under `results/<run-id>/` and committed; raw
 predictions and failure galleries will be retained as Kaggle artifacts.
+
+## Compatibility validation
+
+Kaggle smoke version 7 passed on 2026-08-17 using two T4 GPUs and source commit `6cc023e`.
+It covered base inference for both tasks, two QLoRA optimizer steps, adapter save/reload, and
+post-adapter inference. This synthetic check is not an experimental result. Its machine-readable
+record is in `compatibility/20260817_kaggle_v7.json`.
 
 ## Deviations and notes
 
