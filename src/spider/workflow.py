@@ -15,12 +15,14 @@ def gpu_summary() -> dict[str, Any]:
     devices = []
     for index in range(torch.cuda.device_count()):
         properties = torch.cuda.get_device_properties(index)
+        capability = torch.cuda.get_device_capability(index)
         devices.append(
             {
                 "index": index,
                 "name": properties.name,
                 "memory_gib": round(properties.total_memory / 1024**3, 2),
-                "bf16_supported": bool(torch.cuda.is_bf16_supported()),
+                "compute_capability": f"{capability[0]}.{capability[1]}",
+                "native_bf16": bool(capability[0] >= 8 and torch.cuda.is_bf16_supported()),
             }
         )
     return {"cuda_available": torch.cuda.is_available(), "devices": devices}

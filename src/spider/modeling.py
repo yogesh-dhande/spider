@@ -5,6 +5,15 @@ from typing import Any
 SUPPORTED_MODEL_LOADERS = {"qwen3_vl", "auto_multimodal"}
 
 
+def cuda_supports_native_bf16(torch: Any) -> bool:
+    if not torch.cuda.is_bf16_supported():
+        return False
+    return all(
+        torch.cuda.get_device_capability(index)[0] >= 8
+        for index in range(torch.cuda.device_count())
+    )
+
+
 def validate_model_config(
     experiment: dict[str, Any], training: dict[str, Any] | None = None
 ) -> None:
@@ -34,7 +43,7 @@ def load_quantized_model(
 
         model_class = Qwen3VLForConditionalGeneration
 
-    compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    compute_dtype = torch.bfloat16 if cuda_supports_native_bf16(torch) else torch.float16
     quantization = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
