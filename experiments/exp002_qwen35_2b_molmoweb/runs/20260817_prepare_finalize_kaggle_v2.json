@@ -1,0 +1,21 @@
+{
+  "stage": "prepared_data_finalize",
+  "status": "queued",
+  "launched_at_utc": "2026-08-17T23:11:01Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-finalize-prepared-data",
+  "kaggle_version": 2,
+  "source_commit": "afceb54",
+  "runner_repository_commit": "81ef92f",
+  "config": "configs/experiment2.yaml",
+  "config_sha256": "9d45244cceb681147421675b7343214a071edf26fa69f1ed9ada53bb1455f816",
+  "runner_sha256": "04150e60c8f5736628dde686dafaa5a6b375da69ae9a17102a96d2b605688c4f",
+  "requirements_sha256": "855e0527bc6c4171321f3948d29cd326b8c91f563e50882439b52afafb39a5f2",
+  "accelerator": "CPU",
+  "timeout_seconds": 10800,
+  "kernel_sources": [
+    "yogeshkd/spider-exp002-prepare-qa/1",
+    "yogeshkd/spider-exp002-prepare-grounding/1"
+  ],
+  "change_from_v1": "Discover actual Kaggle input roots dynamically instead of assuming fixed mount directory names.",
+  "intended_output": "Merged frozen manifests and images, ScreenSpot evaluation data, summary, exact config, and SHA-256 file checksums"
+}
