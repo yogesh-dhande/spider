@@ -1,6 +1,6 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: Kaggle GPU compatibility smoke passed; official baseline not started.
+Status: Kaggle GPU compatibility smoke passed; official baseline version 1 running.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
