@@ -1,0 +1,18 @@
+{
+  "id": "yogeshkd/spider-exp002-prepare-finalize",
+  "title": "Spider EXP002 Finalize Prepared Data",
+  "code_file": "exp002_prepare_finalize.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "yogeshkd/spider-exp002-prepare-qa",
+    "yogeshkd/spider-exp002-prepare-grounding"
+  ],
+  "model_sources": []
+}
