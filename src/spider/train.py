@@ -166,6 +166,7 @@ def train(
         "dataloader_num_workers": int(training["dataloader_num_workers"]),
         "remove_unused_columns": False,
         "report_to": training["report_to"],
+        "disable_tqdm": True,
         "seed": int(experiment["seed"]),
         "data_seed": int(experiment["seed"]),
         "bf16": compute_dtype == torch.bfloat16,

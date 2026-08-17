@@ -81,3 +81,8 @@ affected run ID. Never silently replace a completed run's configuration or resul
   examples, prompts, decoding, and metrics are unchanged; execution is split into a CPU-only
   prepared-data artifact and eight deterministic GPU evaluation shards with a validated merge.
   QLoRA sessions start at 100 optimizer steps rather than 500 until throughput is measured.
+- 2026-08-17: future preparation, evaluation, and training runners replace animated progress
+  bars with sparse line-oriented logs. This observability-only change was prompted by Kaggle's
+  CLI not exposing live `tqdm` output and the web log being dominated by carriage-return control
+  sequences. It does not change example selection, model computation, or metrics. The currently
+  running QA and grounding preparation version 1 jobs remain pinned to the prior implementation.

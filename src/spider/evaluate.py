@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
-from tqdm.auto import tqdm
 
 from spider.config import experiment_path, load_config, runtime_versions
 from spider.metrics import score_records
 from spider.modeling import load_quantized_model
 from spider.prepare import read_jsonl, write_jsonl
+from spider.progress import LineProgress
 from spider.prompts import inference_messages
 from spider.reports import create_failure_report
 
@@ -190,9 +190,11 @@ def evaluate(
         )
 
     model, processor = load_model(config["experiment"], adapter)
+    progress = LineProgress(f"evaluate_{label}", total=len(records), every_items=100)
     with raw_path.open("a", encoding="utf-8") as handle:
-        for record in tqdm(records, desc=f"Evaluating {label}"):
+        for record in records:
             if record["id"] in existing:
+                progress.update(1, resumed=True)
                 continue
             max_tokens = int(
                 evaluation[
@@ -216,6 +218,8 @@ def evaluate(
             handle.write(json.dumps(output, ensure_ascii=False) + "\n")
             handle.flush()
             existing[record["id"]] = output
+            progress.update(1, resumed=False)
+    progress.close("complete")
 
     ordered = [existing[record["id"]] for record in records]
     thresholds = [int(value) for value in evaluation["distance_thresholds_px"]]

@@ -124,6 +124,11 @@ Failure labels are diagnostic heuristics, not ground-truth error annotations:
 The HTML gallery includes representative successes and failures. Grounding images display the
 target bounds/center in green and the predicted point as a red cross.
 
+Long-running preparation and evaluation stages emit sparse JSON progress lines instead of
+animated notebook progress bars. Logs include completed examples, total, percentage, scanned
+rows where applicable, elapsed time, throughput, and ETA at most once per 500 examples or 60
+seconds. Trainer's animated progress bar is disabled; its periodic metric logs remain enabled.
+
 The tracked [`experiments/registry.yaml`](experiments/registry.yaml) indexes experiments. Each
 official run is archived under its experiment record with config/result checksums, dependency
 versions, model and dataset revisions, and the exact source Git state. Commit each archive;

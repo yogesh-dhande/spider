@@ -10,10 +10,10 @@ from typing import Any
 from urllib.parse import urlparse
 
 from PIL import Image, ImageOps
-from tqdm.auto import tqdm
 
 from spider.config import experiment_path, load_config
 from spider.coordinates import bbox_center, format_point_answer, normalize_bbox
+from spider.progress import LineProgress
 from spider.prompts import grounding_prompt, qa_prompt
 
 SPLITS = ("train", "validation", "test")
@@ -172,101 +172,110 @@ def prepare_molmoweb_task(
     records: dict[str, list[dict[str, Any]]] = {split: [] for split in SPLITS}
     per_domain: dict[str, Counter[str]] = {split: Counter() for split in SPLITS}
     image_dir = data_dir / "images" / task
-    progress = tqdm(total=sum(targets.values()), desc=f"Preparing MolmoWeb {task}")
+    progress = LineProgress(f"prepare_molmoweb_{task}", total=sum(targets.values()))
+    scanned_rows = 0
+    try:
+        for row_index, row in enumerate(stream):
+            scanned_rows = row_index + 1
+            if all(len(records[split]) >= targets[split] for split in SPLITS):
+                break
+            metadata = dict(row.get("metadata") or {})
+            domain = canonical_domain(metadata)
+            split = domain_split(domain, seed, data_cfg["domain_split_percent"])
+            if len(records[split]) >= targets[split]:
+                continue
+            domain_cap = int(data_cfg["max_examples_per_domain"][split])
+            available = domain_cap - per_domain[split][domain]
+            if available <= 0:
+                continue
 
-    for row_index, row in enumerate(stream):
-        if all(len(records[split]) >= targets[split] for split in SPLITS):
-            break
-        metadata = dict(row.get("metadata") or {})
-        domain = canonical_domain(metadata)
-        split = domain_split(domain, seed, data_cfg["domain_split_percent"])
-        if len(records[split]) >= targets[split]:
-            continue
-        domain_cap = int(data_cfg["max_examples_per_domain"][split])
-        available = domain_cap - per_domain[split][domain]
-        if available <= 0:
-            continue
-
-        messages = [
-            message for message in (row.get("messages") or []) if _valid_message(task, message)
-        ]
-        messages.sort(
-            key=lambda message: stable_int(seed, domain, message.get("question", ""), task)
-        )
-        remaining = targets[split] - len(records[split])
-        selected = messages[: min(available, remaining)]
-        if not selected:
-            continue
-
-        image = _decode_image(row.get("image"))
-        if image is None:
-            continue
-        url = str(metadata.get("url") or f"row-{row_index}")
-        image_key = hashlib.sha256(f"{task}\x1f{url}\x1f{row_index}".encode()).hexdigest()[:24]
-        try:
-            image_path, width, height, original_width, original_height = _save_image(
-                image,
-                image_dir,
-                image_key,
-                int(data_cfg["max_width"]),
-                int(data_cfg["max_height"]),
-                int(data_cfg["jpeg_quality"]),
+            messages = [
+                message
+                for message in (row.get("messages") or [])
+                if _valid_message(task, message)
+            ]
+            messages.sort(
+                key=lambda message: stable_int(seed, domain, message.get("question", ""), task)
             )
-        except (OSError, ValueError):
-            continue
+            remaining = targets[split] - len(records[split])
+            selected = messages[: min(available, remaining)]
+            if not selected:
+                continue
 
-        for message_index, message in enumerate(selected):
-            question = str(message["question"]).strip()
-            example_id = hashlib.sha256(
-                f"{task}\x1f{url}\x1f{row_index}\x1f{question}\x1f{message_index}".encode()
+            image = _decode_image(row.get("image"))
+            if image is None:
+                continue
+            url = str(metadata.get("url") or f"row-{row_index}")
+            image_key = hashlib.sha256(
+                f"{task}\x1f{url}\x1f{row_index}".encode()
             ).hexdigest()[:24]
-            record: dict[str, Any] = {
-                "id": example_id,
-                "benchmark": "molmoweb",
-                "task": task,
-                "split": split,
-                "image": str(Path(image_path).relative_to(data_dir)),
-                "image_width": width,
-                "image_height": height,
-                "original_width": original_width,
-                "original_height": original_height,
-                "domain": domain,
-                "url": url,
-                "question": question,
-            }
-            if task == "qa":
-                answer = str(message["answer"]).strip()
-                record.update(
-                    {
-                        "prompt": qa_prompt(question),
-                        "answer": answer,
-                        "question_type": str(message.get("question_type") or "unknown"),
-                        "question_form": str(message.get("question_form") or "unknown"),
-                    }
+            try:
+                image_path, width, height, original_width, original_height = _save_image(
+                    image,
+                    image_dir,
+                    image_key,
+                    int(data_cfg["max_width"]),
+                    int(data_cfg["max_height"]),
+                    int(data_cfg["jpeg_quality"]),
                 )
-            else:
-                bbox_px = list(map(float, json.loads(message["bbox"])))
-                bbox_norm = normalize_bbox(bbox_px, original_width, original_height)
-                center_norm = bbox_center(bbox_norm)
-                record.update(
-                    {
-                        "prompt": grounding_prompt(question),
-                        "answer": format_point_answer(center_norm, question),
-                        "bbox_normalized": [round(value, 4) for value in bbox_norm],
-                        "target_point_normalized": [round(value, 4) for value in center_norm],
-                    }
-                )
-            records[split].append(record)
-            per_domain[split][domain] += 1
-            progress.update(1)
+            except (OSError, ValueError):
+                continue
 
-    progress.close()
+            for message_index, message in enumerate(selected):
+                question = str(message["question"]).strip()
+                example_id = hashlib.sha256(
+                    f"{task}\x1f{url}\x1f{row_index}\x1f{question}\x1f{message_index}".encode()
+                ).hexdigest()[:24]
+                record: dict[str, Any] = {
+                    "id": example_id,
+                    "benchmark": "molmoweb",
+                    "task": task,
+                    "split": split,
+                    "image": str(Path(image_path).relative_to(data_dir)),
+                    "image_width": width,
+                    "image_height": height,
+                    "original_width": original_width,
+                    "original_height": original_height,
+                    "domain": domain,
+                    "url": url,
+                    "question": question,
+                }
+                if task == "qa":
+                    answer = str(message["answer"]).strip()
+                    record.update(
+                        {
+                            "prompt": qa_prompt(question),
+                            "answer": answer,
+                            "question_type": str(message.get("question_type") or "unknown"),
+                            "question_form": str(message.get("question_form") or "unknown"),
+                        }
+                    )
+                else:
+                    bbox_px = list(map(float, json.loads(message["bbox"])))
+                    bbox_norm = normalize_bbox(bbox_px, original_width, original_height)
+                    center_norm = bbox_center(bbox_norm)
+                    record.update(
+                        {
+                            "prompt": grounding_prompt(question),
+                            "answer": format_point_answer(center_norm, question),
+                            "bbox_normalized": [round(value, 4) for value in bbox_norm],
+                            "target_point_normalized": [round(value, 4) for value in center_norm],
+                        }
+                    )
+                records[split].append(record)
+                per_domain[split][domain] += 1
+                progress.update(1, scanned_rows=scanned_rows)
+    except Exception:
+        progress.close("failed", scanned_rows=scanned_rows)
+        raise
     missing = {split: targets[split] - len(records[split]) for split in SPLITS}
     if any(value > 0 for value in missing.values()):
+        progress.close("incomplete", scanned_rows=scanned_rows, missing=missing)
         raise RuntimeError(
             f"Could not fill {task} quotas: {missing}. Increase domain caps or adjust split percentages."
         )
 
+    progress.close("complete", scanned_rows=scanned_rows)
     for split, path in paths.items():
         write_jsonl(path, records[split])
     return summarize_records(records)
@@ -285,54 +294,61 @@ def prepare_screenspot(
     stream = _dataset_stream(spec, int(config["experiment"]["seed"]) + 2, 2000)
     image_dir = data_dir / "images" / "screenspot"
     records: list[dict[str, Any]] = []
-    for row_index, row in enumerate(tqdm(stream, desc="Preparing ScreenSpot")):
-        image = _decode_image(row.get("image"))
-        instruction = str(row.get("instruction") or "").strip()
-        bbox = row.get("bbox")
-        if image is None or not instruction or not isinstance(bbox, list):
-            continue
-        image_key = hashlib.sha256(
-            str(row.get("file_name") or f"screenspot-{row_index}").encode()
-        ).hexdigest()[:24]
-        image_path, width, height, original_width, original_height = _save_image(
-            image,
-            image_dir,
-            image_key,
-            int(data_cfg["max_width"]),
-            int(data_cfg["max_height"]),
-            int(data_cfg["jpeg_quality"]),
-        )
-        bbox_px = bbox_to_xyxy_pixels(
-            bbox,
-            original_width,
-            original_height,
-            spec.get("bbox_format", "xyxy"),
-            spec.get("bbox_units", "pixels"),
-        )
-        bbox_norm = normalize_bbox(bbox_px, original_width, original_height)
-        target = bbox_center(bbox_norm)
-        records.append(
-            {
-                "id": f"screenspot-{row_index:05d}",
-                "benchmark": "screenspot",
-                "task": "grounding",
-                "split": "screenspot",
-                "image": str(Path(image_path).relative_to(data_dir)),
-                "image_width": width,
-                "image_height": height,
-                "original_width": original_width,
-                "original_height": original_height,
-                "domain": str(row.get("data_source") or "screenspot"),
-                "url": "",
-                "question": instruction,
-                "prompt": grounding_prompt(instruction),
-                "answer": format_point_answer(target, instruction),
-                "bbox_normalized": [round(value, 4) for value in bbox_norm],
-                "target_point_normalized": [round(value, 4) for value in target],
-                "element_type": str(row.get("data_type") or "unknown"),
-                "data_source": str(row.get("data_source") or "unknown"),
-            }
-        )
+    progress = LineProgress("prepare_screenspot")
+    try:
+        for row_index, row in enumerate(stream):
+            image = _decode_image(row.get("image"))
+            instruction = str(row.get("instruction") or "").strip()
+            bbox = row.get("bbox")
+            if image is None or not instruction or not isinstance(bbox, list):
+                continue
+            image_key = hashlib.sha256(
+                str(row.get("file_name") or f"screenspot-{row_index}").encode()
+            ).hexdigest()[:24]
+            image_path, width, height, original_width, original_height = _save_image(
+                image,
+                image_dir,
+                image_key,
+                int(data_cfg["max_width"]),
+                int(data_cfg["max_height"]),
+                int(data_cfg["jpeg_quality"]),
+            )
+            bbox_px = bbox_to_xyxy_pixels(
+                bbox,
+                original_width,
+                original_height,
+                spec.get("bbox_format", "xyxy"),
+                spec.get("bbox_units", "pixels"),
+            )
+            bbox_norm = normalize_bbox(bbox_px, original_width, original_height)
+            target = bbox_center(bbox_norm)
+            records.append(
+                {
+                    "id": f"screenspot-{row_index:05d}",
+                    "benchmark": "screenspot",
+                    "task": "grounding",
+                    "split": "screenspot",
+                    "image": str(Path(image_path).relative_to(data_dir)),
+                    "image_width": width,
+                    "image_height": height,
+                    "original_width": original_width,
+                    "original_height": original_height,
+                    "domain": str(row.get("data_source") or "screenspot"),
+                    "url": "",
+                    "question": instruction,
+                    "prompt": grounding_prompt(instruction),
+                    "answer": format_point_answer(target, instruction),
+                    "bbox_normalized": [round(value, 4) for value in bbox_norm],
+                    "target_point_normalized": [round(value, 4) for value in target],
+                    "element_type": str(row.get("data_type") or "unknown"),
+                    "data_source": str(row.get("data_source") or "unknown"),
+                }
+            )
+            progress.update(1, scanned_rows=row_index + 1)
+    except Exception:
+        progress.close("failed", accepted_examples=len(records))
+        raise
+    progress.close("complete", accepted_examples=len(records))
     write_jsonl(path, records)
     return {"examples": len(records)}
 
