@@ -7,6 +7,8 @@ from typing import Any
 from spider.compare import compare_files
 from spider.config import experiment_path, load_config
 
+PREPARED_DATA_NAME = "molmoweb_30k_domain17"
+
 
 def gpu_summary() -> dict[str, Any]:
     """Return a notebook-friendly summary without printing or shelling out."""
@@ -42,6 +44,44 @@ def restore_run(previous_root: str | Path | None, repository_root: str | Path = 
             shutil.copytree(source, target, dirs_exist_ok=True)
             restored.append(target)
     return restored
+
+
+def find_prepared_data(search_root: str | Path) -> Path:
+    search_root = Path(search_root)
+    direct_candidates = (
+        search_root / PREPARED_DATA_NAME,
+        search_root / "data" / PREPARED_DATA_NAME,
+        search_root / "spider" / "data" / PREPARED_DATA_NAME,
+    )
+    for candidate in direct_candidates:
+        if candidate.is_dir():
+            return candidate
+    matches = [path for path in search_root.glob(f"*/data/{PREPARED_DATA_NAME}") if path.is_dir()]
+    if len(matches) != 1:
+        raise FileNotFoundError(
+            f"Expected one {PREPARED_DATA_NAME} directory under {search_root}, found {matches}"
+        )
+    return matches[0]
+
+
+def restore_prepared_data(
+    search_roots: list[str | Path], repository_root: str | Path = "."
+) -> Path:
+    target = Path(repository_root) / "data" / PREPARED_DATA_NAME
+    for search_root in search_roots:
+        source = find_prepared_data(search_root)
+        shutil.copytree(source, target, dirs_exist_ok=True)
+    return target
+
+
+def mount_prepared_data(search_root: str | Path, repository_root: str | Path = ".") -> Path:
+    source = find_prepared_data(search_root).resolve()
+    target = Path(repository_root) / "data" / PREPARED_DATA_NAME
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() or target.is_symlink():
+        raise FileExistsError(f"Prepared data target already exists: {target}")
+    target.symlink_to(source, target_is_directory=True)
+    return target
 
 
 def compare_run_outputs(
