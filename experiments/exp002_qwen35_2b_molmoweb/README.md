@@ -1,6 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: Kaggle GPU compatibility smoke passed; official baseline version 1 running.
+Status: Kaggle GPU compatibility smoke passed; monolithic baseline version 1 stop requested;
+staged baseline pending.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -72,3 +73,11 @@ Do not make derived images public without first verifying the upstream redistrib
 
 Record every change made after the official baseline begins, including its reason and first
 affected run ID. Never silently replace a completed run's configuration or result files.
+
+- 2026-08-17: termination of Kaggle baseline version 1 was requested after about 1 hour 40
+  minutes because it combined data preparation and the complete evaluation in one timeout-bound
+  session. It is an aborted infrastructure run and will not be scored or treated as experimental
+  evidence. The first affected replacement run will be baseline version 2. The frozen model,
+  examples, prompts, decoding, and metrics are unchanged; execution is split into a CPU-only
+  prepared-data artifact and eight deterministic GPU evaluation shards with a validated merge.
+  QLoRA sessions start at 100 optimizer steps rather than 500 until throughput is measured.

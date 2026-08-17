@@ -24,7 +24,11 @@ def _hash_file(path: Path, digest: Any) -> None:
 
 
 def evaluation_signature(
-    config: dict[str, Any], adapter: str | None, manifest_paths: list[Path], split: str
+    config: dict[str, Any],
+    adapter: str | None,
+    manifest_paths: list[Path],
+    split: str,
+    selection: dict[str, Any] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     digest = hashlib.sha256()
     config_payload = json.dumps(config, sort_keys=True, separators=(",", ":"))
@@ -35,7 +39,10 @@ def evaluation_signature(
         "adapter": adapter,
         "split": split,
         "manifests": [str(path) for path in manifest_paths],
+        "selection": selection or {"kind": "all"},
     }
+    if selection:
+        digest.update(json.dumps(selection, sort_keys=True, separators=(",", ":")).encode())
     for manifest in manifest_paths:
         _hash_file(manifest, digest)
     if adapter:
@@ -110,6 +117,35 @@ def _manifest_paths(data_dir: Path, datasets: list[str], split: str) -> list[Pat
     return paths
 
 
+def select_records(
+    manifest_paths: list[Path],
+    limit: int | None = None,
+    shard_index: int | None = None,
+    num_shards: int | None = None,
+) -> list[dict[str, Any]]:
+    if (shard_index is None) != (num_shards is None):
+        raise ValueError("--shard-index and --num-shards must be supplied together")
+    if num_shards is not None:
+        if num_shards < 1:
+            raise ValueError("--num-shards must be at least 1")
+        if shard_index is None or not 0 <= shard_index < num_shards:
+            raise ValueError("--shard-index must be in [0, num_shards)")
+
+    records: list[dict[str, Any]] = []
+    for path in manifest_paths:
+        manifest_records = read_jsonl(path)
+        if num_shards is not None:
+            manifest_records = [
+                record
+                for position, record in enumerate(manifest_records)
+                if position % num_shards == shard_index
+            ]
+        if limit is not None:
+            manifest_records = manifest_records[:limit]
+        records.extend(manifest_records)
+    return records
+
+
 def evaluate(
     config_path: str | Path,
     label: str,
@@ -117,6 +153,8 @@ def evaluate(
     datasets: list[str],
     split: str = "test",
     limit: int | None = None,
+    shard_index: int | None = None,
+    num_shards: int | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     config = load_config(config_path)
     evaluation = config["evaluation"]
@@ -126,12 +164,21 @@ def evaluate(
     raw_path = output_dir / "predictions.raw.jsonl"
 
     manifest_paths = _manifest_paths(data_dir, datasets, split)
-    signature, run_metadata = evaluation_signature(config, adapter, manifest_paths, split)
+    selection = {
+        "kind": "shard" if num_shards is not None else "all",
+        "shard_index": shard_index,
+        "num_shards": num_shards,
+        "limit_per_manifest": limit,
+    }
+    signature, run_metadata = evaluation_signature(
+        config, adapter, manifest_paths, split, selection
+    )
     run_metadata["package_versions"] = runtime_versions()
-    records: list[dict[str, Any]] = []
-    for path in manifest_paths:
-        manifest_records = read_jsonl(path)
-        records.extend(manifest_records[:limit] if limit is not None else manifest_records)
+    records = select_records(manifest_paths, limit, shard_index, num_shards)
+    run_metadata["planned_examples"] = len(records)
+    metadata_path = output_dir / "run_metadata.json"
+    with metadata_path.open("w", encoding="utf-8") as handle:
+        json.dump(run_metadata, handle, indent=2)
     existing = (
         {record["id"]: record for record in read_jsonl(raw_path)} if raw_path.exists() else {}
     )
@@ -177,7 +224,8 @@ def evaluate(
     write_jsonl(predictions_path, scored)
     with (output_dir / "metrics.json").open("w", encoding="utf-8") as handle:
         json.dump(metrics, handle, indent=2)
-    with (output_dir / "run_metadata.json").open("w", encoding="utf-8") as handle:
+    run_metadata["completed_examples"] = len(scored)
+    with metadata_path.open("w", encoding="utf-8") as handle:
         json.dump(run_metadata, handle, indent=2)
     create_failure_report(
         scored,
@@ -198,6 +246,8 @@ def main() -> None:
     )
     parser.add_argument("--split", default="test", choices=["validation", "test"])
     parser.add_argument("--limit", type=int, default=None, help="Smoke-test limit per manifest")
+    parser.add_argument("--shard-index", type=int, default=None, help="Zero-based shard index")
+    parser.add_argument("--num-shards", type=int, default=None, help="Number of evaluation shards")
     args = parser.parse_args()
     _, metrics = evaluate(
         args.config,
@@ -206,6 +256,8 @@ def main() -> None:
         datasets=[name.strip() for name in args.datasets.split(",") if name.strip()],
         split=args.split,
         limit=args.limit,
+        shard_index=args.shard_index,
+        num_shards=args.num_shards,
     )
     print(json.dumps(metrics, indent=2))
 

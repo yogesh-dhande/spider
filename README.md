@@ -41,11 +41,16 @@ pip install -r requirements/experiment2-kaggle.txt
 pip install -e . --no-deps
 spider-prepare --config configs/experiment2.yaml
 
-# Measure the untouched base model first. This resumes at the prediction level.
-spider-evaluate --config configs/experiment2.yaml --label baseline
+# Run one untouched-base shard per Kaggle session/version.
+spider-evaluate --config configs/experiment2.yaml \
+  --label baseline-shard-00-of-08 --shard-index 0 --num-shards 8
+
+# After copying all eight shard outputs under outputs/experiment2/evaluation:
+spider-merge --config configs/experiment2.yaml --label baseline \
+  --shard-labels baseline-shard-00-of-08,baseline-shard-01-of-08,baseline-shard-02-of-08,baseline-shard-03-of-08,baseline-shard-04-of-08,baseline-shard-05-of-08,baseline-shard-06-of-08,baseline-shard-07-of-08
 
 # Train in a bounded Kaggle session. Re-running adds another chunk and resumes checkpoints.
-spider-train --config configs/experiment2.yaml --additional-steps 500
+spider-train --config configs/experiment2.yaml --additional-steps 100
 
 # After the configured one-epoch target has completed:
 spider-evaluate \
@@ -62,17 +67,19 @@ spider-compare \
 spider-archive --config configs/experiment2.yaml
 ```
 
-Save each completed Kaggle notebook version with `data/molmoweb_30k_domain17` and
-`outputs/experiment2` as outputs. In the next session, attach that version's output and copy
-both directories back into the repository before resuming. The notebook contains a cell for
-this. A 500-step chunk is intentionally conservative; adjust it once measured throughput is
-known.
+Prepare the data once in a CPU-only session and save `data/molmoweb_30k_domain17` as a private,
+versioned Kaggle dataset. Every GPU stage attaches that exact dataset version. Evaluation uses
+eight deterministic shards (about 650 examples each); a shard is only mergeable when its exact
+expected IDs and signatures are complete. Training uses 100-optimizer-step sessions initially.
+Each subsequent training session attaches and resumes the previous adapter/checkpoint output.
+Adjust chunk size only after measured throughput leaves a substantial margin below Kaggle's
+session limit.
 
 For two T4s, launch training through Accelerate:
 
 ```bash
 accelerate launch --num_processes 2 -m spider.train \
-  --config configs/experiment2.yaml --additional-steps 500
+  --config configs/experiment2.yaml --additional-steps 100
 ```
 
 The effective batch size scales with GPU count, and the chunk logic caps training at the

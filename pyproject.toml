@@ -35,6 +35,7 @@ dev = [
 spider-prepare = "spider.prepare:main"
 spider-train = "spider.train:main"
 spider-evaluate = "spider.evaluate:main"
+spider-merge = "spider.merge:main"
 spider-compare = "spider.compare:main"
 spider-archive = "spider.archive:main"
 spider-smoke = "spider.smoke:main"
