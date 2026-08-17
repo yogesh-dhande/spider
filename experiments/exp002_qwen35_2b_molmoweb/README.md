@@ -60,6 +60,14 @@ It covered base inference for both tasks, two QLoRA optimizer steps, adapter sav
 post-adapter inference. This synthetic check is not an experimental result. Its machine-readable
 record is in `compatibility/20260817_kaggle_v7.json`.
 
+## Prepared-data reuse
+
+After baseline version 1 finishes, preserve `data/molmoweb_30k_domain17` as a versioned private
+Kaggle artifact containing the resized images, frozen manifests, summary, config, and checksums.
+Training and later evaluations must attach that version instead of repeating preparation. Until
+the dedicated dataset is published, the immutable baseline notebook output is the source artifact.
+Do not make derived images public without first verifying the upstream redistribution terms.
+
 ## Deviations and notes
 
 Record every change made after the official baseline begins, including its reason and first
