@@ -56,7 +56,9 @@ def find_prepared_data(search_root: str | Path) -> Path:
     for candidate in direct_candidates:
         if candidate.is_dir():
             return candidate
-    matches = [path for path in search_root.glob(f"*/data/{PREPARED_DATA_NAME}") if path.is_dir()]
+    matches = [
+        path for path in search_root.rglob(PREPARED_DATA_NAME) if path.is_dir()
+    ] if search_root.is_dir() else []
     if len(matches) != 1:
         raise FileNotFoundError(
             f"Expected one {PREPARED_DATA_NAME} directory under {search_root}, found {matches}"
