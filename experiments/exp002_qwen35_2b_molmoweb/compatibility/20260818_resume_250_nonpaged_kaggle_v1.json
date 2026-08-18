@@ -1,0 +1,29 @@
+{
+  "purpose": "full_checkpoint_nonpaged_adamw8bit_resume_gate",
+  "status": "queued",
+  "launched_at_utc": "2026-08-18T07:29:41Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-resume-250-compatibility",
+  "kaggle_version": 1,
+  "source_commit": "12d1435",
+  "runner_repository_commit": "abfc300",
+  "runner_sha256": "ebb1078d4a29dccc0817601d836d84ae29b20dad4f001a55d7ac3e57d0c17f84",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "resume_source": "yogeshkd/spider-exp002-sft-stage-00/2",
+  "expected_start_step": 250,
+  "additional_steps": 1,
+  "expected_completed_step": 251,
+  "source_optimizer": "paged_adamw_8bit",
+  "resume_optimizer": "adamw_8bit",
+  "num_processes": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_batch_size": 16,
+  "scientific_result": false,
+  "trigger": "stage 1 version 1 paged optimizer restore failure",
+  "acceptance_requires": [
+    "training_state start_step 250 and completed_step 251",
+    "resumed_from checkpoint-250",
+    "optimizer adamw_8bit",
+    "checkpoint-251 with optimizer, scheduler, Trainer, and two-rank RNG state",
+    "world_size 2 and effective_batch_size 16"
+  ]
+}
