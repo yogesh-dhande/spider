@@ -199,8 +199,8 @@ h3 { font-family: Georgia, serif; font-size: 24px; font-weight: 400; letter-spac
 .answerBlock p { color: var(--muted); font: 9px monospace; letter-spacing: .06em; margin: 0 0 7px; text-transform: uppercase; }
 .answerBlock div { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .answerBlock.reference { background: #f1eee6; border-left-color: var(--ink); margin-bottom: 18px; padding: 12px; }
-.predictionGrid { display: grid; gap: 15px; grid-template-columns: 1fr 1fr 1fr; }
-.answerBlock.recovered { border-left-color: var(--teal); }
+.predictionGrid { display: grid; gap: 15px; grid-template-columns: 1fr 1fr; }
+.answerBlock.latest { border-left-color: var(--teal); }
 .score { background: #ece9e1; border-radius: 99px; color: #777c79; display: inline-block; font: 8px monospace; margin-top: 9px; padding: 4px 6px; text-transform: uppercase; }
 .scoreGood { background: var(--teal-soft); color: #05695f; }
 details { border-top: 1px solid #e4e0d7; margin-top: 18px; padding-top: 13px; }
@@ -235,18 +235,16 @@ footer { border-top: 1px solid var(--line); color: var(--muted); display: flex; 
 }
 .clickMarker.targetPoint { background: #0d9c68; height: 17px; width: 17px; z-index: 6; }
 .clickMarker.baseline { background: #58615e; margin-left: -5px; margin-top: -5px; }
-.clickMarker.step250 { background: var(--orange); margin-left: 5px; margin-top: -5px; }
-.clickMarker.step1000 { background: var(--teal); margin-top: 6px; }
+.clickMarker.latest { background: var(--teal); margin-left: 5px; margin-top: 5px; }
 .markerLegend { display: flex; flex-wrap: wrap; gap: 8px 13px; margin-bottom: 20px; }
 .markerLegend span { align-items: center; color: var(--muted); display: flex; font: 8px monospace; text-transform: uppercase; }
 .markerLegend span::before { border-radius: 50%; content: ""; height: 8px; margin-right: 5px; width: 8px; }
 .markerLegend .legendTarget::before { background: #0d9c68; }
 .markerLegend .legendBaseline::before { background: #58615e; }
-.markerLegend .legend250::before { background: var(--orange); }
-.markerLegend .legend1000::before { background: var(--teal); }
+.markerLegend .legendLatest::before { background: var(--teal); }
 .groundingLabel { color: var(--orange); font: 9px monospace; letter-spacing: .08em; margin: 0 0 8px; text-transform: uppercase; }
 .groundingCard h3 { margin-top: 0; }
-.groundingScores { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); }
+.groundingScores { display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr); }
 .groundScore { background: #f1eee6; border-top: 3px solid #9aa09d; display: flex; flex-direction: column; min-width: 0; padding: 11px; }
 .groundScore.hit { background: #e4f2ed; border-color: var(--teal); }
 .groundScore.miss { background: #f5e7df; border-color: var(--orange); }

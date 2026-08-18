@@ -34,23 +34,20 @@ def test_first_answer_removes_decoded_next_turn() -> None:
     assert first_answer("Get started\n<think>\n") == "Get started"
 
 
-def test_build_qa_probe_dashboard_scores_recovered_answer(tmp_path: Path) -> None:
+def test_build_qa_probe_dashboard_scores_display_answer(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.jsonl"
-    step250 = tmp_path / "step250.jsonl"
-    step1000 = tmp_path / "step1000.jsonl"
+    latest = tmp_path / "latest.jsonl"
     _write_predictions(baseline, "Start")
-    _write_predictions(step250, "Get started")
-    _write_predictions(step1000, "Get started\nuser\nRepeat the question")
+    _write_predictions(latest, "Get started\nuser\nRepeat the question")
 
     payload = build_qa_probe_dashboard(
-        {"baseline": baseline, "step250": step250, "step1000": step1000}
+        {"baseline": baseline, "latest": latest}
     )
 
     assert payload["meta"]["examples"] == 1
     assert payload["meta"]["turn_leak_examples"] == 1
-    assert payload["records"][0]["recovered_answer"] == "Get started"
-    assert payload["records"][0]["scores"]["step1000"]["exact"] is False
-    assert payload["records"][0]["scores"]["recovered"]["exact"] is True
+    assert payload["records"][0]["display_predictions"]["latest"] == "Get started"
+    assert payload["records"][0]["scores"]["latest"]["exact"] is True
 
 
 def _write_grounding_predictions(path: Path, point: list[int]) -> None:
@@ -78,18 +75,16 @@ def _write_grounding_predictions(path: Path, point: list[int]) -> None:
 
 def test_build_grounding_dashboard_keeps_visual_click_points(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.jsonl"
-    step250 = tmp_path / "step250.jsonl"
-    step1000 = tmp_path / "step1000.jsonl"
+    latest = tmp_path / "latest.jsonl"
     _write_grounding_predictions(baseline, [500, 500])
-    _write_grounding_predictions(step250, [175, 175])
-    _write_grounding_predictions(step1000, [150, 150])
+    _write_grounding_predictions(latest, [150, 150])
 
     payload = build_grounding_probe_dashboard(
-        {"baseline": baseline, "step250": step250, "step1000": step1000}
+        {"baseline": baseline, "latest": latest}
     )
 
     record = payload["records"][0]
     assert record["target_point_normalized"] == [150, 150]
     assert record["scores"]["baseline"]["within_element_bounds"] is False
-    assert record["scores"]["step1000"]["parsed_point"] == [150.0, 150.0]
-    assert payload["metrics"]["step1000"]["click_accuracy"] == 1.0
+    assert record["scores"]["latest"]["parsed_point"] == [150.0, 150.0]
+    assert payload["metrics"]["latest"]["click_accuracy"] == 1.0

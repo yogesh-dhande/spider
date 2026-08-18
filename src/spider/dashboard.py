@@ -31,11 +31,11 @@ def _prediction_metrics(prediction: str, answer: str) -> dict[str, Any]:
 def build_qa_probe_dashboard(
     prediction_paths: Mapping[str, Path],
     *,
-    recovered_label: str = "step1000",
+    latest_label: str = "latest",
 ) -> dict[str, Any]:
     """Join aligned QA probe predictions into a compact dashboard payload."""
-    if recovered_label not in prediction_paths:
-        raise ValueError(f"Missing recovered prediction label: {recovered_label}")
+    if latest_label not in prediction_paths:
+        raise ValueError(f"Missing latest prediction label: {latest_label}")
 
     by_label: dict[str, dict[str, dict[str, Any]]] = {}
     for label, path in prediction_paths.items():
@@ -45,20 +45,22 @@ def build_qa_probe_dashboard(
             raise ValueError(f"Duplicate QA IDs in {path}")
         by_label[label] = indexed
 
-    reference_ids = set(by_label[recovered_label])
+    reference_ids = set(by_label[latest_label])
     for label, indexed in by_label.items():
         if set(indexed) != reference_ids:
-            raise ValueError(f"QA IDs for {label} do not match {recovered_label}")
+            raise ValueError(f"QA IDs for {label} do not match {latest_label}")
 
     rows: list[dict[str, Any]] = []
-    for record_id, record in by_label[recovered_label].items():
+    for record_id, record in by_label[latest_label].items():
         answer = str(record["answer"])
         predictions = {
             label: str(indexed[record_id].get("prediction") or "")
             for label, indexed in by_label.items()
         }
-        recovered = first_answer(predictions[recovered_label])
-        leaked = recovered != predictions[recovered_label].strip()
+        display_predictions = {
+            label: first_answer(prediction) for label, prediction in predictions.items()
+        }
+        leaked = display_predictions[latest_label] != predictions[latest_label].strip()
         rows.append(
             {
                 "id": record_id,
@@ -72,14 +74,13 @@ def build_qa_probe_dashboard(
                 "question_type": str(record.get("question_type") or "unknown"),
                 "question_form": record.get("question_form"),
                 "predictions": predictions,
-                "recovered_answer": recovered,
+                "display_predictions": display_predictions,
                 "leaked_turn": leaked,
                 "scores": {
                     **{
                         label: _prediction_metrics(prediction, answer)
-                        for label, prediction in predictions.items()
+                        for label, prediction in display_predictions.items()
                     },
-                    "recovered": _prediction_metrics(recovered, answer),
                 },
             }
         )
@@ -87,7 +88,7 @@ def build_qa_probe_dashboard(
     rows.sort(key=lambda item: (str(item["question_type"]).lower(), item["id"]))
     question_types = Counter(str(row["question_type"]) for row in rows)
     metrics: dict[str, dict[str, float]] = {}
-    for label in [*prediction_paths, "recovered"]:
+    for label in prediction_paths:
         metrics[label] = {
             "exact_accuracy": sum(bool(row["scores"][label]["exact"]) for row in rows)
             / len(rows),
@@ -102,7 +103,7 @@ def build_qa_probe_dashboard(
             "examples": len(rows),
             "unique_screenshots": len({row["image"] for row in rows}),
             "question_types": dict(sorted(question_types.items())),
-            "recovered_label": recovered_label,
+            "latest_label": latest_label,
             "turn_leak_examples": sum(bool(row["leaked_turn"]) for row in rows),
             "license": "MolmoWeb-SyntheticQA — ODC-BY 1.0",
         },
@@ -191,13 +192,25 @@ def build_grounding_probe_dashboard(
     }
 
 
-def build_probe_dashboard(prediction_paths: Mapping[str, Path]) -> dict[str, Any]:
+def build_probe_dashboard(
+    prediction_paths: Mapping[str, Path],
+    *,
+    checkpoint_labels: Mapping[str, str] | None = None,
+    latest_label: str = "latest",
+    latest_step: int | None = None,
+) -> dict[str, Any]:
     """Build the combined QA and grounding explorer payload."""
+    labels = dict(checkpoint_labels or {label: label for label in prediction_paths})
+    if set(labels) != set(prediction_paths):
+        raise ValueError("Checkpoint labels must match prediction path labels")
     return {
         "meta": {
             "license": "MolmoWeb-SyntheticQA and SyntheticGround — ODC-BY 1.0",
+            "checkpoint_labels": labels,
+            "latest_label": latest_label,
+            "latest_step": latest_step,
         },
-        "qa": build_qa_probe_dashboard(prediction_paths),
+        "qa": build_qa_probe_dashboard(prediction_paths, latest_label=latest_label),
         "grounding": build_grounding_probe_dashboard(prediction_paths),
     }
 

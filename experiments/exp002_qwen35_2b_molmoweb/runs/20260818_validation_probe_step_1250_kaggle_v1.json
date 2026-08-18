@@ -1,0 +1,35 @@
+{
+  "stage": "validation_probe_step_1250",
+  "status": "complete",
+  "completed_at_utc": "2026-08-18T20:44:07Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-validation-probe-step-1250",
+  "kaggle_version": 1,
+  "source_commit": "815764c",
+  "runner_repository_commit": "d13803b",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "training_source": "yogeshkd/spider-exp002-sft-stage-04/1",
+  "checkpoint_step": 1250,
+  "split": "validation",
+  "screenshotqa_examples": 128,
+  "grounding_examples": 128,
+  "selection": "deterministic manifest prefix",
+  "test_sets_touched": false,
+  "comparison_anchor": "validation-probe-step-0250",
+  "completed_predictions": 256,
+  "evaluation_protocol": "v2-model-and-chat-eos",
+  "primary_metrics": {
+    "qa_answer_accuracy": 0.375,
+    "qa_mean_token_f1": 0.6999994701312052,
+    "grounding_click_accuracy": 0.578125,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 23.9077461423593
+  },
+  "delta_from_step_1000": {
+    "qa_answer_accuracy": 0.0078125,
+    "qa_mean_token_f1": 0.0125689700281133,
+    "grounding_click_accuracy": 0.0625,
+    "grounding_parse_rate": 0.0,
+    "grounding_median_pixel_distance": -4.908567356933724
+  },
+  "regression_gate": "passed"
+}

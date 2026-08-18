@@ -6,12 +6,15 @@ import argparse
 import json
 import math
 import re
+import shutil
 import subprocess
 import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from spider.dashboard import build_probe_dashboard, write_dashboard_json
 
 OWNER = "yogeshkd"
 PLANNED_STEPS = 1875
@@ -209,7 +212,9 @@ def launch_probe(step: int, repository_root: Path) -> None:
     emit("kaggle_probe_launched", step=step, output=output)
 
 
-def download_probe_metrics(step: int, version: int = 1) -> dict[str, float]:
+def download_probe_artifacts(
+    step: int, repository_root: Path, version: int = 1
+) -> dict[str, float]:
     label = f"validation-probe-step-{step:04d}"
     with tempfile.TemporaryDirectory(prefix=f"spider-exp002-probe-{step:04d}-") as directory:
         run(
@@ -221,7 +226,7 @@ def download_probe_metrics(step: int, version: int = 1) -> dict[str, float]:
                 "--path",
                 directory,
                 "--file-pattern",
-                rf"probes/{label}\.json",
+                rf"probes/{label}\.json|evaluation/{label}/predictions\.jsonl",
                 "--page-size",
                 "200",
                 "--quiet",
@@ -231,11 +236,41 @@ def download_probe_metrics(step: int, version: int = 1) -> dict[str, float]:
         if len(summaries) != 1:
             raise RuntimeError(f"Expected one step-{step} probe summary, found {summaries}")
         summary = json.loads(summaries[0].read_text(encoding="utf-8"))
+        predictions = list(Path(directory).rglob("predictions.jsonl"))
+        if len(predictions) != 1:
+            raise RuntimeError(f"Expected one step-{step} prediction file, found {predictions}")
+        artifact_dir = (
+            repository_root
+            / "experiments/exp002_qwen35_2b_molmoweb/artifacts/validation_probes"
+            / f"step_{step:04d}"
+        )
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        persisted_predictions = artifact_dir / "predictions.jsonl"
+        shutil.copy2(predictions[0], persisted_predictions)
+        shutil.copy2(summaries[0], artifact_dir / "summary.json")
     if summary.get("step") != step or summary.get("completed_predictions") != 256:
         raise RuntimeError(f"Invalid step-{step} probe summary: {summary}")
     metrics = {key: float(value) for key, value in summary["primary_metrics"].items()}
     if not all(math.isfinite(value) for value in metrics.values()):
         raise RuntimeError(f"Step-{step} probe has non-finite metrics: {metrics}")
+
+    baseline = (
+        repository_root
+        / "experiments/exp002_qwen35_2b_molmoweb/artifacts/validation_probes"
+        / "baseline/predictions.jsonl"
+    )
+    payload = build_probe_dashboard(
+        {"baseline": baseline, "latest": persisted_predictions},
+        checkpoint_labels={"baseline": "Baseline", "latest": f"Latest · step {step}"},
+        latest_step=step,
+    )
+    dashboard_output = repository_root / "dataset-dashboard/app/qa-probe.json"
+    write_dashboard_json(payload, dashboard_output)
+    emit(
+        "dashboard_refreshed",
+        latest_step=step,
+        output=str(dashboard_output.relative_to(repository_root)),
+    )
     return metrics
 
 
@@ -306,7 +341,7 @@ def main() -> None:
             )
             if probe_terminal != "COMPLETE":
                 raise RuntimeError(f"Step-{step} probe terminated with {probe_terminal}")
-            metrics = download_probe_metrics(step)
+            metrics = download_probe_artifacts(step, repository_root)
             regressions = probe_regressions(probe_anchor, metrics)
             emit(
                 "kaggle_probe_validated",

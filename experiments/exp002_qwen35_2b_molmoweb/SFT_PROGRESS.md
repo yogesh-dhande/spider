@@ -14,8 +14,8 @@ selected checkpoint.
 | 500 | 1.901 | 0.2853 | 0.6048 | 0.8308 | — | — | — | — | — | checkpoint validated; task probe deferred |
 | 750 | 1.950 | 0.1780 | 0.5966 | 0.8331 | — | — | — | — | — | checkpoint validated; task probe deferred |
 | 1000 | 1.754 | 0.1330 | 0.5897 | 0.8373 | 0.3672 | 0.6874 | 0.5156 | 1.0000 | 28.8 px | corrected regression gate passed |
-| 1250 | running | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-4 regression gate |
-| 1500 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-5 regression gate |
+| 1250 | 1.854 | 0.0962 | 0.5637 | 0.8396 | 0.3750 | 0.7000 | 0.5781 | 1.0000 | 23.9 px | regression gate passed |
+| 1500 | running | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-5 regression gate |
 | 1750 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-6 regression gate |
 | 1875 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | final validation probe |
 
@@ -52,3 +52,7 @@ the saved-output diagnostic: QA exact 0.3672, QA token F1 0.6874, grounding clic
 parse rate 1.0000, and median grounding distance 28.8 pixels. This passes the step-250 regression
 gate, but the small QA exact and later grounding gains indicate a plateau. At the user's request,
 automatic continuation now pauses for the fixed task probe after every remaining stage.
+
+At step 1,250, QA exact increased another 0.78 percentage points, token F1 increased 1.26
+points, and grounding click accuracy increased 6.25 points relative to step 1,000. Median click
+distance fell by 4.9 pixels. The checkpoint passed the regression gate and stage 5 began.
