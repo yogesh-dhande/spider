@@ -120,6 +120,15 @@ def render_notebook(
                     "'adapter': str(adapter)})\n"
                 )
             ),
+            code_cell(
+                "from spider.probe import run_validation_probe\n"
+                f"probe_label = 'validation-probe-step-{expected_stop_step:04d}'\n"
+                "probe = run_validation_probe(\n"
+                "    'configs/experiment2.yaml', probe_label, str(adapter),\n"
+                f"    step={expected_stop_step}, limit_per_task=128\n"
+                ")\n"
+                "print(probe.read_text())\n"
+            ),
         ],
         "metadata": {
             "kernelspec": {

@@ -49,12 +49,13 @@ def validate_ddp_state(
     steps: int,
     num_processes: int,
     gradient_accumulation_steps: int,
+    expected_start_step: int = 0,
 ) -> None:
     expected_batch = num_processes * gradient_accumulation_steps
     expected = {
         "status": "complete",
-        "start_step": 0,
-        "completed_step": steps,
+        "start_step": expected_start_step,
+        "completed_step": expected_start_step + steps,
         "world_size": num_processes,
         "gradient_accumulation_steps": gradient_accumulation_steps,
         "effective_batch_size": expected_batch,
@@ -129,6 +130,63 @@ def run_ddp_compatibility(
     summary_path = output_dir / "ddp_compatibility.json"
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"event": "ddp_compatibility_complete", "path": str(summary_path)}))
+    return summary_path
+
+
+def run_ddp_resume_compatibility(
+    config_path: str | Path = "configs/experiment2.yaml",
+    expected_start_step: int = 2,
+    additional_steps: int = 1,
+    num_processes: int = 2,
+    gradient_accumulation_steps: int = 8,
+) -> Path:
+    config_path = Path(config_path)
+    config = load_config(config_path)
+    output_dir = experiment_path(config, "output_dir")
+    before = json.loads((output_dir / "training_state.json").read_text(encoding="utf-8"))
+    if before.get("completed_step") != expected_start_step:
+        raise RuntimeError(f"Unexpected restored checkpoint state: {before}")
+    started = time.monotonic()
+    env = os.environ.copy()
+    source_root = Path(__file__).resolve().parents[1]
+    env["PYTHONPATH"] = os.pathsep.join(
+        value for value in (str(source_root), env.get("PYTHONPATH")) if value
+    )
+    command = torchrun_command(
+        config_path,
+        additional_steps,
+        num_processes,
+        gradient_accumulation_steps,
+        resume="auto",
+    )
+    print(json.dumps({"event": "ddp_resume_compatibility_start", "command": command}), flush=True)
+    subprocess.run(command, check=True, env=env)
+    after = json.loads((output_dir / "training_state.json").read_text(encoding="utf-8"))
+    validate_ddp_state(
+        after,
+        output_dir,
+        additional_steps,
+        num_processes,
+        gradient_accumulation_steps,
+        expected_start_step=expected_start_step,
+    )
+    if not after.get("resumed_from", "").endswith(f"checkpoint-{expected_start_step}"):
+        raise RuntimeError(f"Trainer did not resume from the expected checkpoint: {after}")
+    summary = {
+        "purpose": "cross_kernel_ddp_resume_compatibility_not_scientific_result",
+        "completed_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "runtime_seconds": time.monotonic() - started,
+        "restored_state": before,
+        "resumed_state": after,
+        "checks": {
+            "cross_kernel_restore": "passed",
+            "optimizer_scheduler_rng_resume": "passed",
+            "new_terminal_checkpoint": "passed",
+        },
+    }
+    summary_path = output_dir / "ddp_resume_compatibility.json"
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"event": "ddp_resume_compatibility_complete", "path": str(summary_path)}))
     return summary_path
 
 
