@@ -106,6 +106,7 @@ def train(
     max_steps: int | None = None,
     additional_steps: int | None = None,
     gradient_accumulation_steps: int | None = None,
+    optimizer_name: str | None = None,
 ) -> Path:
     import torch
     from peft import LoraConfig
@@ -125,6 +126,9 @@ def train(
     )
     if gradient_accumulation <= 0:
         raise ValueError("gradient_accumulation_steps must be positive")
+    optimizer = optimizer_name or str(training.get("optimizer", "paged_adamw_8bit"))
+    if optimizer not in {"paged_adamw_8bit", "adamw_8bit", "adamw_torch"}:
+        raise ValueError(f"Unsupported optimizer: {optimizer}")
     validate_model_config(experiment, training)
     data_dir = experiment_path(config, "data_dir")
     output_root = experiment_path(config, "output_dir")
@@ -195,6 +199,7 @@ def train(
             * gradient_accumulation
             * world_size
         ),
+        optimizer=optimizer,
     )
 
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
@@ -226,7 +231,7 @@ def train(
         # Transformers 5.x accepts ratios as floats below 1 through warmup_steps.
         "warmup_steps": float(training["warmup_ratio"]),
         "weight_decay": float(training["weight_decay"]),
-        "optim": "paged_adamw_8bit",
+        "optim": optimizer,
         "lr_scheduler_type": "cosine",
         "gradient_checkpointing": bool(training["gradient_checkpointing"]),
         "gradient_checkpointing_kwargs": {"use_reentrant": False},
@@ -318,6 +323,7 @@ def train(
                         * gradient_accumulation
                         * world_size
                     ),
+                    "optimizer": optimizer,
                     "trainable_parameter_dtypes": trainable_dtypes,
                     "package_versions": runtime_versions(),
                 },
@@ -360,6 +366,7 @@ def train(
                 * gradient_accumulation
                 * world_size
             ),
+            "optimizer": optimizer,
             "checkpoint": checkpoint_relative,
             "resumed_from": checkpoint,
             "stage_runtime_seconds": stage_runtime,
@@ -412,6 +419,12 @@ def main() -> None:
         default=None,
         help="Execution override used to preserve effective batch under multi-GPU DDP",
     )
+    parser.add_argument(
+        "--optimizer",
+        default=None,
+        choices=("paged_adamw_8bit", "adamw_8bit", "adamw_torch"),
+        help="Execution override for optimizer compatibility testing",
+    )
     args = parser.parse_args()
     resume = None if args.resume.lower() == "none" else args.resume
     adapter = train(
@@ -420,6 +433,7 @@ def main() -> None:
         max_steps=args.max_steps,
         additional_steps=args.additional_steps,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
+        optimizer_name=args.optimizer,
     )
     print(f"Saved adapter to {adapter}")
 

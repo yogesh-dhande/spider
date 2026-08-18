@@ -3,8 +3,9 @@
 Status: pre-SFT baseline complete, independently validated, and immutably archived; two-T4 QLoRA
 compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) completed with a
 validated resumable checkpoint. The cross-kernel two-GPU resume gate and step-250 task regression
-gate passed; official stage 1 (steps 250–500) is running. The frozen test sets remain untouched
-until the final SFT checkpoint.
+gate passed. Stage 1 version 1 failed before its first new step in a known multi-GPU paged-optimizer
+resume path; a full step-250 non-paged AdamW8bit resume gate is pending before retry. The frozen
+test sets remain untouched until the final SFT checkpoint.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -132,3 +133,9 @@ affected run ID. Never silently replace a completed run's configuration or resul
   rather than automatic at every 250-step boundary. Training continues automatically while stage
   loss/eval-loss health checks remain sound; the user will request the next task-metric round.
   This reduces probe compute and repeated adaptation decisions against the same 256 examples.
+- 2026-08-18: stage 1 version 1 restored checkpoint 250 and constructed both trainers, then failed
+  before its first optimizer step with bitsandbytes `invalid argument` while restoring the paged
+  AdamW8bit optimizer state. The failure is consistent with upstream reports for paged optimizer
+  resume under multi-GPU training. It produced no scientific output and is not resumable. Future
+  stages use non-paged `adamw_8bit`, which preserves the AdamW8bit algorithm and saved state while
+  changing only state allocation; a one-step resume from the full checkpoint must pass first.

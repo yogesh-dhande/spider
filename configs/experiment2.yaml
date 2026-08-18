@@ -55,6 +55,7 @@ training:
   learning_rate: 0.0002
   warmup_ratio: 0.03
   weight_decay: 0.0
+  optimizer: adamw_8bit
   lora_rank: 32
   lora_alpha: 32
   lora_dropout: 0.05

@@ -1,6 +1,6 @@
 {
   "stage": "official_sft_stage_01",
-  "status": "running",
+  "status": "error_before_training_step",
   "launched_at_utc": "2026-08-18T06:54:06Z",
   "running_observed_at_utc": "2026-08-18T06:55:03Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-01",
@@ -19,6 +19,18 @@
   "expected_completed_step": 500,
   "planned_epoch_steps": 1875,
   "automatic_task_validation_probe": false,
+  "failed_at_utc": "2026-08-18T06:57:08Z",
+  "observed_failure_runtime_seconds": 174.6,
+  "completed_new_optimizer_steps": 0,
+  "failure": {
+    "phase": "paged_adamw_8bit_optimizer_state_restore",
+    "message": "Error invalid argument at line 580 in file /src/csrc/pythonInterface.cpp",
+    "model_loaded": true,
+    "checkpoint_250_restored_to_working_directory": true,
+    "trainer_constructed_on_both_ranks": true,
+    "scientific_output": false
+  },
+  "disposition": "not_resumable_not_a_scientific_result",
   "health_metrics": [
     "train_loss",
     "eval_loss",

@@ -89,6 +89,7 @@ def validate_download(root: Path, stage: int) -> dict[str, Any]:
         "world_size": 2,
         "gradient_accumulation_steps": 8,
         "effective_batch_size": 16,
+        "optimizer": "adamw_8bit",
         "checkpoint": f"adapter/checkpoint-{expected_stop}",
     }
     for key, value in expected.items():

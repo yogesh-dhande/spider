@@ -21,10 +21,11 @@ def torchrun_command(
     num_processes: int,
     gradient_accumulation_steps: int,
     resume: str = "none",
+    optimizer: str | None = None,
 ) -> list[str]:
     if steps <= 0 or num_processes <= 1 or gradient_accumulation_steps <= 0:
         raise ValueError("DDP smoke sizes must be positive and use at least two processes")
-    return [
+    command = [
         sys.executable,
         "-m",
         "torch.distributed.run",
@@ -41,6 +42,9 @@ def torchrun_command(
         "--gradient-accumulation-steps",
         str(gradient_accumulation_steps),
     ]
+    if optimizer is not None:
+        command.extend(["--optimizer", optimizer])
+    return command
 
 
 def validate_ddp_state(
@@ -139,6 +143,7 @@ def run_ddp_resume_compatibility(
     additional_steps: int = 1,
     num_processes: int = 2,
     gradient_accumulation_steps: int = 8,
+    optimizer: str | None = None,
 ) -> Path:
     config_path = Path(config_path)
     config = load_config(config_path)
@@ -158,6 +163,7 @@ def run_ddp_resume_compatibility(
         num_processes,
         gradient_accumulation_steps,
         resume="auto",
+        optimizer=optimizer,
     )
     print(json.dumps({"event": "ddp_resume_compatibility_start", "command": command}), flush=True)
     subprocess.run(command, check=True, env=env)
@@ -183,6 +189,7 @@ def run_ddp_resume_compatibility(
             "optimizer_scheduler_rng_resume": "passed",
             "new_terminal_checkpoint": "passed",
         },
+        "optimizer": optimizer,
     }
     summary_path = output_dir / "ddp_resume_compatibility.json"
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

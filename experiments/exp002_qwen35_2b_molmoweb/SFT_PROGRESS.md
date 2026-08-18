@@ -10,7 +10,7 @@ health signal. This avoids repeatedly tuning against the small probe and does no
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | 0 | — | — | — | — | 0.3594 | 0.6047 | 0.1953 | 1.0000 | 222.8 px | baseline anchor |
 | 250 | 1.854 | 0.6481 | 0.6321 | 0.8309 | 0.3594 | 0.6453 | 0.4688 | 1.0000 | 39.3 px | regression gate passed |
-| 500 | running | pending | pending | pending | — | — | — | — | — | task probe deferred |
+| 500 | retry pending | pending | pending | pending | — | — | — | — | — | non-paged optimizer resume gate pending |
 
 `Train loss` is the stage aggregate reported by Trainer. Task metrics, rather than language-model
 loss alone, determine improvement relative to the baseline. Runtime is training-stage wall time;

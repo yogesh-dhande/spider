@@ -27,6 +27,7 @@ def make_stage(root: Path, *, start: int = 250, stop: int = 500) -> Path:
         "world_size": 2,
         "gradient_accumulation_steps": 8,
         "effective_batch_size": 16,
+        "optimizer": "adamw_8bit",
         "checkpoint": f"adapter/checkpoint-{stop}",
         "resumed_from": f"/input/adapter/checkpoint-{start}",
         "stage_runtime_seconds": 10.0,

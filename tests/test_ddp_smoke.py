@@ -6,11 +6,14 @@ from spider.ddp_smoke import torchrun_command, validate_ddp_state
 
 
 def test_torchrun_command_preserves_effective_batch_override() -> None:
-    command = torchrun_command("configs/experiment2.yaml", 2, 2, 8, resume="auto")
+    command = torchrun_command(
+        "configs/experiment2.yaml", 2, 2, 8, resume="auto", optimizer="adamw_8bit"
+    )
     assert "--nproc_per_node=2" in command
     assert command[command.index("--additional-steps") + 1] == "2"
     assert command[command.index("--gradient-accumulation-steps") + 1] == "8"
     assert command[command.index("--resume") + 1] == "auto"
+    assert command[command.index("--optimizer") + 1] == "adamw_8bit"
 
 
 def test_validate_ddp_state_requires_terminal_checkpoint(tmp_path: Path) -> None:
