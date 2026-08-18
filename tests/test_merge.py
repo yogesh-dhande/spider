@@ -3,7 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from spider.merge import _load_complete_shard, summarize_shard_metrics
+from spider.merge import (
+    _canonical_manifest_names,
+    _load_complete_shard,
+    summarize_shard_metrics,
+)
 
 
 def _write_shard(path: Path, ids: list[str]) -> None:
@@ -60,3 +64,19 @@ def test_summarize_shard_metrics_reports_partition_variability() -> None:
     assert summary["variability"]["screenspot_grounding_click_accuracy"]["mean"] == pytest.approx(
         0.4
     )
+
+
+def test_manifest_identity_ignores_environment_specific_mount_root() -> None:
+    legacy = {
+        "manifests": [
+            "/kaggle/input/notebooks/owner/source/data/manifests/qa_test.jsonl",
+            "/kaggle/input/notebooks/owner/source/data/manifests/grounding_test.jsonl",
+        ]
+    }
+    current = {
+        "manifests": [
+            "/kaggle/input/source/data/manifests/qa_test.jsonl",
+            "/kaggle/input/source/data/manifests/grounding_test.jsonl",
+        ]
+    }
+    assert _canonical_manifest_names(legacy) == _canonical_manifest_names(current)
