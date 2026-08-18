@@ -104,6 +104,7 @@ def train(
     resume: str | None = "auto",
     max_steps: int | None = None,
     additional_steps: int | None = None,
+    gradient_accumulation_steps: int | None = None,
 ) -> Path:
     import torch
     from peft import LoraConfig
@@ -116,6 +117,13 @@ def train(
     config = load_config(config_path)
     experiment = config["experiment"]
     training = config["training"]
+    gradient_accumulation = (
+        int(gradient_accumulation_steps)
+        if gradient_accumulation_steps is not None
+        else int(training["gradient_accumulation_steps"])
+    )
+    if gradient_accumulation <= 0:
+        raise ValueError("gradient_accumulation_steps must be positive")
     validate_model_config(experiment, training)
     data_dir = experiment_path(config, "data_dir")
     output_root = experiment_path(config, "output_dir")
@@ -142,7 +150,7 @@ def train(
     planned_steps, epoch_stop_step = training_step_plan(
         examples=len(train_dataset),
         per_device_batch=int(training["per_device_train_batch_size"]),
-        gradient_accumulation=int(training["gradient_accumulation_steps"]),
+        gradient_accumulation=gradient_accumulation,
         world_size=world_size,
         epochs=float(training["num_train_epochs"]),
         current_step=current_step,
@@ -156,7 +164,7 @@ def train(
         _, stop_step = training_step_plan(
             examples=len(train_dataset),
             per_device_batch=int(training["per_device_train_batch_size"]),
-            gradient_accumulation=int(training["gradient_accumulation_steps"]),
+            gradient_accumulation=gradient_accumulation,
             world_size=world_size,
             epochs=float(training["num_train_epochs"]),
             current_step=current_step,
@@ -180,6 +188,12 @@ def train(
         stop_step=stop_step,
         planned_epoch_steps=planned_steps,
         world_size=world_size,
+        gradient_accumulation_steps=gradient_accumulation,
+        effective_batch_size=(
+            int(training["per_device_train_batch_size"])
+            * gradient_accumulation
+            * world_size
+        ),
     )
 
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
@@ -206,7 +220,7 @@ def train(
         "num_train_epochs": float(training["num_train_epochs"]),
         "per_device_train_batch_size": int(training["per_device_train_batch_size"]),
         "per_device_eval_batch_size": int(training["per_device_eval_batch_size"]),
-        "gradient_accumulation_steps": int(training["gradient_accumulation_steps"]),
+        "gradient_accumulation_steps": gradient_accumulation,
         "learning_rate": float(training["learning_rate"]),
         # Transformers 5.x accepts ratios as floats below 1 through warmup_steps.
         "warmup_steps": float(training["warmup_ratio"]),
@@ -285,6 +299,7 @@ def train(
         peft_config=peft_config,
         callbacks=callbacks,
     )
+    _print_event("training_trainer_ready", local_rank=local_rank)
     if training.get("lora_trainable_dtype", "float32") != "float32":
         raise ValueError("Only float32 LoRA trainable parameters are currently supported")
     trainable_dtypes = cast_trainable_parameters_to_fp32(trainer.model, torch)
@@ -295,6 +310,13 @@ def train(
                     "model": experiment["model_name"],
                     "model_revision": experiment.get("model_revision"),
                     "base_compute_dtype": str(compute_dtype),
+                    "world_size": world_size,
+                    "gradient_accumulation_steps": gradient_accumulation,
+                    "effective_batch_size": (
+                        int(training["per_device_train_batch_size"])
+                        * gradient_accumulation
+                        * world_size
+                    ),
                     "trainable_parameter_dtypes": trainable_dtypes,
                     "package_versions": runtime_versions(),
                 },
@@ -330,6 +352,13 @@ def train(
             "completed_step": completed_step,
             "stop_step": stop_step,
             "planned_epoch_steps": planned_steps,
+            "world_size": world_size,
+            "gradient_accumulation_steps": gradient_accumulation,
+            "effective_batch_size": (
+                int(training["per_device_train_batch_size"])
+                * gradient_accumulation
+                * world_size
+            ),
             "checkpoint": checkpoint_relative,
             "resumed_from": checkpoint,
             "stage_runtime_seconds": stage_runtime,
@@ -376,6 +405,12 @@ def main() -> None:
         default=None,
         help="Run this many more optimizer steps, capped at the configured epoch target",
     )
+    parser.add_argument(
+        "--gradient-accumulation-steps",
+        type=int,
+        default=None,
+        help="Execution override used to preserve effective batch under multi-GPU DDP",
+    )
     args = parser.parse_args()
     resume = None if args.resume.lower() == "none" else args.resume
     adapter = train(
@@ -383,6 +418,7 @@ def main() -> None:
         resume=resume,
         max_steps=args.max_steps,
         additional_steps=args.additional_steps,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
     )
     print(f"Saved adapter to {adapter}")
 
