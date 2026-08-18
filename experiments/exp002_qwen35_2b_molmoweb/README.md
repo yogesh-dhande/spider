@@ -151,3 +151,8 @@ affected run ID. Never silently replace a completed run's configuration or resul
   The raw QA result is invalid. Truncating saved predictions at the decoded next-turn boundary
   recovers 0.3672 exact and 0.6874 token F1, both above step 250, but this is diagnostic only.
   Training remains paused until the same checkpoint is rerun with explicit chat-EOS stopping.
+- 2026-08-18: the corrected step-1,000 probe reproduced the diagnostic values and passed the
+  regression gate. Because QA exact and grounding improvements are flattening while train loss
+  continues to fall faster than validation loss, task probes will run after every remaining stage
+  at steps 1,250, 1,500, 1,750, and 1,875. Each probe gates the next stage; the frozen test set is
+  still evaluated only once on the final selected checkpoint.

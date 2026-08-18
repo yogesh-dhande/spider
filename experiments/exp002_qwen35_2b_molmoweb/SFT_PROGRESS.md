@@ -1,11 +1,11 @@
 # EXP002 SFT progress
 
 Task metrics use the same fixed held-out validation probe: 128 ScreenshotQA examples and 128
-grounding examples. Step 250 is the first post-SFT regression gate. After it passes, later task
-probes are scheduled after stage 3 (step 1,000) and stage 7 (step 1,875); per-stage language-model
-validation loss still provides a training health signal. This avoids tuning at every small stage
-against the same probe and does not touch the frozen 5,272-example test suite or ScreenSpot until
-step 1,875.
+grounding examples. Step 250 is the first post-SFT regression gate. After the corrected step-1,000
+probe showed diminishing gains, task probes are scheduled after every remaining stage (steps
+1,250, 1,500, 1,750, and 1,875); per-stage language-model validation loss remains a training
+health signal. The frozen 5,272-example test suite and ScreenSpot remain untouched until the final
+selected checkpoint.
 
 | Step | Runtime (h) | Train loss | Eval loss | Eval token acc. | QA exact | QA token F1 | Ground click acc. | Ground parse rate | Median distance | Status |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -13,7 +13,10 @@ step 1,875.
 | 250 | 1.854 | 0.6481 | 0.6321 | 0.8309 | 0.3594 | 0.6453 | 0.4688 | 1.0000 | 39.3 px | regression gate passed |
 | 500 | 1.901 | 0.2853 | 0.6048 | 0.8308 | — | — | — | — | — | checkpoint validated; task probe deferred |
 | 750 | 1.950 | 0.1780 | 0.5966 | 0.8331 | — | — | — | — | — | checkpoint validated; task probe deferred |
-| 1000 | 1.754 | 0.1330 | 0.5897 | 0.8373 | invalid | invalid | 0.5156* | 1.0000* | 28.8 px* | checkpoint validated; probe rerun required |
+| 1000 | 1.754 | 0.1330 | 0.5897 | 0.8373 | 0.3672 | 0.6874 | 0.5156 | 1.0000 | 28.8 px | corrected regression gate passed |
+| 1250 | running | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-4 regression gate |
+| 1500 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-5 regression gate |
+| 1750 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-6 regression gate |
 | 1875 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | final validation probe |
 
 `Train loss` is the stage aggregate reported by Trainer. Task metrics, rather than language-model
@@ -43,3 +46,9 @@ parser had already hidden the same issue in 71 of 128 step-250 outputs by accept
 coordinate and ignoring trailing turns. The starred step-1,000 grounding values above remain
 useful first-coordinate diagnostics, but the corrected generation probe must be run before the
 stage-3 regression gate is considered passed or stage 4 begins.
+
+The corrected step-1,000 rerun stopped on both model EOS and chat end-of-turn and exactly matched
+the saved-output diagnostic: QA exact 0.3672, QA token F1 0.6874, grounding click accuracy 0.5156,
+parse rate 1.0000, and median grounding distance 28.8 pixels. This passes the step-250 regression
+gate, but the small QA exact and later grounding gains indicate a plateau. At the user's request,
+automatic continuation now pauses for the fixed task probe after every remaining stage.
