@@ -1,0 +1,25 @@
+{
+  "stage": "baseline_validation_probe",
+  "status": "running",
+  "launched_at_utc": "2026-08-18T06:21:56Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-baseline-validation-probe",
+  "kaggle_version": 1,
+  "source_commit": "a0132a6",
+  "runner_repository_commit": "04a4eaa",
+  "runner_sha256": "43efe561ed508eca0e04922300f2af613ed9a1b5442a48f68eb70f2f576d10a7",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "adapter": null,
+  "checkpoint_step": 0,
+  "split": "validation",
+  "screenshotqa_examples": 128,
+  "grounding_examples": 128,
+  "selection": "deterministic manifest prefix",
+  "test_sets_touched": false,
+  "metrics": [
+    "screenshotqa_exact_match",
+    "screenshotqa_token_f1",
+    "grounding_click_accuracy",
+    "grounding_parse_rate",
+    "grounding_median_pixel_distance"
+  ]
+}

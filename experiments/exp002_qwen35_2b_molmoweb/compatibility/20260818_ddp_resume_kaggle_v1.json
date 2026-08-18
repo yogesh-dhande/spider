@@ -1,0 +1,25 @@
+{
+  "purpose": "cross_kernel_two_gpu_resume_compatibility",
+  "status": "running",
+  "launched_at_utc": "2026-08-18T06:21:56Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-ddp-resume-compatibility",
+  "kaggle_version": 1,
+  "source_commit": "8c4849d",
+  "runner_repository_commit": "7ebe91b",
+  "runner_sha256": "c5172fdcd3a970f9d55cde96efeefa150535bdf91a0db24a650d8404d501416f",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "resume_source": "yogeshkd/spider-exp002-ddp-compatibility/1",
+  "expected_start_step": 2,
+  "additional_steps": 1,
+  "expected_completed_step": 3,
+  "num_processes": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_batch_size": 16,
+  "scientific_result": false,
+  "acceptance_requires": [
+    "training_state start_step 2 and completed_step 3",
+    "resumed_from checkpoint-2",
+    "checkpoint-3 with optimizer, scheduler, Trainer, and two-rank RNG state",
+    "world_size 2 and effective_batch_size 16"
+  ]
+}
