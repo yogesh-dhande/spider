@@ -1,0 +1,35 @@
+{
+  "stage": "official_baseline_merge",
+  "status": "queued",
+  "launched_at_utc": "2026-08-18T03:11:13Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-baseline-merge",
+  "kaggle_version": 1,
+  "source_commit": "714b6e2",
+  "runner_repository_commit": "fa7b9e6",
+  "config": "configs/experiment2.yaml",
+  "config_sha256": "9d45244cceb681147421675b7343214a071edf26fa69f1ed9ada53bb1455f816",
+  "runner_sha256": "51a06c7220ea66cdffe264e0a2275d6b5d7daef8c7a63166d576bc484fbca7c8",
+  "requirements_sha256": "780778e63e9b15356607c28fa05a9dda2120c3e9686a415c4a2c2341300f2e65",
+  "accelerator": null,
+  "timeout_seconds": 3600,
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "shard_sources": {
+    "0": "yogeshkd/spider-exp002-baseline-shard-00/1",
+    "1": "yogeshkd/spider-exp002-baseline-shard-01/1",
+    "2": "yogeshkd/spider-exp002-baseline-shard-02/1",
+    "3": "yogeshkd/spider-exp002-baseline-shard-03/2",
+    "4": "yogeshkd/spider-exp002-baseline-shard-04/2",
+    "5": "yogeshkd/spider-exp002-baseline-shard-05/1",
+    "6": "yogeshkd/spider-exp002-baseline-shard-06/1",
+    "7": "yogeshkd/spider-exp002-baseline-shard-07/1"
+  },
+  "expected_predictions": 5272,
+  "outputs": [
+    "predictions.raw.jsonl",
+    "predictions.jsonl",
+    "metrics.json",
+    "shard_metrics.json",
+    "run_metadata.json",
+    "report/failures.html"
+  ]
+}
