@@ -32,6 +32,12 @@ that the pipeline detects an expected grounding regression while exercising scre
 strict action parsing, deterministic transitions, decomposed rewards, replay persistence, resume,
 paired aggregation, bootstrap intervals, and immutable config checks.
 
+The clean-tree `smoke_v2` run at source commit `a1e6530` passed end to end. The centered control
+completed 12/12 episodes and the offset variant completed 3/12, producing the expected -0.75 paired
+success-rate delta with a 95% paired bootstrap interval of [-1.00, -0.50]. Its compact immutable
+record is under `runs/20260818_smoke_v2/`; full replay and content-addressed screenshots remain in
+the ignored local output tree.
+
 Configuration: [`sandbox_coordinate_bias.yaml`](../../configs/studies/sandbox_coordinate_bias.yaml)
 
 Design details: [`RESEARCH_PIPELINE.md`](../../docs/RESEARCH_PIPELINE.md)

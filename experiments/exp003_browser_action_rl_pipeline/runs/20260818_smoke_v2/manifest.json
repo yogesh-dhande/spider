@@ -1,0 +1,16 @@
+{
+  "completed_at_utc": "2026-08-18T23:15:24+00:00",
+  "config_path": "/Users/yogesh/projects/spider/configs/studies/sandbox_coordinate_bias.yaml",
+  "config_sha256": "fbdf1c3af55e2fbb9c825d7c949e71846e606f70abef7ce1091854411ab5b716",
+  "created_at_utc": "2026-08-18T23:15:23+00:00",
+  "num_shards": 1,
+  "run_id": "smoke_v2",
+  "schema_version": 1,
+  "shard_index": 0,
+  "source_git_commit": "a1e65307cb56c16156adb97c8a9fa3fe4cd1847e",
+  "source_git_dirty": false,
+  "status": "complete",
+  "study_id": "exp003a_coordinate_bias",
+  "suite_id": "browser_sandbox_v1",
+  "summary_sha256": "a774f254262de7e1ef1bf00c3048e26ef7d2e7b5ab783328beb94eaf129f8b2d"
+}

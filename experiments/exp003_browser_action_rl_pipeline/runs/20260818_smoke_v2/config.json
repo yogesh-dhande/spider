@@ -1,0 +1,49 @@
+{
+  "study": {
+    "base": {
+      "environment": {
+        "type": "deterministic_browser"
+      },
+      "policy": {
+        "coordinate_bias_px": [
+          0,
+          0
+        ],
+        "id": "oracle",
+        "malformed_every": 0,
+        "type": "oracle"
+      }
+    },
+    "bootstrap_samples": 2000,
+    "control_variant": "centered",
+    "id": "exp003a_coordinate_bias",
+    "max_steps": 6,
+    "output_dir": "outputs/studies",
+    "repeats": 3,
+    "run_id": "smoke_v2",
+    "seed": 17,
+    "suite_path": "../sandbox_tasks.yaml",
+    "variants": [
+      {
+        "id": "centered",
+        "overlay": {
+          "policy": {
+            "id": "oracle_centered"
+          }
+        }
+      },
+      {
+        "id": "x_offset_120px",
+        "overlay": {
+          "policy": {
+            "coordinate_bias_px": [
+              120,
+              0
+            ],
+            "id": "oracle_x_offset_120px"
+          }
+        }
+      }
+    ]
+  }
+}
