@@ -1,7 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
 Status: Kaggle GPU compatibility smoke passed; monolithic baseline version 1 cancelled;
-prepared data validated and packaging as a private Kaggle dataset.
+prepared data validated; baseline shard 0 ready to launch from finalizer version 3.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -63,10 +63,10 @@ record is in `compatibility/20260817_kaggle_v7.json`.
 
 ## Prepared-data reuse
 
-After baseline version 1 finishes, preserve `data/molmoweb_30k_domain17` as a versioned private
-Kaggle artifact containing the resized images, frozen manifests, summary, config, and checksums.
-Training and later evaluations must attach that version instead of repeating preparation. Until
-the dedicated dataset is published, the immutable baseline notebook output is the source artifact.
+Finalizer version 3 preserves `data/molmoweb_30k_domain17` as an immutable private Kaggle
+notebook artifact containing the resized images, frozen manifests, summary, config, and checksums.
+Training and evaluation attach that exact version instead of repeating preparation. A separate
+Kaggle Dataset can be created later through a server-side workflow; it is not required for runs.
 Do not make derived images public without first verifying the upstream redistribution terms.
 
 ## Deviations and notes
