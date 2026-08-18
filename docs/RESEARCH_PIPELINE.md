@@ -107,6 +107,15 @@ The oracle is only an infrastructure probe. The next adapter will call the froze
 the same observation and action contract. BrowserGym/Playwright environments and model training
 algorithms will be added behind their respective interfaces after the deterministic loop is proven.
 
+Parallel workers write isolated deterministic shard directories. Merge only after every shard is
+complete and validated:
+
+```bash
+spider-study --config study.yaml --run-id pilot --shard-index 0 --num-shards 8
+# Run indices 1–7 on other workers using the same command/config.
+spider-study-merge --run-root outputs/studies/<study-id>/pilot
+```
+
 ## Planned RL loop
 
 Under Kaggle's session limit, start with an asynchronous cycle:

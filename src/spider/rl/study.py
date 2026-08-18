@@ -74,6 +74,10 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     total_steps = sum(int(row["steps_taken"]) for row in rows)
     parse_errors = sum(int(row["parse_errors"]) for row in rows)
@@ -223,7 +227,10 @@ def run_study(
     output_root = Path(output_dir_override or str(study.get("output_dir", "outputs/studies")))
     if not output_root.is_absolute():
         output_root = (Path.cwd() / output_root).resolve()
-    run_root = output_root / study_id / run_id
+    study_run_root = output_root / study_id / run_id
+    run_root = study_run_root
+    if num_shards > 1:
+        run_root = study_run_root / "shards" / f"{shard_index:05d}-of-{num_shards:05d}"
     run_root.mkdir(parents=True, exist_ok=True)
     effective_config = deepcopy(config)
     effective_config["study"]["run_id"] = run_id
@@ -335,6 +342,95 @@ def run_study(
     return run_root
 
 
+def merge_study_shards(run_root: str | Path) -> Path:
+    run_root = Path(run_root).resolve()
+    shard_root = run_root / "shards"
+    manifests = sorted(shard_root.glob("*-of-*/manifest.json"))
+    if not manifests:
+        raise FileNotFoundError(f"No study shard manifests found under {shard_root}")
+    shard_records = [json.loads(path.read_text(encoding="utf-8")) for path in manifests]
+    if any(record.get("status") != "complete" for record in shard_records):
+        raise ValueError("All study shards must be complete before merge")
+    expected_num_shards = int(shard_records[0]["num_shards"])
+    expected_indices = set(range(expected_num_shards))
+    actual_indices = {int(record["shard_index"]) for record in shard_records}
+    if actual_indices != expected_indices or len(manifests) != expected_num_shards:
+        raise ValueError(
+            f"Expected shard indices {sorted(expected_indices)}, found {sorted(actual_indices)}"
+        )
+    config_hashes = {str(record["config_sha256"]) for record in shard_records}
+    study_ids = {str(record["study_id"]) for record in shard_records}
+    run_ids = {str(record["run_id"]) for record in shard_records}
+    suite_ids = {str(record["suite_id"]) for record in shard_records}
+    if any(len(values) != 1 for values in (config_hashes, study_ids, run_ids, suite_ids)):
+        raise ValueError("Study shards disagree on config, study, run, or suite identity")
+
+    first_config_path = manifests[0].parent / "config.json"
+    effective_config = json.loads(first_config_path.read_text(encoding="utf-8"))
+    study = effective_config["study"]
+    variants = study["variants"]
+    variant_ids = [str(row["id"]) for row in variants]
+    control_variant = str(study["control_variant"])
+    rows_by_variant: dict[str, list[dict[str, Any]]] = {}
+    for variant_id in variant_ids:
+        rows: list[dict[str, Any]] = []
+        for manifest_path in manifests:
+            rows.extend(
+                load_jsonl(manifest_path.parent / "variants" / variant_id / "episodes.jsonl")
+            )
+        episode_ids = [str(row["episode_id"]) for row in rows]
+        if len(episode_ids) != len(set(episode_ids)):
+            raise ValueError(f"Duplicate episode IDs while merging variant {variant_id}")
+        rows_by_variant[variant_id] = rows
+
+    summary: dict[str, Any] = {
+        "schema_version": 1,
+        "study_id": next(iter(study_ids)),
+        "run_id": next(iter(run_ids)),
+        "suite_id": next(iter(suite_ids)),
+        "control_variant": control_variant,
+        "paired_design": True,
+        "merged_shards": expected_num_shards,
+        "variants": {key: _aggregate(value) for key, value in rows_by_variant.items()},
+        "comparisons": {},
+    }
+    for variant_id, rows in rows_by_variant.items():
+        if variant_id == control_variant:
+            continue
+        summary["comparisons"][variant_id] = _compare(
+            rows_by_variant[control_variant],
+            rows,
+            bootstrap_samples=int(study.get("bootstrap_samples", 2000)),
+            bootstrap_seed=int(study.get("seed", 0)),
+        )
+    _atomic_json(run_root / "config.json", effective_config)
+    _atomic_json(run_root / "summary.json", summary)
+    (run_root / "comparison.md").write_text(_comparison_markdown(summary), encoding="utf-8")
+    source_commit, source_dirty = _git_state(Path.cwd())
+    merge_manifest = {
+        "schema_version": 1,
+        "kind": "study_shard_merge",
+        "status": "complete",
+        "study_id": summary["study_id"],
+        "run_id": summary["run_id"],
+        "suite_id": summary["suite_id"],
+        "config_sha256": next(iter(config_hashes)),
+        "source_git_commit": source_commit,
+        "source_git_dirty": source_dirty,
+        "completed_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "summary_sha256": _sha256_file(run_root / "summary.json"),
+        "source_shards": [
+            {
+                "shard_index": int(record["shard_index"]),
+                "manifest_sha256": _sha256_file(path),
+            }
+            for path, record in zip(manifests, shard_records, strict=True)
+        ],
+    }
+    _atomic_json(run_root / "manifest.json", merge_manifest)
+    return run_root
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a paired browser-agent ablation study")
     parser.add_argument("--config", type=Path, required=True)
@@ -350,6 +446,14 @@ def main() -> None:
         shard_index=args.shard_index,
         num_shards=args.num_shards,
     )
+    print(json.dumps({"status": "complete", "output": str(output)}, sort_keys=True))
+
+
+def merge_main() -> None:
+    parser = argparse.ArgumentParser(description="Merge complete browser-agent study shards")
+    parser.add_argument("--run-root", type=Path, required=True)
+    args = parser.parse_args()
+    output = merge_study_shards(args.run_root)
     print(json.dumps({"status": "complete", "output": str(output)}, sort_keys=True))
 
 

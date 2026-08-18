@@ -43,6 +43,7 @@ spider-compare = "spider.compare:main"
 spider-archive = "spider.archive:main"
 spider-smoke = "spider.smoke:main"
 spider-study = "spider.rl.study:main"
+spider-study-merge = "spider.rl.study:merge_main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spider"]

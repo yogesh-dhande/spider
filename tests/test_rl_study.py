@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from spider.rl.study import _git_state, deep_merge, run_study
+from spider.rl.study import _git_state, deep_merge, merge_study_shards, run_study
 
 
 def test_deep_merge_preserves_unmodified_base() -> None:
@@ -61,3 +61,26 @@ def test_source_provenance_can_come_from_environment(
     monkeypatch.setenv("SPIDER_SOURCE_COMMIT", "container-sha")
     monkeypatch.setenv("SPIDER_SOURCE_DIRTY", "false")
     assert _git_state(tmp_path) == ("container-sha", False)
+
+
+def test_sharded_study_is_isolated_and_merges(tmp_path: Path) -> None:
+    source = yaml.safe_load(Path("configs/studies/sandbox_coordinate_bias.yaml").read_text())
+    source["study"]["suite_path"] = str(Path("configs/sandbox_tasks.yaml").resolve())
+    source["study"]["output_dir"] = str(tmp_path / "outputs")
+    source["study"]["run_id"] = "sharded"
+    source["study"]["repeats"] = 2
+    config_path = tmp_path / "study.yaml"
+    config_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    first = run_study(config_path, shard_index=0, num_shards=2)
+    second = run_study(config_path, shard_index=1, num_shards=2)
+    assert first.name == "00000-of-00002"
+    assert second.name == "00001-of-00002"
+    run_root = first.parents[1]
+    assert merge_study_shards(run_root) == run_root
+
+    summary = json.loads((run_root / "summary.json").read_text())
+    assert summary["merged_shards"] == 2
+    assert summary["variants"]["centered"]["episodes"] == 8
+    assert summary["variants"]["centered"]["success_rate"] == 1.0
+    assert summary["comparisons"]["x_offset_120px"]["paired_episodes"] == 8
