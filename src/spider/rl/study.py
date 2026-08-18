@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import random
 import subprocess
 from copy import deepcopy
@@ -13,8 +14,9 @@ from typing import Any
 
 from spider.config import load_config
 from spider.rl.policies import make_policy
+from spider.rl.rewards import make_reward
 from spider.rl.rollout import LocalArtifactStore, append_jsonl, load_jsonl, run_episode
-from spider.rl.sandbox import load_task_suite
+from spider.rl.sandbox import load_task_suite, make_environment
 
 
 def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
@@ -33,22 +35,35 @@ def _canonical_hash(payload: dict[str, Any]) -> str:
 
 
 def _git_state(repository_root: Path) -> tuple[str | None, bool | None]:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=repository_root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    environment_commit = os.environ.get("SPIDER_SOURCE_COMMIT")
+    environment_dirty = os.environ.get("SPIDER_SOURCE_DIRTY")
+    if environment_commit:
+        dirty = None
+        if environment_dirty is not None:
+            dirty = environment_dirty.lower() in {"1", "true", "yes"}
+        return environment_commit, dirty
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repository_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None, None
     if result.returncode != 0:
         return None, None
-    dirty = subprocess.run(
-        ["git", "status", "--porcelain"],
-        cwd=repository_root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repository_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return result.stdout.strip(), None
     return result.stdout.strip(), bool(dirty.stdout.strip()) if dirty.returncode == 0 else None
 
 
@@ -157,6 +172,7 @@ def run_study(
     config_path: str | Path,
     *,
     run_id_override: str | None = None,
+    output_dir_override: str | Path | None = None,
     shard_index: int = 0,
     num_shards: int = 1,
 ) -> Path:
@@ -204,13 +220,14 @@ def run_study(
     if control_variant not in variant_configs:
         raise ValueError("study.control_variant must name one variant")
 
-    output_root = Path(str(study.get("output_dir", "outputs/studies")))
+    output_root = Path(output_dir_override or str(study.get("output_dir", "outputs/studies")))
     if not output_root.is_absolute():
         output_root = (Path.cwd() / output_root).resolve()
     run_root = output_root / study_id / run_id
     run_root.mkdir(parents=True, exist_ok=True)
     effective_config = deepcopy(config)
     effective_config["study"]["run_id"] = run_id
+    effective_config["study"]["output_dir"] = str(output_root)
     config_hash = _canonical_hash(effective_config)
     manifest_path = run_root / "manifest.json"
     if manifest_path.exists():
@@ -247,15 +264,14 @@ def run_study(
         environment_config = variant_config.get("environment")
         if not isinstance(environment_config, dict):
             raise TypeError(f"Variant {variant_id} has no environment mapping")
-        if environment_config.get("type") != "deterministic_browser":
-            raise ValueError(
-                f"Variant {variant_id} has unsupported environment type: "
-                f"{environment_config.get('type')!r}"
-            )
         policy_config = variant_config.get("policy")
         if not isinstance(policy_config, dict):
             raise TypeError(f"Variant {variant_id} has no policy mapping")
         policy = make_policy(policy_config, tasks)
+        reward_config = variant_config.get("reward")
+        if reward_config is not None and not isinstance(reward_config, dict):
+            raise TypeError(f"Variant {variant_id} reward must be a mapping")
+        reward_composer = make_reward(reward_config)
         episode_path = run_root / "variants" / variant_id / "episodes.jsonl"
         existing = load_jsonl(episode_path)
         completed = {str(row["episode_id"]) for row in existing}
@@ -271,7 +287,9 @@ def run_study(
                     variant_id=variant_id,
                     task=task,
                     seed=episode_seed,
+                    environment=make_environment(environment_config),
                     policy=policy,
+                    reward_composer=reward_composer,
                     artifact_store=artifact_store,
                     max_steps=max_steps,
                 )
@@ -317,12 +335,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run a paired browser-agent ablation study")
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--run-id")
+    parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--num-shards", type=int, default=1)
     args = parser.parse_args()
     output = run_study(
         args.config,
         run_id_override=args.run_id,
+        output_dir_override=args.output_dir,
         shard_index=args.shard_index,
         num_shards=args.num_shards,
     )

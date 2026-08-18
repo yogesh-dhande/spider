@@ -58,6 +58,7 @@ Only ideas that pass a cheaper tier advance. Final benchmarks never select confi
 - strict JSON browser actions using normalized coordinates;
 - a deterministic screenshot-producing browser sandbox;
 - a policy adapter boundary with an oracle test implementation;
+- raw environment signals composed by configurable reward weights;
 - content-addressed screenshot artifacts and resumable JSONL episodes;
 - paired task/seed variants with automatic comparison output;
 - stable task sharding for future parallel workers;
@@ -68,6 +69,24 @@ Run the smoke ablation:
 ```bash
 spider-study --config configs/studies/sandbox_coordinate_bias.yaml
 ```
+
+Run the identical CLI in the portable research container:
+
+```bash
+docker build \
+  --build-arg SPIDER_SOURCE_COMMIT="$(git rev-parse HEAD)" \
+  -f containers/research.Dockerfile \
+  -t spider-study:dev .
+docker run --rm \
+  -v "$PWD/outputs/container:/artifacts" \
+  spider-study:dev \
+  --config configs/studies/sandbox_coordinate_bias.yaml \
+  --run-id container-smoke \
+  --output-dir /artifacts
+```
+
+The mounted output directory is the only platform-specific part. A Google Cloud job will mount or
+upload the same artifact tree to GCS and invoke the same entrypoint.
 
 The oracle is only an infrastructure probe. The next adapter will call the frozen Qwen policy using
 the same observation and action contract. BrowserGym/Playwright environments and model training

@@ -1,0 +1,14 @@
+.git
+.venv
+.pytest_cache
+.ruff_cache
+data
+dataset-dashboard
+dist
+experiments
+kaggle
+notebooks
+outputs
+tests
+__pycache__
+*.pyc

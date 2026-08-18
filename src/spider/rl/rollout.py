@@ -6,8 +6,14 @@ from pathlib import Path
 from typing import Any
 
 from spider.rl.actions import ActionParseError, parse_action
-from spider.rl.sandbox import DeterministicBrowserEnvironment
-from spider.rl.types import Observation, PolicyAdapter, PolicyTask, TaskSpec
+from spider.rl.rewards import RewardComposer
+from spider.rl.types import (
+    BrowserEnvironment,
+    Observation,
+    PolicyAdapter,
+    PolicyTask,
+    TaskSpec,
+)
 
 
 class LocalArtifactStore:
@@ -45,11 +51,12 @@ def run_episode(
     variant_id: str,
     task: TaskSpec,
     seed: int,
+    environment: BrowserEnvironment,
     policy: PolicyAdapter,
+    reward_composer: RewardComposer,
     artifact_store: LocalArtifactStore,
     max_steps: int,
 ) -> dict[str, Any]:
-    environment = DeterministicBrowserEnvironment()
     observation = environment.reset(task, seed)
     policy.start_episode(PolicyTask(task_id=task.task_id, instruction=task.instruction), seed)
     steps: list[dict[str, Any]] = []
@@ -66,8 +73,14 @@ def run_episode(
         except ActionParseError as error:
             parse_errors += 1
             parse_error = str(error)
-            components = {"valid_action": -0.1, "progress": 0.0, "task_success": 0.0}
-            reward = sum(components.values())
+            signals = {
+                "action_validity": 0.0,
+                "progress": 0.0,
+                "task_success": 0.0,
+                "action_error": 0.0,
+                "parse_error": 1.0,
+            }
+            reward, components = reward_composer.score(signals)
             next_observation = observation
             done = False
             success = False
@@ -75,8 +88,8 @@ def run_episode(
         else:
             parsed_action = action.to_dict()
             transition = environment.step(action)
-            components = transition.reward_components
-            reward = sum(components.values())
+            signals = transition.reward_signals
+            reward, components = reward_composer.score(signals)
             next_observation = transition.observation
             done = transition.done
             success = transition.success
@@ -91,6 +104,7 @@ def run_episode(
                 "action": parsed_action,
                 "parse_error": parse_error,
                 "environment_error": environment_error,
+                "reward_signals": signals,
                 "reward_components": components,
                 "reward": reward,
                 "next_observation": after,
@@ -107,6 +121,7 @@ def run_episode(
         "episode_id": stable_episode_id(variant_id, task.task_id, seed),
         "variant_id": variant_id,
         "policy_id": policy.policy_id,
+        "reward_id": reward_composer.reward_id,
         "task_id": task.task_id,
         "instruction": task.instruction,
         "seed": seed,

@@ -32,5 +32,6 @@ def test_sandbox_rejects_missed_click_without_progress() -> None:
     environment.reset(task, seed=0)
     transition = environment.step(BrowserAction(action="click", x=0.0, y=0.0))
     assert transition.error == "click missed target account"
-    assert transition.reward_components["progress"] < 0
+    assert transition.reward_signals["action_error"] == 1.0
+    assert transition.reward_signals["progress"] == 0.0
     assert transition.observation.step_index == 0

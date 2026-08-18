@@ -199,20 +199,33 @@ class DeterministicBrowserEnvironment:
             raise RuntimeError("Cannot step a terminal environment")
         expected = task.steps[self.step_index]
         matched, error = self._matches(action, expected)
-        components = {"valid_action": 0.05, "progress": 0.0, "task_success": 0.0}
+        signals = {
+            "action_validity": 1.0,
+            "progress": 0.0,
+            "task_success": 0.0,
+            "action_error": 0.0,
+            "parse_error": 0.0,
+        }
         if matched:
             self.step_index += 1
-            components["progress"] = 0.2
+            signals["progress"] = 1.0
             if self.step_index == len(task.steps):
                 self.terminal = True
                 self.success = True
-                components["task_success"] = 1.0
+                signals["task_success"] = 1.0
         else:
-            components["progress"] = -0.1
+            signals["action_error"] = 1.0
         return Transition(
             observation=self.observe(),
-            reward_components=components,
+            reward_signals=signals,
             done=self.terminal,
             success=self.success,
             error=error,
         )
+
+
+def make_environment(config: dict[str, object]) -> DeterministicBrowserEnvironment:
+    environment_type = config.get("type")
+    if environment_type != "deterministic_browser":
+        raise ValueError(f"Unsupported environment type: {environment_type!r}")
+    return DeterministicBrowserEnvironment()

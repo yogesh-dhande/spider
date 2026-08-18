@@ -57,7 +57,7 @@ class Observation:
 @dataclass(frozen=True)
 class Transition:
     observation: Observation
-    reward_components: dict[str, float]
+    reward_signals: dict[str, float]
     done: bool
     success: bool
     error: str | None = None
