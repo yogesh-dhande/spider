@@ -3,7 +3,7 @@
 Status: Kaggle GPU compatibility smoke passed; monolithic baseline version 1 cancelled;
 prepared data validated; all eight official baseline shards complete and validated; exact-coverage
 CPU merge version 1 failed on an environment-specific manifest-path comparison after restoring
-all shards; corrected version 2 pending.
+all shards; corrected version 2 queued.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
