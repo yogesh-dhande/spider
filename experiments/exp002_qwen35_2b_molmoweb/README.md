@@ -1,7 +1,9 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
 Status: pre-SFT baseline complete, independently validated, and immutably archived; two-T4 QLoRA
-compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) is queued.
+compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) completed with a
+validated resumable checkpoint. Held-out validation probes and the cross-kernel resume gate are
+next; the frozen test sets remain untouched until the final SFT checkpoint.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -120,3 +122,8 @@ affected run ID. Never silently replace a completed run's configuration or resul
   resumed. A separate two-T4 gate measured 32.0 seconds per step while preserving effective batch
   16 and the 1,875-step horizon, then passed checkpoint and adapter-reload inference. Official SFT
   restarts from the untouched base model on two T4 processes and uses 250-step resumable stages.
+- 2026-08-18: official two-T4 stage 0 version 2 completed steps 0–250 in 6,674.6 seconds and
+  produced a validated checkpoint with optimizer, scheduler, two-rank RNG, Trainer, and adapter
+  state. Its final held-out language-model validation loss was 0.6321 with token accuracy 0.8309.
+  Task-level ScreenshotQA and grounding comparisons require the fixed held-out validation probe;
+  no official test examples were evaluated at this stage.

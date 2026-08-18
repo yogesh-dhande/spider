@@ -1,6 +1,6 @@
 {
   "stage": "official_sft_stage_00",
-  "status": "queued",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T04:14:30Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-00",
   "kaggle_version": 2,
@@ -21,6 +21,29 @@
   "expected_completed_step": 250,
   "planned_epoch_steps": 1875,
   "estimated_stage_hours": 2.3,
+  "completed_at_utc": "2026-08-18T06:08:01Z",
+  "validated_at_utc": "2026-08-18T06:19:24Z",
+  "stage_runtime_seconds": 6674.6454671500005,
+  "actual_optimizer_steps_per_second": 0.037455,
+  "training_metrics": {
+    "train_loss": 0.6481067867279052,
+    "final_logged_loss": 0.49954781532287595,
+    "eval_loss": 0.6320996284484863,
+    "eval_mean_token_accuracy": 0.8308524014428258,
+    "eval_runtime_seconds": 106.909
+  },
+  "validated_checkpoint": "outputs/experiment2/adapter/checkpoint-250",
+  "checkpoint_validation": {
+    "trainer_global_step": 250,
+    "trainer_max_steps": 1875,
+    "optimizer_state_present": true,
+    "scheduler_state_present": true,
+    "rank_0_rng_state_present": true,
+    "rank_1_rng_state_present": true,
+    "adapter_config_present": true,
+    "training_state_complete": true
+  },
+  "metric_note": "Trainer train_steps_per_second uses the 1875-step horizon as its numerator and is not the observed stage throughput; actual_optimizer_steps_per_second is 250/stage_runtime_seconds.",
   "kaggle_session_limit_hours": 12,
   "acceptance_requires": [
     "adapter/checkpoint-250/trainer_state.json",
