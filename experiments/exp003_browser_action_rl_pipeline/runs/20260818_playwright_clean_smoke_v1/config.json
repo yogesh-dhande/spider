@@ -1,0 +1,61 @@
+{
+  "study": {
+    "base": {
+      "environment": {
+        "headless": true,
+        "type": "playwright_sandbox"
+      },
+      "policy": {
+        "coordinate_bias_px": [
+          0,
+          0
+        ],
+        "id": "oracle",
+        "malformed_every": 0,
+        "type": "oracle"
+      },
+      "reward": {
+        "id": "default_browser_reward",
+        "type": "weighted_signals",
+        "weights": {
+          "action_error": -0.1,
+          "action_validity": 0.05,
+          "parse_error": -0.1,
+          "progress": 0.2,
+          "task_success": 1.0
+        }
+      }
+    },
+    "bootstrap_samples": 2000,
+    "control_variant": "centered",
+    "id": "exp003a_playwright_coordinate_bias",
+    "max_steps": 6,
+    "output_dir": "/artifacts",
+    "repeats": 1,
+    "run_id": "clean-smoke-v1",
+    "seed": 17,
+    "suite_path": "../sandbox_tasks.yaml",
+    "variants": [
+      {
+        "id": "centered",
+        "overlay": {
+          "policy": {
+            "id": "oracle_centered"
+          }
+        }
+      },
+      {
+        "id": "x_offset_120px",
+        "overlay": {
+          "policy": {
+            "coordinate_bias_px": [
+              120,
+              0
+            ],
+            "id": "oracle_x_offset_120px"
+          }
+        }
+      }
+    ]
+  }
+}

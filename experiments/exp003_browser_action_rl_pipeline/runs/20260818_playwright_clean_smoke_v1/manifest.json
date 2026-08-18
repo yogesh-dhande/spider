@@ -1,0 +1,16 @@
+{
+  "completed_at_utc": "2026-08-18T23:26:08+00:00",
+  "config_path": "/workspace/configs/studies/playwright_coordinate_bias.yaml",
+  "config_sha256": "a41fc4d77ebc836682410813579821305236b8e66a962ab0a235d410222ac126",
+  "created_at_utc": "2026-08-18T23:26:05+00:00",
+  "num_shards": 1,
+  "run_id": "clean-smoke-v1",
+  "schema_version": 1,
+  "shard_index": 0,
+  "source_git_commit": "7e1f1c2a7c74796fc23055adf9fb14decf6cde8b",
+  "source_git_dirty": false,
+  "status": "complete",
+  "study_id": "exp003a_playwright_coordinate_bias",
+  "suite_id": "browser_sandbox_v1",
+  "summary_sha256": "2c3d0be2998aef3c8477f5f5bed36ff8e9d27c8b4c32a8db59b1232847a1e48b"
+}

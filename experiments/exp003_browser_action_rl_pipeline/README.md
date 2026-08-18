@@ -48,6 +48,10 @@ The pinned Playwright/Chromium adapter now exercises the same rollout contract a
 mouse, keyboard, scroll, DOM-state verification, and screenshot operations inside a portable
 container. Browser instances are reused within each variant and closed deterministically.
 
+The clean-container Playwright smoke at source commit `7e1f1c2` reproduced the in-memory outcome:
+4/4 centered episodes versus 1/4 offset episodes, a -0.75 paired success-rate delta. Its compact
+record is under `runs/20260818_playwright_clean_smoke_v1/`.
+
 Next, add the Qwen policy adapter and BrowserGym task adapter behind the proven interfaces. Run a
 small frozen-checkpoint action baseline before any trajectory fine-tuning, then train a balanced
 MolmoWeb trajectory pilot with perception replay.
