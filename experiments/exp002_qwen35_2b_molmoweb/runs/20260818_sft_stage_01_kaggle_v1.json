@@ -1,0 +1,35 @@
+{
+  "stage": "official_sft_stage_01",
+  "status": "running",
+  "launched_at_utc": "2026-08-18T06:54:06Z",
+  "running_observed_at_utc": "2026-08-18T06:55:03Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-01",
+  "kaggle_version": 1,
+  "source_commit": "006b9e7",
+  "runner_repository_commit": "af1428a",
+  "runner_sha256": "327ee5f7668914a36541429a5d0af05678870c804dafe654b3bc6cf7d7440c72",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "resume_source": "yogeshkd/spider-exp002-sft-stage-00/2",
+  "accelerator": "NvidiaTeslaT4",
+  "num_processes": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_batch_size": 16,
+  "start_step": 250,
+  "additional_steps": 250,
+  "expected_completed_step": 500,
+  "planned_epoch_steps": 1875,
+  "automatic_task_validation_probe": false,
+  "health_metrics": [
+    "train_loss",
+    "eval_loss",
+    "eval_mean_token_accuracy"
+  ],
+  "acceptance_requires": [
+    "adapter/checkpoint-500/trainer_state.json",
+    "training_state start_step 250 and completed_step 500",
+    "resumed_from checkpoint-250",
+    "world_size 2 and effective_batch_size 16",
+    "optimizer/scheduler/two-rank RNG state",
+    "adapter/final reloadable"
+  ]
+}

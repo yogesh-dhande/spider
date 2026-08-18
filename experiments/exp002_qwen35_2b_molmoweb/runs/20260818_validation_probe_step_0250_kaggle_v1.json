@@ -1,6 +1,6 @@
 {
   "stage": "validation_probe_step_0250",
-  "status": "queued",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T06:26:44Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-validation-probe-step-0250",
   "kaggle_version": 1,
@@ -15,5 +15,22 @@
   "grounding_examples": 128,
   "selection": "deterministic manifest prefix",
   "test_sets_touched": false,
-  "comparison_anchor": "baseline-validation-probe"
+  "comparison_anchor": "baseline-validation-probe",
+  "completed_at_utc": "2026-08-18T06:53:09Z",
+  "completed_predictions": 256,
+  "primary_metrics": {
+    "qa_answer_accuracy": 0.359375,
+    "qa_mean_token_f1": 0.645265806661273,
+    "grounding_click_accuracy": 0.46875,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 39.306621760745436
+  },
+  "delta_from_baseline": {
+    "qa_answer_accuracy": 0.0,
+    "qa_mean_token_f1": 0.040569250563110115,
+    "grounding_click_accuracy": 0.2734375,
+    "grounding_parse_rate": 0.0,
+    "grounding_median_pixel_distance": -183.48620273549554
+  },
+  "regression_gate": "passed"
 }

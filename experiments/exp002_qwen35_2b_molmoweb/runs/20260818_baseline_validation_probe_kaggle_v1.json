@@ -1,6 +1,6 @@
 {
   "stage": "baseline_validation_probe",
-  "status": "running",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T06:21:56Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-baseline-validation-probe",
   "kaggle_version": 1,
@@ -15,6 +15,15 @@
   "grounding_examples": 128,
   "selection": "deterministic manifest prefix",
   "test_sets_touched": false,
+  "completed_at_utc": "2026-08-18T06:34:29Z",
+  "completed_predictions": 256,
+  "primary_metrics": {
+    "qa_answer_accuracy": 0.359375,
+    "qa_mean_token_f1": 0.6046965560981629,
+    "grounding_click_accuracy": 0.1953125,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 222.79282449624097
+  },
   "metrics": [
     "screenshotqa_exact_match",
     "screenshotqa_token_f1",
