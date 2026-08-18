@@ -1,0 +1,33 @@
+{
+  "stage": "official_sft_stage_00",
+  "status": "queued",
+  "launched_at_utc": "2026-08-18T04:14:30Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-00",
+  "kaggle_version": 2,
+  "source_commit": "654b284",
+  "runner_repository_commit": "b559a57",
+  "config": "configs/experiment2.yaml",
+  "config_sha256": "9d45244cceb681147421675b7343214a071edf26fa69f1ed9ada53bb1455f816",
+  "runner_sha256": "3cd507c5222e4552ebe2c8f9ec4f23df62a5f94d5b1bd09aa633ac4e848642e6",
+  "requirements_sha256": "780778e63e9b15356607c28fa05a9dda2120c3e9686a415c4a2c2341300f2e65",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "resume_source": null,
+  "accelerator": "NvidiaTeslaT4",
+  "num_processes": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_batch_size": 16,
+  "start_step": 0,
+  "additional_steps": 250,
+  "expected_completed_step": 250,
+  "planned_epoch_steps": 1875,
+  "estimated_stage_hours": 2.3,
+  "kaggle_session_limit_hours": 12,
+  "acceptance_requires": [
+    "adapter/checkpoint-250/trainer_state.json",
+    "training_state completed_step 250",
+    "world_size 2",
+    "effective_batch_size 16",
+    "optimizer/scheduler/RNG state",
+    "adapter/final reloadable"
+  ]
+}

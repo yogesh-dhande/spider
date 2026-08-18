@@ -1,7 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
 Status: pre-SFT baseline complete, independently validated, and immutably archived; two-T4 QLoRA
-compatibility passed and official timeout-safe stage 0 (steps 0–250) is being prepared.
+compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) is queued.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
