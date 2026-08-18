@@ -24,6 +24,8 @@ def test_paired_ablation_runs_and_resumes(tmp_path: Path) -> None:
 
     output = run_study(config_path)
     summary = json.loads((output / "summary.json").read_text())
+    effective_config = json.loads((output / "config.json").read_text())
+    assert effective_config["study"]["run_id"] == "test"
     assert summary["variants"]["centered"]["success_rate"] == 1.0
     assert summary["variants"]["x_offset_120px"]["success_rate"] < 1.0
     assert summary["comparisons"]["x_offset_120px"]["paired_episodes"] == 8

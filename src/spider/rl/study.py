@@ -209,7 +209,9 @@ def run_study(
         output_root = (Path.cwd() / output_root).resolve()
     run_root = output_root / study_id / run_id
     run_root.mkdir(parents=True, exist_ok=True)
-    config_hash = _canonical_hash(config)
+    effective_config = deepcopy(config)
+    effective_config["study"]["run_id"] = run_id
+    config_hash = _canonical_hash(effective_config)
     manifest_path = run_root / "manifest.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -232,6 +234,7 @@ def run_study(
             "num_shards": num_shards,
         }
         _atomic_json(manifest_path, manifest)
+        _atomic_json(run_root / "config.json", effective_config)
 
     repeats = int(study.get("repeats", 1))
     seed = int(study.get("seed", 0))

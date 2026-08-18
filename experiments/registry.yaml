@@ -31,7 +31,7 @@ experiments:
     status: infrastructure_smoke
     config: configs/studies/sandbox_coordinate_bias.yaml
     record: experiments/exp003_browser_action_rl_pipeline/README.md
-    implementation_commit: pending
+    implementation_commit: 0443d34
     parent: exp002
     interpretation: infrastructure_only_no_model_claim
     hypothesis: >-
