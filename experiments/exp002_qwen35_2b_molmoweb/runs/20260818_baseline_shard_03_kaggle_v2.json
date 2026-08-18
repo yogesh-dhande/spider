@@ -1,6 +1,6 @@
 {
   "stage": "official_baseline_shard",
-  "status": "running",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T01:37:37Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-baseline-shard-03",
   "kaggle_version": 2,
@@ -23,5 +23,22 @@
     "total_examples": 659
   },
   "decoding": "greedy",
-  "adapter": null
+  "adapter": null,
+  "completed_at_utc": "2026-08-18T02:09:30Z",
+  "runtime": {
+    "kaggle_seconds": 1922.0,
+    "evaluation_seconds": 1784.7,
+    "examples_per_second": 0.369
+  },
+  "output": {
+    "completed_examples": 659,
+    "unique_prediction_ids": 659,
+    "run_signature": "89515206a3c8e30b736808acd916010b8bbcc2d2000772f7d06bf58d831cea19",
+    "headline_metrics": {
+      "molmoweb_qa_answer_accuracy": 0.208,
+      "molmoweb_grounding_click_accuracy": 0.572,
+      "screenspot_grounding_click_accuracy": 0.44654088050314467
+    },
+    "validation": "passed_counts_uniqueness_distribution_signatures_scored_output_and_failure_report"
+  }
 }
