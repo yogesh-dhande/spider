@@ -47,7 +47,9 @@ representative failures.
   two-step GPU training smoke test is required before the official baseline or SFT run.
 - No action tokens, trajectories, planning, or RL.
 - Greedy, identically quantized baseline and post-SFT inference.
-- ScreenSpot is external evaluation only.
+- ScreenSpot is external evaluation only; its Web subset is the relevant browser comparison.
+- ScreenSpot-Pro and other desktop/professional benchmarks are out of scope and must not influence
+  training or checkpoint selection.
 - Primary metrics: normalized exact ScreenshotQA accuracy and click-inside-element accuracy.
 - Diagnostics: token F1, parse/on-grid rate, mean/median pixel distance, and pixel thresholds.
 

@@ -18,10 +18,12 @@ The strongest apples-to-apples control is therefore to evaluate released `MolmoW
 `MolmoWeb-8B` checkpoints on our immutable validation/test manifests with our evaluator. This is a
 recommended follow-up after EXP002, not a replacement for the frozen Qwen baseline.
 
-## GUI grounding reference: ScreenSpot-v2
+## Browser grounding reference: ScreenSpot-v2 Web
 
-ScreenSpot-v2 is the closest widely used external benchmark for element-description-to-click
-grounding.
+ScreenSpot-v2 is a widely used external benchmark for element-description-to-click grounding,
+but its overall score mixes web, desktop, and mobile examples. EXP002 is intentionally scoped to
+browser use. Its relevant external score is therefore the **Web subset**, reported separately from
+the complete benchmark.
 
 | Reference | Parameters | Click accuracy |
 |---|---:|---:|
@@ -33,12 +35,21 @@ grounding.
 The current leaderboard and MolmoWeb paper tables are not identical snapshots of the benchmark,
 so each comparison must name its source and version. EXP002's existing 47.2% external result is on
 the original ScreenSpot evaluation, not ScreenSpot-v2, and should only be compared with original
-ScreenSpot results. In the MolmoWeb paper, MolmoWeb-Ground-8B scores 88.7% on original ScreenSpot.
+ScreenSpot results. It is a mixed-platform reference; the browser-specific Web slice must be
+reported for the experiment's primary comparison. In the MolmoWeb paper, MolmoWeb-Ground-8B
+scores 88.7% on original ScreenSpot.
 
 Sources:
 
 - https://gui-agent.github.io/grounding-leaderboard/screenspot
 - https://arxiv.org/abs/2604.08516 (Table 8)
+
+### Out-of-scope benchmark: ScreenSpot-Pro
+
+ScreenSpot-Pro evaluates high-resolution desktop and professional applications. It is neither a
+training source nor a primary external benchmark for this browser-only experiment. EXP002 will not
+download it, evaluate on it, or use it for checkpoint, prompt, preprocessing, or hyperparameter
+selection. A future desktop experiment may treat it as a sealed final test.
 
 ## Screenshot-QA references
 
@@ -71,7 +82,9 @@ Report three tiers separately:
 
 1. EXP002 domain-held-out MolmoWeb probe: baseline versus every Qwen checkpoint.
 2. Released MolmoWeb-4B/8B controls on exactly the same manifests and evaluator.
-3. Standard external benchmarks: ScreenSpot-v2 for grounding and ScreenQA Short (or a
-   browser-specific QA benchmark with a stable public split) for screenshot understanding.
+3. Standard external browser benchmarks: the ScreenSpot and ScreenSpot-v2 Web subsets for
+   grounding, plus a browser-specific QA benchmark with a stable public split when available.
 
-This avoids claiming a state-of-the-art gap from incompatible splits or scoring rules.
+Full mixed-platform ScreenSpot scores may be retained as secondary historical context, but must not
+replace the Web-subset result in the headline browser comparison. This avoids claiming a
+state-of-the-art gap from incompatible domains, splits, or scoring rules.
