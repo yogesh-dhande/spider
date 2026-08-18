@@ -2,8 +2,9 @@
 
 Status: pre-SFT baseline complete, independently validated, and immutably archived; two-T4 QLoRA
 compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) completed with a
-validated resumable checkpoint. Held-out validation probes and the cross-kernel resume gate are
-next; the frozen test sets remain untouched until the final SFT checkpoint.
+validated resumable checkpoint. The cross-kernel two-GPU resume gate passed, and matched held-out
+baseline/step-250 validation probes are running; the frozen test sets remain untouched until the
+final SFT checkpoint.
 
 Parent: EXP001, superseded before any official baseline or training run.
 

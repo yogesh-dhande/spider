@@ -1,0 +1,19 @@
+{
+  "stage": "validation_probe_step_0250",
+  "status": "queued",
+  "launched_at_utc": "2026-08-18T06:26:44Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-validation-probe-step-0250",
+  "kaggle_version": 1,
+  "source_commit": "e3d3764",
+  "runner_repository_commit": "36e5c23",
+  "runner_sha256": "32188e406dbbc68268f1ef36f9c457cb7adef5bc4a7ce12b78e3bf9c76eb3ea2",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "training_source": "yogeshkd/spider-exp002-sft-stage-00/2",
+  "checkpoint_step": 250,
+  "split": "validation",
+  "screenshotqa_examples": 128,
+  "grounding_examples": 128,
+  "selection": "deterministic manifest prefix",
+  "test_sets_touched": false,
+  "comparison_anchor": "baseline-validation-probe"
+}
