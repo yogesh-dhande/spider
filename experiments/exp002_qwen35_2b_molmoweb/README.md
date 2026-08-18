@@ -4,8 +4,8 @@ Status: pre-SFT baseline complete, independently validated, and immutably archiv
 compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) completed with a
 validated resumable checkpoint. The cross-kernel two-GPU resume gate and step-250 task regression
 gate passed. Stage 1 version 1 failed before its first new step in a known multi-GPU paged-optimizer
-resume path; a full step-250 non-paged AdamW8bit resume gate is pending before retry. The frozen
-test sets remain untouched until the final SFT checkpoint.
+resume path; a full step-250 non-paged AdamW8bit resume gate then passed and stage 1 is ready to
+retry. The frozen test sets remain untouched until the final SFT checkpoint.
 
 Parent: EXP001, superseded before any official baseline or training run.
 

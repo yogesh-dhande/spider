@@ -173,7 +173,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--start-stage", type=int, default=1)
     parser.add_argument("--end-stage", type=int, default=7)
-    parser.add_argument("--version", type=int, default=1)
+    parser.add_argument(
+        "--first-stage-version",
+        type=int,
+        default=1,
+        help="Kaggle version of the already-launched first stage; later new stages use version 1",
+    )
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--heartbeat-seconds", type=int, default=900)
     parser.add_argument("--repository-root", type=Path, default=Path.cwd())
@@ -189,7 +194,8 @@ def main() -> None:
         terminal = wait_for_terminal(stage, args.poll_seconds, args.heartbeat_seconds)
         if terminal != "COMPLETE":
             raise RuntimeError(f"Stage {stage} terminated with {terminal}")
-        summary = download_and_validate(stage, args.version)
+        version = args.first_stage_version if stage == args.start_stage else 1
+        summary = download_and_validate(stage, version)
         emit("kaggle_stage_validated", **summary)
         if stage < args.end_stage:
             launch(stage + 1, args.repository_root.resolve())
