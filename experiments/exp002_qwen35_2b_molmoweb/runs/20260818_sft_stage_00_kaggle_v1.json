@@ -1,0 +1,35 @@
+{
+  "stage": "official_sft_stage_00",
+  "status": "queued",
+  "launched_at_utc": "2026-08-18T03:46:54Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-00",
+  "kaggle_version": 1,
+  "source_commit": "4ce2912",
+  "runner_repository_commit": "227d62d",
+  "config": "configs/experiment2.yaml",
+  "config_sha256": "9d45244cceb681147421675b7343214a071edf26fa69f1ed9ada53bb1455f816",
+  "runner_sha256": "d64b5b7da07c416e596f99940c525fe15241ebfb7c607e98c0cc8397b5504639",
+  "requirements_sha256": "780778e63e9b15356607c28fa05a9dda2120c3e9686a415c4a2c2341300f2e65",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "accelerator": "NvidiaTeslaT4",
+  "training_processes": 1,
+  "effective_batch_size": 16,
+  "start_step": 0,
+  "additional_steps": 100,
+  "expected_completed_step": 100,
+  "planned_epoch_steps": 1875,
+  "timeout_strategy": {
+    "kaggle_session_limit_hours": 12,
+    "stage_expected_minutes": "15-25",
+    "acceptance_requires_terminal_checkpoint": true,
+    "next_stage_uses_optimizer_scheduler_rng_resume": true
+  },
+  "expected_outputs": [
+    "outputs/experiment2/adapter/checkpoint-100/trainer_state.json",
+    "outputs/experiment2/adapter/final/adapter_config.json",
+    "outputs/experiment2/training_state.json",
+    "outputs/experiment2/training_stages.jsonl",
+    "outputs/experiment2/training_metrics.json",
+    "outputs/experiment2/training_setup.json"
+  ]
+}

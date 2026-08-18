@@ -1,7 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
 Status: pre-SFT baseline complete, independently validated, and immutably archived; timeout-safe
-QLoRA stage 0 is being prepared and fine-tuning has not started yet.
+QLoRA stage 0 (optimizer steps 0–100) queued on Kaggle.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
