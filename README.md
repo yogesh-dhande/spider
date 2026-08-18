@@ -108,6 +108,7 @@ outputs/experiment2/evaluation/<label>/
   predictions.raw.jsonl   # append-only resume state
   predictions.jsonl       # predictions plus per-example scores/error category
   metrics.json
+  shard_metrics.json      # merged runs: per-shard scores and partition variability
   report/failures.html
   report/assets/*.jpg
 ```

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import statistics
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,39 @@ from spider.evaluate import _manifest_paths, evaluation_signature, select_record
 from spider.metrics import score_records
 from spider.prepare import read_jsonl, write_jsonl
 from spider.reports import create_failure_report
+
+PRIMARY_SHARD_METRICS = {
+    "molmoweb_qa_answer_accuracy": ("molmoweb", "qa", "answer_accuracy"),
+    "molmoweb_grounding_click_accuracy": ("molmoweb", "grounding", "click_accuracy"),
+    "screenspot_grounding_click_accuracy": ("screenspot", "grounding", "click_accuracy"),
+}
+
+
+def summarize_shard_metrics(
+    shard_labels: list[str], shard_metrics: list[dict[str, Any]]
+) -> dict[str, Any]:
+    if len(shard_labels) != len(shard_metrics) or not shard_labels:
+        raise ValueError("Shard labels and metrics must be non-empty and have equal length")
+    per_shard = dict(zip(shard_labels, shard_metrics, strict=True))
+    variability: dict[str, dict[str, float]] = {}
+    for name, path in PRIMARY_SHARD_METRICS.items():
+        values = [float(metrics[path[0]][path[1]][path[2]]) for metrics in shard_metrics]
+        variability[name] = {
+            "mean": statistics.fmean(values),
+            "population_std": statistics.pstdev(values),
+            "minimum": min(values),
+            "maximum": max(values),
+        }
+    return {
+        "kind": "deterministic_partition_diagnostics",
+        "num_shards": len(shard_labels),
+        "note": (
+            "Shards are equal-sized deterministic partitions, not independent experimental "
+            "replicates. The merged metrics remain authoritative."
+        ),
+        "per_shard": per_shard,
+        "variability": variability,
+    }
 
 
 def _load_complete_shard(
@@ -63,8 +97,10 @@ def merge_evaluation_shards(
         raise ValueError("Evaluation manifests contain duplicate IDs")
 
     num_shards = len(shard_labels)
+    thresholds = [int(value) for value in evaluation["distance_thresholds_px"]]
     merged_by_id: dict[str, dict[str, Any]] = {}
     shard_metadata: list[dict[str, Any]] = []
+    metrics_by_shard: list[dict[str, Any]] = []
     for shard_index, shard_label in enumerate(shard_labels):
         expected_ids = {
             record["id"]
@@ -80,6 +116,8 @@ def merge_evaluation_shards(
             raise ValueError(f"Shard outputs overlap: {sorted(overlap)[:5]}")
         merged_by_id.update({record["id"]: record for record in records})
         shard_metadata.append(metadata)
+        _, shard_metrics = score_records(records, thresholds)
+        metrics_by_shard.append(shard_metrics)
 
     if set(merged_by_id) != set(expected_by_id):
         raise ValueError("Merged shards do not cover the complete evaluation set")
@@ -116,7 +154,6 @@ def merge_evaluation_shards(
             }
         )
 
-    thresholds = [int(value) for value in evaluation["distance_thresholds_px"]]
     scored, metrics = score_records(ordered, thresholds)
     output_dir = evaluation_root / label
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -126,6 +163,10 @@ def merge_evaluation_shards(
     write_jsonl(predictions_path, scored)
     (output_dir / "metrics.json").write_text(
         json.dumps(metrics, indent=2) + "\n", encoding="utf-8"
+    )
+    shard_summary = summarize_shard_metrics(shard_labels, metrics_by_shard)
+    (output_dir / "shard_metrics.json").write_text(
+        json.dumps(shard_summary, indent=2) + "\n", encoding="utf-8"
     )
     run_metadata.update(
         {
