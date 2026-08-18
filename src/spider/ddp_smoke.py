@@ -20,6 +20,7 @@ def torchrun_command(
     steps: int,
     num_processes: int,
     gradient_accumulation_steps: int,
+    resume: str = "none",
 ) -> list[str]:
     if steps <= 0 or num_processes <= 1 or gradient_accumulation_steps <= 0:
         raise ValueError("DDP smoke sizes must be positive and use at least two processes")
@@ -34,7 +35,7 @@ def torchrun_command(
         "--config",
         str(config_path),
         "--resume",
-        "none",
+        resume,
         "--additional-steps",
         str(steps),
         "--gradient-accumulation-steps",

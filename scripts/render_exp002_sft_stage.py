@@ -30,6 +30,8 @@ def render_notebook(
     expected_start_step: int,
     additional_steps: int,
     previous_kernel: str | None,
+    num_processes: int,
+    gradient_accumulation_steps: int,
 ) -> dict[str, object]:
     expected_stop_step = expected_start_step + additional_steps
     restore_source = (
@@ -46,6 +48,30 @@ def render_notebook(
             "print({'event': 'training_from_base_model', 'completed_step': 0})\n"
         )
     )
+    if num_processes == 1:
+        training_source = (
+            "from spider.train import train\n"
+            "adapter = train(\n"
+            "    'configs/experiment2.yaml', resume='auto',\n"
+            f"    additional_steps={additional_steps},\n"
+            f"    gradient_accumulation_steps={gradient_accumulation_steps}\n"
+            ")\n"
+        )
+    else:
+        training_source = (
+            "from spider.ddp_smoke import torchrun_command\n"
+            "command = torchrun_command(\n"
+            f"    'configs/experiment2.yaml', {additional_steps}, {num_processes},\n"
+            f"    {gradient_accumulation_steps}, resume='auto'\n"
+            ")\n"
+            "env = os.environ.copy()\n"
+            "env['PYTHONPATH'] = os.pathsep.join(\n"
+            "    value for value in (str(REPO_ROOT / 'src'), env.get('PYTHONPATH')) if value\n"
+            ")\n"
+            "print({'event': 'distributed_training_start', 'command': command})\n"
+            "subprocess.run(command, check=True, env=env)\n"
+            "adapter = REPO_ROOT / 'outputs/experiment2/adapter/final'\n"
+        )
     return {
         "cells": [
             markdown_cell(
@@ -79,18 +105,20 @@ def render_notebook(
                 "print({'event': 'gpu_inventory', **gpu_summary()})\n"
             ),
             code_cell(
-                "from spider.train import train\n"
-                "adapter = train(\n"
-                "    'configs/experiment2.yaml', resume='auto',\n"
-                f"    additional_steps={additional_steps}\n"
-                ")\n"
-                "state = json.loads(\n"
-                "    (REPO_ROOT / 'outputs/experiment2/training_state.json').read_text()\n"
-                ")\n"
-                f"assert state['start_step'] == {expected_start_step}, state\n"
-                f"assert state['completed_step'] == {expected_stop_step}, state\n"
-                "print({'event': 'stage_runner_complete', 'state': state, "
-                "'adapter': str(adapter)})\n"
+                training_source
+                + (
+                    "state = json.loads(\n"
+                    "    (REPO_ROOT / 'outputs/experiment2/training_state.json').read_text()\n"
+                    ")\n"
+                    f"assert state['start_step'] == {expected_start_step}, state\n"
+                    f"assert state['completed_step'] == {expected_stop_step}, state\n"
+                    f"assert state['world_size'] == {num_processes}, state\n"
+                    f"assert state['gradient_accumulation_steps'] == "
+                    f"{gradient_accumulation_steps}, state\n"
+                    "assert state['effective_batch_size'] == 16, state\n"
+                    "print({'event': 'stage_runner_complete', 'state': state, "
+                    "'adapter': str(adapter)})\n"
+                )
             ),
         ],
         "metadata": {
@@ -135,10 +163,20 @@ def main() -> None:
     parser.add_argument("--expected-start-step", type=int, required=True)
     parser.add_argument("--additional-steps", type=int, required=True)
     parser.add_argument("--previous-kernel", default=None)
+    parser.add_argument("--num-processes", type=int, default=1)
+    parser.add_argument("--gradient-accumulation-steps", type=int, default=16)
     parser.add_argument("--output-root", type=Path, default=Path("kaggle"))
     args = parser.parse_args()
-    if args.stage_index < 0 or args.expected_start_step < 0 or args.additional_steps <= 0:
+    if (
+        args.stage_index < 0
+        or args.expected_start_step < 0
+        or args.additional_steps <= 0
+        or args.num_processes <= 0
+        or args.gradient_accumulation_steps <= 0
+    ):
         parser.error("stage/start must be non-negative and additional steps must be positive")
+    if args.num_processes * args.gradient_accumulation_steps != 16:
+        parser.error("num processes times gradient accumulation must preserve effective batch 16")
     output_dir = args.output_root / f"exp002_sft_stage_{args.stage_index:02d}"
     output_dir.mkdir(parents=True, exist_ok=True)
     notebook = render_notebook(
@@ -147,6 +185,8 @@ def main() -> None:
         args.expected_start_step,
         args.additional_steps,
         args.previous_kernel,
+        args.num_processes,
+        args.gradient_accumulation_steps,
     )
     (output_dir / f"exp002_sft_stage_{args.stage_index:02d}.ipynb").write_text(
         json.dumps(notebook, indent=1) + "\n", encoding="utf-8"

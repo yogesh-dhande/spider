@@ -25,9 +25,10 @@ def build_training_dataset(
     data_dir: Path,
     chat_template_kwargs: dict[str, Any] | None = None,
 ):
-    from datasets import Dataset, Sequence
+    from datasets import Dataset, Sequence, disable_progress_bars
     from datasets import Image as DatasetImage
 
+    disable_progress_bars()
     rows: list[dict[str, Any]] = []
     for record in read_jsonl(manifest_path):
         prompt, completion = training_conversation(

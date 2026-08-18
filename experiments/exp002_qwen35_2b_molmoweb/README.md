@@ -1,7 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: pre-SFT baseline complete, independently validated, and immutably archived; timeout-safe
-QLoRA stage 0 (optimizer steps 0–100) queued on Kaggle.
+Status: pre-SFT baseline complete, independently validated, and immutably archived; two-T4 QLoRA
+compatibility passed and official timeout-safe stage 0 (steps 0–250) is being prepared.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -75,10 +75,12 @@ Do not make derived images public without first verifying the upstream redistrib
 
 ## Timeout-safe SFT execution
 
-The official one-epoch QLoRA horizon is 1,875 optimizer steps with one T4 process, per-device
-batch 1, and gradient accumulation 16. Training is split across bounded Kaggle kernels. Stage 0
-runs 100 steps to measure official-data throughput; later stage sizes are chosen from that
-measurement with a large margin below Kaggle's session limit. Every successful stage saves the
+The official one-epoch QLoRA horizon is 1,875 optimizer steps with per-device batch 1 and
+effective batch 16. The official run uses two T4 processes with gradient accumulation
+8 after a full-resolution compatibility gate passed distributed QLoRA, checkpointing, adapter
+reload, and inference. Training is split at steps 250, 500, 750, 1000, 1250, 1500, 1750, and
+1875; measured throughput projects roughly 2.2–2.7 hours per regular stage, leaving a large margin
+below Kaggle's 12-hour session limit. Every successful stage saves the
 adapter plus Trainer optimizer, scheduler, scaler, RNG, and data-skip state. The next stage must
 restore exactly one completed predecessor and continue against the original 1,875-step scheduler
 horizon. Failed or partial stages are never eligible resume sources. Stage boundaries therefore
@@ -112,3 +114,9 @@ affected run ID. Never silently replace a completed run's configuration or resul
   produced no merged predictions. Version 2 compares the logical manifest filenames and still
   enforces exact deterministic shard IDs, non-overlap, full coverage, and matching model,
   revision, adapter, and split. This is merge plumbing only; no inference is repeated.
+- 2026-08-18: the first one-T4 SFT stage was cancelled without a checkpoint after its 10-step
+  progress report measured 71.1 seconds per optimizer step, projecting about 37 hours for the
+  epoch. It is an infrastructure throughput probe, not an experimental result, and will not be
+  resumed. A separate two-T4 gate measured 32.0 seconds per step while preserving effective batch
+  16 and the 1,875-step horizon, then passed checkpoint and adapter-reload inference. Official SFT
+  restarts from the untouched base model on two T4 processes and uses 250-step resumable stages.

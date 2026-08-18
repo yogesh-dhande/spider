@@ -1,9 +1,11 @@
 {
   "purpose": "two_gpu_compatibility_not_scientific_result",
-  "status": "queued",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T04:05:48Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-ddp-compatibility",
   "kaggle_version": 1,
+  "completed_at_utc": "2026-08-18T04:09:40Z",
+  "runtime_seconds": 179.56545966499993,
   "source_commit": "99ca914",
   "runner_repository_commit": "cc4b5cf",
   "config": "configs/experiment2.yaml",
@@ -16,10 +18,15 @@
   "gradient_accumulation_steps": 8,
   "effective_batch_size": 16,
   "steps": 2,
-  "checks": [
-    "distributed_qlora",
-    "terminal_optimizer_checkpoint",
-    "adapter_save_reload",
-    "post_adapter_inference"
-  ]
+  "seconds_per_step": 32.0,
+  "projected_epoch_hours": 16.67,
+  "planned_epoch_steps": 1875,
+  "checks": {
+    "distributed_qlora": "passed",
+    "terminal_optimizer_checkpoint": "passed",
+    "adapter_save_reload": "passed",
+    "post_adapter_inference": "passed"
+  },
+  "checkpoint": "outputs/experiment2/adapter/checkpoint-2",
+  "summary": "outputs/experiment2/ddp_compatibility.json"
 }
