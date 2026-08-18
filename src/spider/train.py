@@ -5,6 +5,8 @@ import json
 import math
 import os
 import re
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,10 @@ from spider.config import experiment_path, load_config, runtime_versions
 from spider.modeling import load_quantized_model, validate_model_config
 from spider.prepare import read_jsonl
 from spider.prompts import training_conversation
+
+
+def _print_event(event: str, **payload: Any) -> None:
+    print(json.dumps({"event": event, **payload}, sort_keys=True), flush=True)
 
 
 def build_training_dataset(
@@ -63,6 +69,10 @@ def training_step_plan(
     current_step: int,
     additional_steps: int,
 ) -> tuple[int, int]:
+    if examples <= 0 or per_device_batch <= 0 or gradient_accumulation <= 0 or world_size <= 0:
+        raise ValueError("Training sizes and batch factors must be positive")
+    if epochs <= 0 or current_step < 0 or additional_steps <= 0:
+        raise ValueError("Epochs/additional steps must be positive and current step non-negative")
     effective_batch = per_device_batch * gradient_accumulation * world_size
     steps_per_epoch = math.ceil(examples / effective_batch)
     planned_steps = math.ceil(steps_per_epoch * epochs)
@@ -126,10 +136,61 @@ def train(
     eval_count = min(int(training.get("eval_examples", 256)), len(eval_dataset))
     eval_dataset = eval_dataset.select(range(eval_count))
 
+    checkpoint = latest_checkpoint(output_dir) if resume == "auto" else resume
+    current_step = checkpoint_step(checkpoint)
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    planned_steps, epoch_stop_step = training_step_plan(
+        examples=len(train_dataset),
+        per_device_batch=int(training["per_device_train_batch_size"]),
+        gradient_accumulation=int(training["gradient_accumulation_steps"]),
+        world_size=world_size,
+        epochs=float(training["num_train_epochs"]),
+        current_step=current_step,
+        additional_steps=max(1, math.ceil(len(train_dataset))),
+    )
+    if max_steps is not None and additional_steps is not None:
+        raise ValueError("Use either max_steps or additional_steps, not both")
+    if additional_steps is not None:
+        if additional_steps <= 0:
+            raise ValueError("additional_steps must be positive")
+        _, stop_step = training_step_plan(
+            examples=len(train_dataset),
+            per_device_batch=int(training["per_device_train_batch_size"]),
+            gradient_accumulation=int(training["gradient_accumulation_steps"]),
+            world_size=world_size,
+            epochs=float(training["num_train_epochs"]),
+            current_step=current_step,
+            additional_steps=additional_steps,
+        )
+    elif max_steps is not None:
+        stop_step = int(max_steps)
+        planned_steps = int(max_steps)
+    else:
+        stop_step = epoch_stop_step
+    if current_step >= stop_step:
+        raise ValueError(
+            f"Checkpoint step {current_step} has already reached requested stop step {stop_step}"
+        )
+    _print_event(
+        "training_stage_plan",
+        examples=len(train_dataset),
+        evaluation_examples=eval_count,
+        resume_checkpoint=checkpoint,
+        start_step=current_step,
+        stop_step=stop_step,
+        planned_epoch_steps=planned_steps,
+        world_size=world_size,
+    )
+
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
     device_map: str | dict[str, int] = {"": local_rank}
     model, processor, compute_dtype = load_quantized_model(experiment, device_map)
     model.config.use_cache = False
+    _print_event(
+        "training_model_loaded",
+        local_rank=local_rank,
+        compute_dtype=str(compute_dtype),
+    )
 
     peft_config = LoraConfig(
         r=int(training["lora_rank"]),
@@ -173,21 +234,9 @@ def train(
         "fp16": compute_dtype == torch.float16,
         "ddp_find_unused_parameters": False,
     }
-    checkpoint = latest_checkpoint(output_dir) if resume == "auto" else resume
     callbacks: list[TrainerCallback] = []
-    if max_steps is not None and additional_steps is not None:
-        raise ValueError("Use either max_steps or additional_steps, not both")
+    stage_started = time.monotonic()
     if additional_steps is not None:
-        world_size = int(os.environ.get("WORLD_SIZE", "1"))
-        planned_steps, stop_step = training_step_plan(
-            examples=len(train_dataset),
-            per_device_batch=int(training["per_device_train_batch_size"]),
-            gradient_accumulation=int(training["gradient_accumulation_steps"]),
-            world_size=world_size,
-            epochs=float(training["num_train_epochs"]),
-            current_step=checkpoint_step(checkpoint),
-            additional_steps=additional_steps,
-        )
         sft_kwargs["max_steps"] = planned_steps
 
         class StopAtStepCallback(TrainerCallback):
@@ -200,6 +249,33 @@ def train(
         callbacks.append(StopAtStepCallback())
     if max_steps is not None:
         sft_kwargs["max_steps"] = int(max_steps)
+
+    class SparseProgressCallback(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            elapsed = max(time.monotonic() - stage_started, 1e-9)
+            completed = max(int(state.global_step) - current_step, 0)
+            steps_per_second = completed / elapsed
+            remaining = max(stop_step - int(state.global_step), 0)
+            eta = remaining / steps_per_second if steps_per_second > 0 else None
+            _print_event(
+                "training_progress",
+                global_step=int(state.global_step),
+                stage_completed_steps=completed,
+                stage_target_step=stop_step,
+                planned_epoch_steps=planned_steps,
+                elapsed_seconds=round(elapsed, 1),
+                steps_per_second=round(steps_per_second, 4),
+                eta_seconds=round(eta, 1) if eta is not None else None,
+                loss=(logs or {}).get("loss"),
+                eval_loss=(logs or {}).get("eval_loss"),
+            )
+            return control
+
+        def on_save(self, args, state, control, **kwargs):
+            _print_event("training_checkpoint_saved", global_step=int(state.global_step))
+            return control
+
+    callbacks.append(SparseProgressCallback())
     trainer = SFTTrainer(
         model=model,
         args=SFTConfig(**sft_kwargs),
@@ -230,10 +306,44 @@ def train(
     trainer.save_model(str(output_dir / "final"))
     if trainer.is_world_process_zero():
         processor.save_pretrained(str(output_dir / "final"))
+        completed_checkpoint = latest_checkpoint(output_dir)
+        completed_step = int(trainer.state.global_step)
+        if additional_steps is not None and (
+            checkpoint_step(completed_checkpoint) != completed_step or completed_step < stop_step
+        ):
+            raise RuntimeError(
+                "Resumable stage did not preserve its terminal optimizer checkpoint: "
+                f"step={completed_step}, checkpoint={completed_checkpoint}"
+            )
+        stage_runtime = time.monotonic() - stage_started
+        checkpoint_relative = (
+            str(Path(completed_checkpoint).relative_to(output_root))
+            if completed_checkpoint is not None
+            else None
+        )
+        state_record = {
+            "status": "complete",
+            "completed_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            "model": experiment["model_name"],
+            "model_revision": experiment.get("model_revision"),
+            "start_step": current_step,
+            "completed_step": completed_step,
+            "stop_step": stop_step,
+            "planned_epoch_steps": planned_steps,
+            "checkpoint": checkpoint_relative,
+            "resumed_from": checkpoint,
+            "stage_runtime_seconds": stage_runtime,
+            "metrics": result.metrics,
+        }
+        with (output_root / "training_state.json").open("w", encoding="utf-8") as handle:
+            json.dump(state_record, handle, indent=2)
+        with (output_root / "training_stages.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(state_record, sort_keys=True) + "\n")
         with (output_root / "training_metrics.json").open("w", encoding="utf-8") as handle:
             json.dump(
                 {
                     "metrics": result.metrics,
+                    "stage": state_record,
                     "model": experiment["model_name"],
                     "model_revision": experiment.get("model_revision"),
                     "package_versions": runtime_versions(),
@@ -241,6 +351,13 @@ def train(
                 handle,
                 indent=2,
             )
+        _print_event(
+            "training_stage_complete",
+            completed_step=completed_step,
+            planned_epoch_steps=planned_steps,
+            checkpoint=checkpoint_relative,
+            runtime_seconds=round(stage_runtime, 1),
+        )
     return output_dir / "final"
 
 

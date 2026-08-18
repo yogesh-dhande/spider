@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from PIL import Image
 
 from spider.train import build_training_dataset, training_step_plan
@@ -49,3 +50,8 @@ def test_chunk_plan_keeps_full_scheduler_horizon() -> None:
 def test_chunk_plan_caps_stop_at_epoch_target() -> None:
     planned, stop = training_step_plan(30_000, 1, 16, 1, 1.0, 1750, 500)
     assert planned == stop == 1875
+
+
+def test_chunk_plan_rejects_non_positive_inputs() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        training_step_plan(30_000, 1, 16, 1, 1.0, 0, 0)

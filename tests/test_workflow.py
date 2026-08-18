@@ -4,12 +4,14 @@ from pathlib import Path
 import pytest
 
 from spider.workflow import (
+    find_completed_training_outputs,
     find_prepared_data,
     find_prepared_data_paths,
     mount_prepared_data,
     restore_evaluation_shards,
     restore_packaged_data,
     restore_prepared_data,
+    restore_training_output,
 )
 
 
@@ -108,3 +110,45 @@ def test_restore_evaluation_shards_rejects_ambiguous_sources(tmp_path: Path) -> 
 
     with pytest.raises(FileNotFoundError, match="Expected one complete"):
         restore_evaluation_shards([tmp_path], [label], tmp_path / "repository")
+
+
+def _write_training_output(root: Path, step: int) -> Path:
+    output = root / "spider" / "outputs" / "experiment2"
+    checkpoint = output / "adapter" / f"checkpoint-{step}"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "trainer_state.json").write_text("{}\n", encoding="utf-8")
+    (output / "training_state.json").write_text(
+        '{"status":"complete","completed_step":'
+        + str(step)
+        + ',"checkpoint":"adapter/checkpoint-'
+        + str(step)
+        + '"}\n',
+        encoding="utf-8",
+    )
+    return output
+
+
+def test_restore_completed_training_output(tmp_path: Path) -> None:
+    source = _write_training_output(tmp_path / "input" / "stage-00", 100)
+    assert find_completed_training_outputs(tmp_path / "input") == [source]
+
+    restored = restore_training_output([tmp_path / "input"], tmp_path / "repository")
+    assert (restored / "adapter" / "checkpoint-100" / "trainer_state.json").is_file()
+    assert (restored / "training_state.json").is_file()
+
+
+def test_restore_training_output_rejects_incomplete_or_ambiguous_sources(
+    tmp_path: Path,
+) -> None:
+    incomplete = tmp_path / "input" / "incomplete" / "outputs" / "experiment2"
+    incomplete.mkdir(parents=True)
+    (incomplete / "training_state.json").write_text(
+        '{"status":"running","completed_step":100}\n', encoding="utf-8"
+    )
+    with pytest.raises(FileNotFoundError, match="Expected one complete"):
+        restore_training_output([tmp_path / "input"], tmp_path / "repository")
+
+    _write_training_output(tmp_path / "input" / "stage-00", 100)
+    _write_training_output(tmp_path / "input" / "stage-01", 500)
+    with pytest.raises(FileNotFoundError, match="Expected one complete"):
+        restore_training_output([tmp_path / "input"], tmp_path / "repository")

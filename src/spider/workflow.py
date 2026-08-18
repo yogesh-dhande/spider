@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,8 @@ from spider.config import experiment_path, load_config
 
 PREPARED_DATA_NAME = "molmoweb_30k_domain17"
 EVALUATION_DIR_PARTS = ("outputs", "experiment2", "evaluation")
+TRAINING_OUTPUT_DIR_PARTS = ("outputs", "experiment2")
+TRAINING_STATE_NAME = "training_state.json"
 
 
 def gpu_summary() -> dict[str, Any]:
@@ -163,6 +166,48 @@ def restore_evaluation_shards(
         shutil.copytree(matches[0], target, dirs_exist_ok=False)
         restored.append(target)
     return restored
+
+
+def find_completed_training_outputs(search_root: str | Path) -> list[Path]:
+    """Find complete, resumable training outputs under an attached Kaggle source."""
+    root = Path(search_root)
+    if not root.is_dir():
+        return []
+    outputs: list[Path] = []
+    for state_path in root.rglob(TRAINING_STATE_NAME):
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        output_dir = state_path.parent
+        checkpoint = output_dir / str(state.get("checkpoint", ""))
+        if (
+            state.get("status") == "complete"
+            and int(state.get("completed_step", 0)) > 0
+            and checkpoint.is_dir()
+            and (checkpoint / "trainer_state.json").is_file()
+        ):
+            outputs.append(output_dir)
+    return sorted(set(outputs))
+
+
+def restore_training_output(
+    search_roots: list[str | Path], repository_root: str | Path = "."
+) -> Path:
+    """Restore exactly one complete optimizer checkpoint chain for the next SFT stage."""
+    matches: list[Path] = []
+    for root in search_roots:
+        matches.extend(find_completed_training_outputs(root))
+    matches = sorted(set(matches))
+    if len(matches) != 1:
+        raise FileNotFoundError(
+            f"Expected one complete training output under {search_roots}, found {matches}"
+        )
+    target = Path(repository_root).joinpath(*TRAINING_OUTPUT_DIR_PARTS)
+    if target.exists():
+        raise FileExistsError(f"Training output target already exists: {target}")
+    shutil.copytree(matches[0], target)
+    return target
 
 
 def compare_run_outputs(

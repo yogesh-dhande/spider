@@ -1,7 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: pre-SFT baseline complete, independently validated, and immutably archived; fine-tuning
-has not started.
+Status: pre-SFT baseline complete, independently validated, and immutably archived; timeout-safe
+QLoRA stage 0 is being prepared and fine-tuning has not started yet.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -72,6 +72,18 @@ notebook artifact containing the resized images, frozen manifests, summary, conf
 Training and evaluation attach that exact version instead of repeating preparation. A separate
 Kaggle Dataset can be created later through a server-side workflow; it is not required for runs.
 Do not make derived images public without first verifying the upstream redistribution terms.
+
+## Timeout-safe SFT execution
+
+The official one-epoch QLoRA horizon is 1,875 optimizer steps with one T4 process, per-device
+batch 1, and gradient accumulation 16. Training is split across bounded Kaggle kernels. Stage 0
+runs 100 steps to measure official-data throughput; later stage sizes are chosen from that
+measurement with a large margin below Kaggle's session limit. Every successful stage saves the
+adapter plus Trainer optimizer, scheduler, scaler, RNG, and data-skip state. The next stage must
+restore exactly one completed predecessor and continue against the original 1,875-step scheduler
+horizon. Failed or partial stages are never eligible resume sources. Stage boundaries therefore
+change execution packaging, not the frozen dataset, batch size, prompts, loss, learning rate,
+scheduler, seed, or model configuration.
 
 ## Deviations and notes
 
