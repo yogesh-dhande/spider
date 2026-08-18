@@ -16,6 +16,8 @@ from spider.progress import LineProgress
 from spider.prompts import inference_messages
 from spider.reports import create_failure_report
 
+EVALUATION_PROTOCOL_VERSION = "v2-model-and-chat-eos"
+
 
 def _hash_file(path: Path, digest: Any) -> None:
     with path.open("rb") as handle:
@@ -33,6 +35,7 @@ def evaluation_signature(
     digest = hashlib.sha256()
     config_payload = json.dumps(config, sort_keys=True, separators=(",", ":"))
     digest.update(config_payload.encode())
+    digest.update(EVALUATION_PROTOCOL_VERSION.encode())
     payload: dict[str, Any] = {
         "model": config["experiment"]["model_name"],
         "model_revision": config["experiment"].get("model_revision"),
@@ -40,6 +43,7 @@ def evaluation_signature(
         "split": split,
         "manifests": [str(path) for path in manifest_paths],
         "selection": selection or {"kind": "all"},
+        "evaluation_protocol_version": EVALUATION_PROTOCOL_VERSION,
     }
     if selection:
         digest.update(json.dumps(selection, sort_keys=True, separators=(",", ":")).encode())
@@ -69,6 +73,26 @@ def load_model(experiment: dict[str, Any], adapter: str | None = None):
     return model, processor
 
 
+def generation_eos_token_ids(model: Any, processor: Any) -> list[int]:
+    """Collect model EOS and processor chat end-of-turn IDs without duplicates."""
+    result: list[int] = []
+
+    def extend(value: Any) -> None:
+        values = value if isinstance(value, (list, tuple)) else [value]
+        for token_id in values:
+            if isinstance(token_id, int) and token_id not in result:
+                result.append(token_id)
+
+    extend(getattr(getattr(model, "generation_config", None), "eos_token_id", None))
+    extend(getattr(getattr(model, "config", None), "eos_token_id", None))
+    extend(
+        getattr(getattr(getattr(model, "config", None), "text_config", None), "eos_token_id", None)
+    )
+    tokenizer = getattr(processor, "tokenizer", processor)
+    extend(getattr(tokenizer, "eos_token_id", None))
+    return result
+
+
 def generate_prediction(
     record: dict[str, Any],
     image_path: Path,
@@ -91,11 +115,17 @@ def generate_prediction(
         **(chat_template_kwargs or {}),
     ).to(model.device)
     with torch.inference_mode():
+        eos_token_ids = generation_eos_token_ids(model, processor)
+        generation_kwargs: dict[str, Any] = {
+            "max_new_tokens": max_new_tokens,
+            "do_sample": False,
+            "use_cache": True,
+        }
+        if eos_token_ids:
+            generation_kwargs["eos_token_id"] = eos_token_ids
         generated = model.generate(
             **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            use_cache=True,
+            **generation_kwargs,
         )
     trimmed = generated[:, inputs.input_ids.shape[1] :]
     return processor.batch_decode(

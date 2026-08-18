@@ -1,13 +1,12 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: pre-SFT baseline complete, independently validated, and immutably archived; two-T4 QLoRA
-compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250) completed with a
-validated resumable checkpoint. The cross-kernel two-GPU resume gate and step-250 task regression
-gate passed. Stage 1 version 1 failed before its first new step in a known multi-GPU paged-optimizer
-resume path; a full step-250 non-paged AdamW8bit resume gate then passed and stage 1 is ready to
-retry. Stages 1 and 2 completed with validated checkpoints through step 750; stage 3 is running and
-will be followed by the scheduled step-1,000 regression probe. The frozen test sets remain
-untouched until the final SFT checkpoint.
+Status: pre-SFT baseline complete, independently validated, and immutably archived. Two-T4 QLoRA
+stages have produced validated resumable checkpoints through step 1,000 with steadily improving
+held-out language-model loss. The first step-1,000 task probe exposed an evaluation stop-token
+mismatch: training supervised Qwen3.5's chat end token, but generation did not stop on it. A saved-
+output diagnostic recovers QA above step 250, so no training regression is established. Stage 4 is
+paused until the corrected step-1,000 probe confirms the official task metrics. The frozen test
+sets remain untouched until the final SFT checkpoint.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -146,3 +145,9 @@ affected run ID. Never silently replace a completed run's configuration or resul
   than three percentage points in QA exact, QA token F1, grounding click accuracy, or parse rate,
   or a median grounding-distance increase greater than 25 pixels relative to step 250, pauses the
   chain for review. The step-1,875 probe runs before the one-time final test evaluation.
+- 2026-08-18: stage 3 completed through step 1,000 with eval loss 0.5897 and token accuracy 0.8373.
+  Its first task probe generated almost every response to the 96-token limit because evaluation
+  inherited model EOS `<|endoftext|>` instead of also stopping on chat end-of-turn `<|im_end|>`.
+  The raw QA result is invalid. Truncating saved predictions at the decoded next-turn boundary
+  recovers 0.3672 exact and 0.6874 token F1, both above step 250, but this is diagnostic only.
+  Training remains paused until the same checkpoint is rerun with explicit chat-EOS stopping.

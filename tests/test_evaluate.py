@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from spider.evaluate import evaluation_signature, select_records
+from spider.evaluate import evaluation_signature, generation_eos_token_ids, select_records
 
 
 def test_evaluation_signature_changes_with_manifest(tmp_path: Path) -> None:
@@ -41,3 +41,38 @@ def test_select_records_rejects_incomplete_shard_arguments(tmp_path: Path) -> No
     manifest.write_text('{"id":"one"}\n', encoding="utf-8")
     with pytest.raises(ValueError, match="supplied together"):
         select_records([manifest], shard_index=0)
+
+
+def test_generation_eos_includes_model_and_chat_end_tokens() -> None:
+    class Value:
+        pass
+
+    model = Value()
+    model.generation_config = Value()
+    model.generation_config.eos_token_id = 248044
+    model.config = Value()
+    model.config.eos_token_id = None
+    model.config.text_config = Value()
+    model.config.text_config.eos_token_id = 248044
+    processor = Value()
+    processor.tokenizer = Value()
+    processor.tokenizer.eos_token_id = 248046
+
+    assert generation_eos_token_ids(model, processor) == [248044, 248046]
+
+
+def test_generation_eos_flattens_lists_and_removes_duplicates() -> None:
+    class Value:
+        pass
+
+    model = Value()
+    model.generation_config = Value()
+    model.generation_config.eos_token_id = [1, 2]
+    model.config = Value()
+    model.config.eos_token_id = 2
+    model.config.text_config = Value()
+    model.config.text_config.eos_token_id = None
+    processor = Value()
+    processor.eos_token_id = 3
+
+    assert generation_eos_token_ids(model, processor) == [1, 2, 3]
