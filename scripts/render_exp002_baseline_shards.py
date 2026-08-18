@@ -10,7 +10,7 @@ OWNER = "yogeshkd"
 REPO_REV = "11c71b0"
 PREPARED_KERNEL = "spider-exp002-finalize-prepared-data"
 NUM_SHARDS = 8
-MERGE_REPO_REV = "9b7eedd"
+MERGE_REPO_REV = "714b6e2"
 
 
 def code_cell(source: str) -> dict[str, object]:
