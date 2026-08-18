@@ -1,9 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: Kaggle GPU compatibility smoke passed; monolithic baseline version 1 cancelled;
-prepared data validated; all eight official baseline shards complete and validated; exact-coverage
-CPU merge version 1 failed on an environment-specific manifest-path comparison after restoring
-all shards; corrected version 2 queued.
+Status: pre-SFT baseline complete, independently validated, and ready for immutable archiving;
+fine-tuning has not started.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -53,8 +51,11 @@ Exact model and dataset revisions are pinned in
 
 ## Results
 
-Pending. Completed runs will be archived under `results/<run-id>/` and committed; raw
-predictions and failure galleries will be retained as Kaggle artifacts.
+The pre-SFT baseline over 5,272 frozen examples is complete: 22.40% MolmoWeb ScreenshotQA exact
+accuracy, 56.65% MolmoWeb grounding click accuracy, and 47.17% ScreenSpot grounding click
+accuracy. See [`BASELINE_RESULTS.md`](BASELINE_RESULTS.md) for all eight shard scores,
+variability, diagnostics, validation, and failure-category counts. Raw/scored predictions and the
+representative failure gallery are retained in Kaggle merge version 2.
 
 ## Compatibility validation
 

@@ -1,9 +1,12 @@
 {
   "stage": "official_baseline_merge",
-  "status": "queued",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T03:17:05Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-baseline-merge",
   "kaggle_version": 2,
+  "finished_at_utc": "2026-08-18T03:18:08Z",
+  "elapsed_seconds": 63.4,
+  "merge_completed_seconds": 56.8,
   "source_commit": "371507b",
   "runner_repository_commit": "737eb78",
   "config": "configs/experiment2.yaml",
@@ -24,6 +27,44 @@
     "7": "yogeshkd/spider-exp002-baseline-shard-07/1"
   },
   "expected_predictions": 5272,
+  "completed_predictions": 5272,
+  "merged_signature": "8cd36840e9d1ce7e7de4a32acf210ef2216c41d95a45acb1e98e8008fb48dede",
+  "metrics": {
+    "molmoweb_qa_answer_accuracy": 0.224,
+    "molmoweb_qa_mean_token_f1": 0.49636899548313557,
+    "molmoweb_grounding_click_accuracy": 0.5665,
+    "molmoweb_grounding_median_pixel_distance": 31.1528689331466,
+    "screenspot_grounding_click_accuracy": 0.4716981132075472,
+    "screenspot_grounding_median_pixel_distance": 50.98850607370206
+  },
+  "shard_variability": {
+    "molmoweb_qa_answer_accuracy": {
+      "mean": 0.224,
+      "population_std": 0.021725560982400433,
+      "minimum": 0.192,
+      "maximum": 0.26
+    },
+    "molmoweb_grounding_click_accuracy": {
+      "mean": 0.5665,
+      "population_std": 0.023059705115200394,
+      "minimum": 0.52,
+      "maximum": 0.608
+    },
+    "screenspot_grounding_click_accuracy": {
+      "mean": 0.4716981132075472,
+      "population_std": 0.036672653426699994,
+      "minimum": 0.4025157232704403,
+      "maximum": 0.5408805031446541
+    }
+  },
+  "validation": {
+    "status": "pass",
+    "unique_prediction_ids": 5272,
+    "exact_frozen_manifest_id_set": true,
+    "source_shards": 8,
+    "predictions_per_source_shard": 659,
+    "failure_report_assets": 136
+  },
   "outputs": [
     "predictions.raw.jsonl",
     "predictions.jsonl",

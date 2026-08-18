@@ -79,6 +79,7 @@ def archive_results(
     sources: dict[str, Path] = {
         "dataset_summary.json": data_dir / "dataset_summary.json",
         "baseline_metrics.json": baseline_dir / "metrics.json",
+        "baseline_shard_metrics.json": baseline_dir / "shard_metrics.json",
         "baseline_run_metadata.json": baseline_dir / "run_metadata.json",
     }
     if sft_dir is not None:

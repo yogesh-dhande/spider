@@ -72,6 +72,7 @@ def test_archive_baseline_without_sft(tmp_path: Path) -> None:
         json.dumps(_metrics(0.2, 0.3, 80)), encoding="utf-8"
     )
     (baseline_dir / "run_metadata.json").write_text("{}\n", encoding="utf-8")
+    (baseline_dir / "shard_metrics.json").write_text("{}\n", encoding="utf-8")
     config = {
         "experiment": {
             "id": "exp-test",
@@ -92,5 +93,6 @@ def test_archive_baseline_without_sft(tmp_path: Path) -> None:
     assert manifest["stage"] == "baseline_only"
     assert manifest["sft_label"] is None
     assert (run_dir / "baseline_metrics.json").is_file()
+    assert (run_dir / "baseline_shard_metrics.json").is_file()
     assert not (run_dir / "comparison.md").exists()
     assert "comparison" not in index["runs"][0]
