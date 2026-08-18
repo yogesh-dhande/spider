@@ -1,0 +1,18 @@
+{
+  "id": "yogeshkd/spider-exp002-baseline-shard-04",
+  "title": "Spider EXP002 Baseline Shard 04",
+  "code_file": "exp002_baseline_shard_04.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "yogeshkd/spider-exp002-finalize-prepared-data"
+  ],
+  "model_sources": []
+}

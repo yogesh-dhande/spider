@@ -8,6 +8,7 @@ from spider.compare import compare_files
 from spider.config import experiment_path, load_config
 
 PREPARED_DATA_NAME = "molmoweb_30k_domain17"
+EVALUATION_DIR_PARTS = ("outputs", "experiment2", "evaluation")
 
 
 def gpu_summary() -> dict[str, Any]:
@@ -128,6 +129,40 @@ def restore_packaged_data(
             raise FileNotFoundError(f"Missing packaged metadata: {source}")
         shutil.copy2(source, target / name)
     return target
+
+
+def restore_evaluation_shards(
+    search_roots: list[str | Path],
+    labels: list[str],
+    repository_root: str | Path = ".",
+) -> list[Path]:
+    """Copy one complete evaluation directory per label from attached Kaggle outputs."""
+    if not labels:
+        raise ValueError("At least one evaluation shard label is required")
+    roots = [Path(root) for root in search_roots]
+    target_root = Path(repository_root).joinpath(*EVALUATION_DIR_PARTS)
+    restored: list[Path] = []
+    for label in labels:
+        matches: list[Path] = []
+        for root in roots:
+            if not root.is_dir():
+                continue
+            matches.extend(
+                path
+                for path in root.rglob(label)
+                if path.is_dir()
+                and (path / "run_metadata.json").is_file()
+                and (path / "predictions.raw.jsonl").is_file()
+            )
+        matches = sorted(set(matches))
+        if len(matches) != 1:
+            raise FileNotFoundError(
+                f"Expected one complete evaluation directory for {label}, found {matches}"
+            )
+        target = target_root / label
+        shutil.copytree(matches[0], target, dirs_exist_ok=False)
+        restored.append(target)
+    return restored
 
 
 def compare_run_outputs(

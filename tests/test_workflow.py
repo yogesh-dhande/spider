@@ -1,10 +1,13 @@
 import shutil
 from pathlib import Path
 
+import pytest
+
 from spider.workflow import (
     find_prepared_data,
     find_prepared_data_paths,
     mount_prepared_data,
+    restore_evaluation_shards,
     restore_packaged_data,
     restore_prepared_data,
 )
@@ -69,3 +72,39 @@ def test_restore_packaged_data(tmp_path: Path) -> None:
     restored = restore_packaged_data(package, tmp_path / "repository")
     assert (restored / "images" / "one.jpg").read_bytes() == b"image"
     assert (restored / "manifests" / "test.jsonl").read_text(encoding="utf-8") == "{}\n"
+
+
+def test_restore_evaluation_shards(tmp_path: Path) -> None:
+    labels = ["baseline-shard-00-of-02", "baseline-shard-01-of-02"]
+    for index, label in enumerate(labels):
+        shard = (
+            tmp_path
+            / "inputs"
+            / f"kernel-{index}"
+            / "spider"
+            / "outputs"
+            / "experiment2"
+            / "evaluation"
+            / label
+        )
+        shard.mkdir(parents=True)
+        (shard / "run_metadata.json").write_text("{}\n", encoding="utf-8")
+        (shard / "predictions.raw.jsonl").write_text("{}\n", encoding="utf-8")
+
+    restored = restore_evaluation_shards(
+        [tmp_path / "inputs"], labels, tmp_path / "repository"
+    )
+    assert [path.name for path in restored] == labels
+    assert all((path / "run_metadata.json").is_file() for path in restored)
+
+
+def test_restore_evaluation_shards_rejects_ambiguous_sources(tmp_path: Path) -> None:
+    label = "baseline-shard-00-of-08"
+    for source in ("first", "second"):
+        shard = tmp_path / source / label
+        shard.mkdir(parents=True)
+        (shard / "run_metadata.json").write_text("{}\n", encoding="utf-8")
+        (shard / "predictions.raw.jsonl").write_text("{}\n", encoding="utf-8")
+
+    with pytest.raises(FileNotFoundError, match="Expected one complete"):
+        restore_evaluation_shards([tmp_path], [label], tmp_path / "repository")
