@@ -46,7 +46,7 @@ def archive_results(
     config_path: str | Path,
     run_id: str | None = None,
     baseline_label: str = "baseline",
-    sft_label: str = "sft",
+    sft_label: str | None = "sft",
 ) -> Path:
     config_path = Path(config_path).resolve()
     config = load_config(config_path)
@@ -61,8 +61,10 @@ def archive_results(
     output_dir = experiment_path(config, "output_dir")
     data_dir = experiment_path(config, "data_dir")
     baseline_dir = output_dir / "evaluation" / baseline_label
-    sft_dir = output_dir / "evaluation" / sft_label
-    required = [baseline_dir / "metrics.json", sft_dir / "metrics.json"]
+    sft_dir = output_dir / "evaluation" / sft_label if sft_label else None
+    required = [baseline_dir / "metrics.json"]
+    if sft_dir is not None:
+        required.append(sft_dir / "metrics.json")
     missing = [str(path) for path in required if not path.exists()]
     if missing:
         raise FileNotFoundError(f"Cannot archive before official evaluations exist: {missing}")
@@ -74,35 +76,43 @@ def archive_results(
     config_target = run_dir / "config.yaml"
     shutil.copy2(config_path, config_target)
     copied.append(config_target)
-    sources = {
+    sources: dict[str, Path] = {
         "dataset_summary.json": data_dir / "dataset_summary.json",
-        "training_metrics.json": output_dir / "training_metrics.json",
         "baseline_metrics.json": baseline_dir / "metrics.json",
         "baseline_run_metadata.json": baseline_dir / "run_metadata.json",
-        "sft_metrics.json": sft_dir / "metrics.json",
-        "sft_run_metadata.json": sft_dir / "run_metadata.json",
     }
+    if sft_dir is not None:
+        sources.update(
+            {
+                "training_metrics.json": output_dir / "training_metrics.json",
+                "sft_metrics.json": sft_dir / "metrics.json",
+                "sft_run_metadata.json": sft_dir / "run_metadata.json",
+            }
+        )
     for target_name, source in sources.items():
         if source.exists():
             target = run_dir / target_name
             shutil.copy2(source, target)
             copied.append(target)
 
-    comparison = run_dir / "comparison.md"
-    rows = compare_files(required[0], required[1], comparison)
-    copied.append(comparison)
-    table = run_dir / "comparison.csv"
-    with table.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
-    copied.append(table)
+    comparison: Path | None = None
+    if sft_dir is not None:
+        comparison = run_dir / "comparison.md"
+        rows = compare_files(required[0], required[1], comparison)
+        copied.append(comparison)
+        table = run_dir / "comparison.csv"
+        with table.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
+        copied.append(table)
 
     manifest = {
         "experiment_id": experiment["id"],
         "experiment_name": experiment["name"],
         "run_id": run_id,
         "archived_at": timestamp.isoformat(),
+        "stage": "baseline_and_sft" if sft_label else "baseline_only",
         "baseline_label": baseline_label,
         "sft_label": sft_label,
         "model": experiment["model_name"],
@@ -119,14 +129,15 @@ def archive_results(
         index = json.loads(index_path.read_text(encoding="utf-8"))
     else:
         index = {"experiment_id": experiment["id"], "runs": []}
-    index["runs"].append(
-        {
-            "run_id": run_id,
-            "archived_at": timestamp.isoformat(),
-            "manifest": f"{run_id}/manifest.json",
-            "comparison": f"{run_id}/comparison.md",
-        }
-    )
+    index_entry = {
+        "run_id": run_id,
+        "archived_at": timestamp.isoformat(),
+        "stage": manifest["stage"],
+        "manifest": f"{run_id}/manifest.json",
+    }
+    if comparison is not None:
+        index_entry["comparison"] = f"{run_id}/comparison.md"
+    index["runs"].append(index_entry)
     index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
     return run_dir
 
@@ -137,8 +148,18 @@ def main() -> None:
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--baseline-label", default="baseline")
     parser.add_argument("--sft-label", default="sft")
+    parser.add_argument(
+        "--baseline-only",
+        action="store_true",
+        help="Archive the official baseline without requiring an SFT evaluation",
+    )
     args = parser.parse_args()
-    path = archive_results(args.config, args.run_id, args.baseline_label, args.sft_label)
+    path = archive_results(
+        args.config,
+        args.run_id,
+        args.baseline_label,
+        None if args.baseline_only else args.sft_label,
+    )
     print(f"Archived immutable results to {path}")
 
 

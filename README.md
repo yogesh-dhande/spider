@@ -65,6 +65,9 @@ spider-compare \
 
 # Create a small immutable archive suitable for Git/publication provenance.
 spider-archive --config configs/experiment2.yaml
+
+# Before SFT exists, freeze the untouched-model result independently.
+spider-archive --config configs/experiment2.yaml --baseline-only
 ```
 
 Prepare the data once in a CPU-only session and save `data/molmoweb_30k_domain17` as a private,
