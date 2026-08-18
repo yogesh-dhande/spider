@@ -1,0 +1,26 @@
+{
+  "stage": "official_baseline_shard",
+  "status": "queued",
+  "launched_at_utc": "2026-08-18T00:30:37Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-baseline-shard-00",
+  "kaggle_version": 1,
+  "source_commit": "11c71b0",
+  "runner_repository_commit": "34bc109",
+  "config": "configs/experiment2.yaml",
+  "config_sha256": "9d45244cceb681147421675b7343214a071edf26fa69f1ed9ada53bb1455f816",
+  "runner_sha256": "c6038d2e21a0dca7d194cca66f24ca46f7796f86a414c136311dac9c1e55e7eb",
+  "requirements_sha256": "780778e63e9b15356607c28fa05a9dda2120c3e9686a415c4a2c2341300f2e65",
+  "accelerator": "NvidiaTeslaT4",
+  "timeout_seconds": 14400,
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "selection": {
+    "shard_index": 0,
+    "num_shards": 8,
+    "molmoweb_qa_test": 250,
+    "molmoweb_grounding_test": 250,
+    "screenspot_test": 159,
+    "total_examples": 659
+  },
+  "decoding": "greedy",
+  "adapter": null
+}
