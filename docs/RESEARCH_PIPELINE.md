@@ -58,6 +58,7 @@ Only ideas that pass a cheaper tier advance. Final benchmarks never select confi
 - strict JSON browser actions using normalized coordinates;
 - a deterministic screenshot-producing browser sandbox;
 - a policy adapter boundary with an oracle test implementation;
+- an HTTP policy adapter that can target a local model server or managed GPU endpoint;
 - raw environment signals composed by configurable reward weights;
 - content-addressed screenshot artifacts and resumable JSONL episodes;
 - paired task/seed variants with automatic comparison output;
@@ -106,6 +107,22 @@ docker run --rm --init --ipc=host \
 The oracle is only an infrastructure probe. The next adapter will call the frozen Qwen policy using
 the same observation and action contract. BrowserGym/Playwright environments and model training
 algorithms will be added behind their respective interfaces after the deterministic loop is proven.
+
+Remote policies are selected through config without embedding service addresses or credentials:
+
+```yaml
+policy:
+  type: http
+  id: qwen35-2b-exp002-step-1250
+  endpoint_env: SPIDER_POLICY_ENDPOINT
+  bearer_token_env: SPIDER_POLICY_TOKEN
+  timeout_seconds: 120
+  max_history: 4
+```
+
+The request includes the task, current URL, image dimensions, base64 screenshot, deterministic seed,
+and bounded previous outputs. The service returns either a raw text `output` or parsed `action`
+object. The policy ID must include immutable model/checkpoint identity.
 
 Parallel workers write isolated deterministic shard directories. Merge only after every shard is
 complete and validated:
