@@ -1,6 +1,6 @@
 {
   "stage": "official_baseline_shard",
-  "status": "running",
+  "status": "error",
   "launched_at_utc": "2026-08-18T01:34:15Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-baseline-shard-03",
   "kaggle_version": 1,
@@ -22,5 +22,13 @@
     "total_examples": 659
   },
   "decoding": "greedy",
-  "adapter": null
+  "adapter": null,
+  "failed_at_utc": "2026-08-18T01:35:00Z",
+  "failure": {
+    "stage": "prepared_data_mount_discovery",
+    "reason": "The attached finalizer artifact was not exposed at the hard-coded notebook input path.",
+    "predictions_written": 0,
+    "experimental_result": false,
+    "replacement": "kaggle_version_2_with_recursive_input_root_discovery"
+  }
 }

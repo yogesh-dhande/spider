@@ -46,11 +46,13 @@ def render_notebook(shard_index: int) -> dict[str, object]:
                 "os.chdir(REPO_ROOT)\n"
                 "sys.path.insert(0, str(REPO_ROOT / 'src'))\n"
             ),
-            code_cell("%pip install -q -r requirements/experiment2-kaggle.txt\n"),
+            code_cell(
+                "%pip install -q --progress-bar off -r requirements/experiment2-kaggle.txt\n"
+            ),
             code_cell(
                 "from spider.workflow import find_prepared_data\n"
                 "prepared = find_prepared_data(\n"
-                f"    '/kaggle/input/notebooks/{OWNER}/{PREPARED_KERNEL}'\n"
+                "    '/kaggle/input'\n"
                 ")\n"
                 "os.environ['SPIDER_DATA_DIR'] = str(prepared)\n"
                 "print({'prepared_data': str(prepared)})\n"
@@ -120,11 +122,13 @@ def render_merge_notebook() -> dict[str, object]:
                 "os.chdir(REPO_ROOT)\n"
                 "sys.path.insert(0, str(REPO_ROOT / 'src'))\n"
             ),
-            code_cell("%pip install -q -r requirements/experiment2-kaggle.txt\n"),
+            code_cell(
+                "%pip install -q --progress-bar off -r requirements/experiment2-kaggle.txt\n"
+            ),
             code_cell(
                 "from spider.workflow import find_prepared_data\n"
                 "prepared = find_prepared_data(\n"
-                f"    '/kaggle/input/notebooks/{OWNER}/{PREPARED_KERNEL}'\n"
+                "    '/kaggle/input'\n"
                 ")\n"
                 "os.environ['SPIDER_DATA_DIR'] = str(prepared)\n"
                 "print({'prepared_data': str(prepared)})\n"

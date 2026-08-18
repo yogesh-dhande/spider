@@ -86,3 +86,8 @@ affected run ID. Never silently replace a completed run's configuration or resul
   CLI not exposing live `tqdm` output and the web log being dominated by carriage-return control
   sequences. It does not change example selection, model computation, or metrics. The currently
   running QA and grounding preparation version 1 jobs remain pinned to the prior implementation.
+- 2026-08-18: baseline shard 3 and 4 version-1 notebooks failed before model loading because
+  Kaggle did not expose the attached finalizer artifact at its previously observed hard-coded
+  notebook path. They wrote zero predictions and are not experimental results. Version 2 searches
+  the full `/kaggle/input` tree for the uniquely named prepared-data directory; this changes only
+  artifact discovery. The remaining runners also disable pip's animated download progress output.
