@@ -1,7 +1,7 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: pre-SFT baseline complete, independently validated, and ready for immutable archiving;
-fine-tuning has not started.
+Status: pre-SFT baseline complete, independently validated, and immutably archived; fine-tuning
+has not started.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -55,7 +55,8 @@ The pre-SFT baseline over 5,272 frozen examples is complete: 22.40% MolmoWeb Scr
 accuracy, 56.65% MolmoWeb grounding click accuracy, and 47.17% ScreenSpot grounding click
 accuracy. See [`BASELINE_RESULTS.md`](BASELINE_RESULTS.md) for all eight shard scores,
 variability, diagnostics, validation, and failure-category counts. Raw/scored predictions and the
-representative failure gallery are retained in Kaggle merge version 2.
+representative failure gallery are retained in Kaggle merge version 2. The compact immutable
+archive is `results/20260818_baseline_v1/`.
 
 ## Compatibility validation
 

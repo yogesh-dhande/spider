@@ -1,0 +1,90 @@
+experiment:
+  id: exp002
+  name: qwen35_2b_molmoweb_exp2
+  interpretation: descriptive_no_preregistered_threshold
+  record_dir: experiments/exp002_qwen35_2b_molmoweb
+  seed: 17
+  model_name: Qwen/Qwen3.5-2B
+  model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  model_loader: auto_multimodal
+  chat_template_kwargs:
+    enable_thinking: false
+  data_dir: data/molmoweb_30k_domain17
+  output_dir: outputs/experiment2
+
+data:
+  qa:
+    dataset: allenai/MolmoWeb-SyntheticQA
+    revision: 8b6199086b04057106c576504c84e44333b49fea
+    config: null
+    split: train
+  grounding:
+    dataset: allenai/MolmoWeb-SyntheticGround
+    revision: 3cce6f5c446e43a050b16658638fcbf49c815e9a
+    config: gpt
+    split: train
+  screenspot:
+    dataset: bevaya/ScreenSpot
+    revision: 0be08781e2e188582f6131625ae1598d443b4d5d
+    config: null
+    split: test
+    bbox_format: xyxy
+    bbox_units: normalized_0_1
+  examples_per_task:
+    train: 15000
+    validation: 1000
+    test: 2000
+  domain_split_percent:
+    train: 75
+    validation: 10
+    test: 15
+  max_examples_per_domain:
+    train: 300
+    validation: 200
+    test: 200
+  streaming_shuffle_buffer: 512
+  max_width: 1280
+  max_height: 720
+  jpeg_quality: 90
+
+training:
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.0002
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  lora_rank: 32
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_trainable_dtype: float32
+  lora_target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+    - in_proj_qkv
+    - in_proj_z
+    - in_proj_b
+    - in_proj_a
+    - out_proj
+  gradient_checkpointing: true
+  logging_steps: 10
+  eval_steps: 250
+  eval_examples: 256
+  save_steps: 250
+  save_total_limit: 3
+  dataloader_num_workers: 2
+  report_to: none
+  loss_type: chunked_nll
+
+evaluation:
+  max_new_tokens_qa: 96
+  max_new_tokens_grounding: 96
+  qa_case_sensitive: false
+  distance_thresholds_px: [25, 50, 100]
+  failure_examples_per_bucket: 25

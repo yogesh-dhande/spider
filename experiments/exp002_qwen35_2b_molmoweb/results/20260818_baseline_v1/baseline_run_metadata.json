@@ -1,0 +1,47 @@
+{
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "adapter": null,
+  "split": "test",
+  "manifests": [
+    "/kaggle/input/notebooks/yogeshkd/spider-exp002-finalize-prepared-data/spider/data/molmoweb_30k_domain17/manifests/qa_test.jsonl",
+    "/kaggle/input/notebooks/yogeshkd/spider-exp002-finalize-prepared-data/spider/data/molmoweb_30k_domain17/manifests/grounding_test.jsonl",
+    "/kaggle/input/notebooks/yogeshkd/spider-exp002-finalize-prepared-data/spider/data/molmoweb_30k_domain17/manifests/screenspot_test.jsonl"
+  ],
+  "selection": {
+    "kind": "merged_shards",
+    "num_shards": 8,
+    "source_labels": [
+      "baseline-shard-00-of-08",
+      "baseline-shard-01-of-08",
+      "baseline-shard-02-of-08",
+      "baseline-shard-03-of-08",
+      "baseline-shard-04-of-08",
+      "baseline-shard-05-of-08",
+      "baseline-shard-06-of-08",
+      "baseline-shard-07-of-08"
+    ],
+    "source_signatures": [
+      "57b149b000037ded127903c62e1d7eb943b4856ff9599da8c1892b797ef84bfc",
+      "06fa8b3c8d3d86d9bba379538a9af8c072a91b4fbafafc3db16187e38d255b2c",
+      "c5a84bfbcea696bc4c7c90639a051dc16d00e9deb47d3fd65d9fb62a7e5dc77c",
+      "89515206a3c8e30b736808acd916010b8bbcc2d2000772f7d06bf58d831cea19",
+      "ef08208bdf7b05f725b3b471bf6e585a9a795585ae46b7dc0d5c8003f0f1202c",
+      "0007a0758e78a94ae0981e5f84543684c97e760400430c31d862025944eef828",
+      "6ffac78d3e4d6d0b74cc88aaf58ababf8dc2890105230c86476537a5ba4fffb3",
+      "8a7482631e9a8c6229c7a24279a083403703531397983dbe298aa3c99abafd2c"
+    ]
+  },
+  "signature": "8cd36840e9d1ce7e7de4a32acf210ef2216c41d95a45acb1e98e8008fb48dede",
+  "package_versions": {
+    "torch": "2.10.0+cpu",
+    "transformers": "5.15.0",
+    "trl": "1.10.0",
+    "peft": "0.20.0",
+    "accelerate": "1.14.0",
+    "bitsandbytes": "0.50.1",
+    "datasets": "5.0.1"
+  },
+  "planned_examples": 5272,
+  "completed_examples": 5272
+}

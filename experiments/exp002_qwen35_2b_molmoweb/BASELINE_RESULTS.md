@@ -6,6 +6,8 @@ non-thinking, 4-bit inference.
 
 Evaluation artifact: [Kaggle baseline merge version 2](https://www.kaggle.com/code/yogeshkd/spider-exp002-baseline-merge)
 
+Immutable compact archive: [`results/20260818_baseline_v1/`](results/20260818_baseline_v1/)
+
 ## Primary merged results
 
 | Evaluation task | Examples | Primary accuracy |

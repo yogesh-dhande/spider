@@ -1,0 +1,38 @@
+{
+  "qa": {
+    "train": {
+      "examples": 15000,
+      "domains": 264
+    },
+    "validation": {
+      "examples": 1000,
+      "domains": 26
+    },
+    "test": {
+      "examples": 2000,
+      "domains": 47
+    }
+  },
+  "grounding": {
+    "train": {
+      "examples": 15000,
+      "domains": 441
+    },
+    "validation": {
+      "examples": 1000,
+      "domains": 29
+    },
+    "test": {
+      "examples": 2000,
+      "domains": 59
+    }
+  },
+  "screenspot": {
+    "examples": 1272
+  },
+  "domain_counts": {
+    "train": 668,
+    "validation": 53,
+    "test": 98
+  }
+}

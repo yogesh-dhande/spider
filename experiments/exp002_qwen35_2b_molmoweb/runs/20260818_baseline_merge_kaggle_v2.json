@@ -65,6 +65,7 @@
     "predictions_per_source_shard": 659,
     "failure_report_assets": 136
   },
+  "archive": "experiments/exp002_qwen35_2b_molmoweb/results/20260818_baseline_v1",
   "outputs": [
     "predictions.raw.jsonl",
     "predictions.jsonl",
