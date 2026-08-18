@@ -2,7 +2,8 @@
 
 Status: Kaggle GPU compatibility smoke passed; monolithic baseline version 1 cancelled;
 prepared data validated; all eight official baseline shards complete and validated; exact-coverage
-CPU merge queued.
+CPU merge version 1 failed on an environment-specific manifest-path comparison after restoring
+all shards; corrected version 2 pending.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -92,3 +93,8 @@ affected run ID. Never silently replace a completed run's configuration or resul
   notebook path. They wrote zero predictions and are not experimental results. Version 2 searches
   the full `/kaggle/input` tree for the uniquely named prepared-data directory; this changes only
   artifact discovery. The remaining runners also disable pip's animated download progress output.
+- 2026-08-18: CPU merge version 1 restored all eight completed shards, then rejected them because
+  shard versions recorded two equivalent Kaggle mount prefixes for the same three manifests. It
+  produced no merged predictions. Version 2 compares the logical manifest filenames and still
+  enforces exact deterministic shard IDs, non-overlap, full coverage, and matching model,
+  revision, adapter, and split. This is merge plumbing only; no inference is repeated.

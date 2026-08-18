@@ -10,7 +10,7 @@ OWNER = "yogeshkd"
 REPO_REV = "11c71b0"
 PREPARED_KERNEL = "spider-exp002-finalize-prepared-data"
 NUM_SHARDS = 8
-MERGE_REPO_REV = "714b6e2"
+MERGE_REPO_REV = "371507b"
 
 
 def code_cell(source: str) -> dict[str, object]:
@@ -137,7 +137,7 @@ def render_merge_notebook() -> dict[str, object]:
                 "from spider.workflow import restore_evaluation_shards\n"
                 f"labels = {labels!r}\n"
                 "restored = restore_evaluation_shards(\n"
-                f"    ['/kaggle/input/notebooks/{OWNER}'], labels, REPO_ROOT\n"
+                "    ['/kaggle/input'], labels, REPO_ROOT\n"
                 ")\n"
                 "print({'restored_shards': [str(path) for path in restored]})\n"
             ),

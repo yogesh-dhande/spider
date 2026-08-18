@@ -1,9 +1,11 @@
 {
   "stage": "official_baseline_merge",
-  "status": "queued",
+  "status": "error",
   "launched_at_utc": "2026-08-18T03:11:13Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-baseline-merge",
   "kaggle_version": 1,
+  "finished_at_utc": "2026-08-18T03:12:27Z",
+  "elapsed_seconds": 74.8,
   "source_commit": "714b6e2",
   "runner_repository_commit": "fa7b9e6",
   "config": "configs/experiment2.yaml",
@@ -24,6 +26,13 @@
     "7": "yogeshkd/spider-exp002-baseline-shard-07/1"
   },
   "expected_predictions": 5272,
+  "completed_predictions": 0,
+  "failure": {
+    "stage": "merge_validation",
+    "exception": "ValueError: Shard metadata disagree on manifests",
+    "cause": "Kaggle changed the prepared-data mount prefix between shard versions; the manifest filenames and frozen expected IDs were unchanged.",
+    "replacement": "Version 2 canonicalizes logical manifest names while retaining exact per-shard ID, non-overlap, full-coverage, model, revision, adapter, and split checks."
+  },
   "outputs": [
     "predictions.raw.jsonl",
     "predictions.jsonl",
