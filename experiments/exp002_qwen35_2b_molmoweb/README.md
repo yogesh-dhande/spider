@@ -128,3 +128,7 @@ affected run ID. Never silently replace a completed run's configuration or resul
   state. Its final held-out language-model validation loss was 0.6321 with token accuracy 0.8309.
   Task-level ScreenshotQA and grounding comparisons require the fixed held-out validation probe;
   no official test examples were evaluated at this stage.
+- 2026-08-18: after the step-250 regression gate, task-level validation probes become on-demand
+  rather than automatic at every 250-step boundary. Training continues automatically while stage
+  loss/eval-loss health checks remain sound; the user will request the next task-metric round.
+  This reduces probe compute and repeated adaptation decisions against the same 256 examples.

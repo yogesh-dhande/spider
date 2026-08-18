@@ -32,6 +32,7 @@ def render_notebook(
     previous_kernel: str | None,
     num_processes: int,
     gradient_accumulation_steps: int,
+    run_validation_probe: bool,
 ) -> dict[str, object]:
     expected_stop_step = expected_start_step + additional_steps
     restore_source = (
@@ -120,14 +121,20 @@ def render_notebook(
                     "'adapter': str(adapter)})\n"
                 )
             ),
-            code_cell(
-                "from spider.probe import run_validation_probe\n"
-                f"probe_label = 'validation-probe-step-{expected_stop_step:04d}'\n"
-                "probe = run_validation_probe(\n"
-                "    'configs/experiment2.yaml', probe_label, str(adapter),\n"
-                f"    step={expected_stop_step}, limit_per_task=128\n"
-                ")\n"
-                "print(probe.read_text())\n"
+            *(
+                [
+                    code_cell(
+                        "from spider.probe import run_validation_probe\n"
+                        f"probe_label = 'validation-probe-step-{expected_stop_step:04d}'\n"
+                        "probe = run_validation_probe(\n"
+                        "    'configs/experiment2.yaml', probe_label, str(adapter),\n"
+                        f"    step={expected_stop_step}, limit_per_task=128\n"
+                        ")\n"
+                        "print(probe.read_text())\n"
+                    )
+                ]
+                if run_validation_probe
+                else []
             ),
         ],
         "metadata": {
@@ -174,6 +181,7 @@ def main() -> None:
     parser.add_argument("--previous-kernel", default=None)
     parser.add_argument("--num-processes", type=int, default=1)
     parser.add_argument("--gradient-accumulation-steps", type=int, default=16)
+    parser.add_argument("--run-validation-probe", action="store_true")
     parser.add_argument("--output-root", type=Path, default=Path("kaggle"))
     args = parser.parse_args()
     if (
@@ -196,6 +204,7 @@ def main() -> None:
         args.previous_kernel,
         args.num_processes,
         args.gradient_accumulation_steps,
+        args.run_validation_probe,
     )
     (output_dir / f"exp002_sft_stage_{args.stage_index:02d}.ipynb").write_text(
         json.dumps(notebook, indent=1) + "\n", encoding="utf-8"

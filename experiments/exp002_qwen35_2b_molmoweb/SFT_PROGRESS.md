@@ -1,8 +1,10 @@
 # EXP002 SFT progress
 
-Task metrics use the same fixed held-out validation probe at every checkpoint: 128 ScreenshotQA
-examples and 128 grounding examples. These development metrics guide the staged run without
-touching the frozen 5,272-example test suite or ScreenSpot until step 1,875.
+Task metrics use the same fixed held-out validation probe: 128 ScreenshotQA examples and 128
+grounding examples. Step 250 is the first post-SFT regression gate. After it passes, later task
+probes run only when requested; per-stage language-model validation loss still provides a training
+health signal. This avoids repeatedly tuning against the small probe and does not touch the frozen
+5,272-example test suite or ScreenSpot until step 1,875.
 
 | Step | Runtime (h) | Train loss | Eval loss | Eval token acc. | QA exact | QA token F1 | Ground click acc. | Ground parse rate | Median distance | Status |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
