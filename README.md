@@ -5,6 +5,10 @@ understanding and precise GUI grounding from a small, balanced slice of MolmoWeb
 It is deliberately limited to visual perception. Browser actions, trajectories, custom action
 tokens, planning, and reinforcement learning are later increments.
 
+In parallel, EXP003 begins a portable deterministic rollout and paired-ablation pipeline for the
+next browser-action increment. Its core is platform-neutral Python; Kaggle notebooks and future
+Google Cloud jobs are thin launchers of the same versioned configs and CLI.
+
 EXP001 (`Qwen3-VL-2B-Instruct`) was superseded before running. EXP002 uses the stronger,
 newer Qwen3.5-2B multimodal backbone while preserving EXP001's design history.
 
@@ -149,3 +153,12 @@ pytest -q
 
 Before paying for a full run, use `--limit 8` on evaluation and `--max-steps 2` on training to
 verify the current Kaggle image and dependency versions.
+
+Run the deterministic browser-action infrastructure ablation with:
+
+```bash
+spider-study --config configs/studies/sandbox_coordinate_bias.yaml
+```
+
+See [`docs/RESEARCH_PIPELINE.md`](docs/RESEARCH_PIPELINE.md) for the idea-to-ablation contract,
+portable artifact layout, budget tiers, and planned RL loop.

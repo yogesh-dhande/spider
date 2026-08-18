@@ -1,0 +1,67 @@
+suite:
+  id: browser_sandbox_v1
+  tasks:
+    - id: open_account
+      instruction: Open your account settings.
+      viewport: [640, 360]
+      elements:
+        - id: account
+          label: Account
+          kind: button
+          bbox: [470, 82, 570, 124]
+      steps:
+        - action: click
+          target: account
+        - action: done
+          result: account settings opened
+
+    - id: search_docs
+      instruction: Search the documentation for browser actions.
+      viewport: [640, 360]
+      elements:
+        - id: search
+          label: Search documentation
+          kind: input
+          bbox: [120, 105, 410, 148]
+        - id: submit
+          label: Search
+          kind: button
+          bbox: [430, 105, 515, 148]
+      steps:
+        - action: click
+          target: search
+        - action: type
+          text: browser actions
+        - action: click
+          target: submit
+        - action: done
+          result: search complete
+
+    - id: accept_preferences
+      instruction: Save the current privacy preferences.
+      viewport: [640, 360]
+      elements:
+        - id: save
+          label: Save preferences
+          kind: button
+          bbox: [250, 220, 405, 264]
+      steps:
+        - action: click
+          target: save
+        - action: done
+          result: preferences saved
+
+    - id: read_more
+      instruction: Scroll down and finish after reaching the next section.
+      viewport: [640, 360]
+      elements:
+        - id: article
+          label: Browser research article
+          kind: panel
+          bbox: [75, 90, 565, 280]
+      steps:
+        - action: scroll
+          direction: down
+          amount: 0.6
+        - action: done
+          result: next section reached

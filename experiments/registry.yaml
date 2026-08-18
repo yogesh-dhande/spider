@@ -25,3 +25,16 @@ experiments:
       The newer unified Qwen3.5-2B multimodal backbone can acquire materially stronger browser
       ScreenshotQA and GUI grounding from 30K balanced, domain-disjoint MolmoWeb examples using
       QLoRA.
+  - id: exp003
+    name: browser_action_rl_pipeline
+    title: Portable browser-action and RL ablation pipeline
+    status: infrastructure_smoke
+    config: configs/studies/sandbox_coordinate_bias.yaml
+    record: experiments/exp003_browser_action_rl_pipeline/README.md
+    implementation_commit: pending
+    parent: exp002
+    interpretation: infrastructure_only_no_model_claim
+    hypothesis: >-
+      A deterministic, paired, resumable rollout pipeline can shorten browser-agent architecture
+      and training ablations while preserving a direct migration path from local and Kaggle jobs
+      to Google Cloud.

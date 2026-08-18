@@ -1,0 +1,31 @@
+study:
+  id: exp003a_coordinate_bias
+  run_id: smoke_v1
+  suite_path: ../sandbox_tasks.yaml
+  output_dir: outputs/studies
+  control_variant: centered
+  seed: 17
+  repeats: 3
+  max_steps: 6
+  bootstrap_samples: 2000
+
+  base:
+    environment:
+      type: deterministic_browser
+    policy:
+      type: oracle
+      id: oracle
+      coordinate_bias_px: [0, 0]
+      malformed_every: 0
+
+  variants:
+    - id: centered
+      overlay:
+        policy:
+          id: oracle_centered
+
+    - id: x_offset_120px
+      overlay:
+        policy:
+          id: oracle_x_offset_120px
+          coordinate_bias_px: [120, 0]
