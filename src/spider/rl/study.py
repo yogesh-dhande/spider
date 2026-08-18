@@ -275,27 +275,31 @@ def run_study(
         episode_path = run_root / "variants" / variant_id / "episodes.jsonl"
         existing = load_jsonl(episode_path)
         completed = {str(row["episode_id"]) for row in existing}
-        for task in tasks:
-            for repeat in range(repeats):
-                episode_seed = seed + repeat
-                episode_id = hashlib.sha256(
-                    f"{variant_id}\0{task.task_id}\0{episode_seed}".encode()
-                ).hexdigest()[:20]
-                if episode_id in completed:
-                    continue
-                episode = run_episode(
-                    variant_id=variant_id,
-                    task=task,
-                    seed=episode_seed,
-                    environment=make_environment(environment_config),
-                    policy=policy,
-                    reward_composer=reward_composer,
-                    artifact_store=artifact_store,
-                    max_steps=max_steps,
-                )
-                append_jsonl(episode_path, episode)
-                existing.append(episode)
-                completed.add(episode_id)
+        environment = make_environment(environment_config)
+        try:
+            for task in tasks:
+                for repeat in range(repeats):
+                    episode_seed = seed + repeat
+                    episode_id = hashlib.sha256(
+                        f"{variant_id}\0{task.task_id}\0{episode_seed}".encode()
+                    ).hexdigest()[:20]
+                    if episode_id in completed:
+                        continue
+                    episode = run_episode(
+                        variant_id=variant_id,
+                        task=task,
+                        seed=episode_seed,
+                        environment=environment,
+                        policy=policy,
+                        reward_composer=reward_composer,
+                        artifact_store=artifact_store,
+                        max_steps=max_steps,
+                    )
+                    append_jsonl(episode_path, episode)
+                    existing.append(episode)
+                    completed.add(episode_id)
+        finally:
+            environment.close()
         rows_by_variant[variant_id] = existing
 
     bootstrap_samples = int(study.get("bootstrap_samples", 2000))

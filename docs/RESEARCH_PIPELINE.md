@@ -88,6 +88,21 @@ docker run --rm \
 The mounted output directory is the only platform-specific part. A Google Cloud job will mount or
 upload the same artifact tree to GCS and invoke the same entrypoint.
 
+The real-browser integration image pins Playwright and its Chromium runtime to the same version:
+
+```bash
+docker build \
+  --build-arg SPIDER_SOURCE_COMMIT="$(git rev-parse HEAD)" \
+  -f containers/browser.Dockerfile \
+  -t spider-browser-study:dev .
+docker run --rm --init --ipc=host \
+  -v "$PWD/outputs/browser-container:/artifacts" \
+  spider-browser-study:dev \
+  --config configs/studies/playwright_coordinate_bias.yaml \
+  --run-id container-smoke \
+  --output-dir /artifacts
+```
+
 The oracle is only an infrastructure probe. The next adapter will call the frozen Qwen policy using
 the same observation and action contract. BrowserGym/Playwright environments and model training
 algorithms will be added behind their respective interfaces after the deterministic loop is proven.

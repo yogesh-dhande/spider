@@ -1,0 +1,41 @@
+study:
+  id: exp003a_playwright_coordinate_bias
+  run_id: smoke_v1
+  suite_path: ../sandbox_tasks.yaml
+  output_dir: outputs/studies
+  control_variant: centered
+  seed: 17
+  repeats: 1
+  max_steps: 6
+  bootstrap_samples: 2000
+
+  base:
+    environment:
+      type: playwright_sandbox
+      headless: true
+    reward:
+      type: weighted_signals
+      id: default_browser_reward
+      weights:
+        action_validity: 0.05
+        progress: 0.2
+        task_success: 1.0
+        action_error: -0.1
+        parse_error: -0.1
+    policy:
+      type: oracle
+      id: oracle
+      coordinate_bias_px: [0, 0]
+      malformed_every: 0
+
+  variants:
+    - id: centered
+      overlay:
+        policy:
+          id: oracle_centered
+
+    - id: x_offset_120px
+      overlay:
+        policy:
+          id: oracle_x_offset_120px
+          coordinate_bias_px: [120, 0]

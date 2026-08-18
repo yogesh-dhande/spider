@@ -70,6 +70,8 @@ class BrowserEnvironment(Protocol):
 
     def step(self, action: BrowserAction) -> Transition: ...
 
+    def close(self) -> None: ...
+
 
 class PolicyAdapter(Protocol):
     policy_id: str

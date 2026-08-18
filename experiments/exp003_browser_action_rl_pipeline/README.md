@@ -44,6 +44,10 @@ Design details: [`RESEARCH_PIPELINE.md`](../../docs/RESEARCH_PIPELINE.md)
 
 ## Next implementation increment
 
-Add a Qwen policy adapter and a BrowserGym/Playwright environment adapter behind the proven
-interfaces. Run a small frozen-checkpoint action baseline before any trajectory fine-tuning, then
-train a balanced MolmoWeb trajectory pilot with perception replay.
+The pinned Playwright/Chromium adapter now exercises the same rollout contract against real browser
+mouse, keyboard, scroll, DOM-state verification, and screenshot operations inside a portable
+container. Browser instances are reused within each variant and closed deterministically.
+
+Next, add the Qwen policy adapter and BrowserGym task adapter behind the proven interfaces. Run a
+small frozen-checkpoint action baseline before any trajectory fine-tuning, then train a balanced
+MolmoWeb trajectory pilot with perception replay.

@@ -223,9 +223,21 @@ class DeterministicBrowserEnvironment:
             error=error,
         )
 
+    def close(self) -> None:
+        return None
 
-def make_environment(config: dict[str, object]) -> DeterministicBrowserEnvironment:
+
+def make_environment(config: dict[str, object]):
     environment_type = config.get("type")
-    if environment_type != "deterministic_browser":
-        raise ValueError(f"Unsupported environment type: {environment_type!r}")
-    return DeterministicBrowserEnvironment()
+    if environment_type == "deterministic_browser":
+        return DeterministicBrowserEnvironment()
+    if environment_type == "playwright_sandbox":
+        from spider.rl.playwright_sandbox import PlaywrightBrowserEnvironment
+
+        return PlaywrightBrowserEnvironment(
+            headless=bool(config.get("headless", True)),
+            browser_channel=(
+                str(config["browser_channel"]) if config.get("browser_channel") else None
+            ),
+        )
+    raise ValueError(f"Unsupported environment type: {environment_type!r}")
