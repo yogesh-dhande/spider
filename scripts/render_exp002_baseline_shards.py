@@ -10,6 +10,7 @@ OWNER = "yogeshkd"
 REPO_REV = "11c71b0"
 PREPARED_KERNEL = "spider-exp002-finalize-prepared-data"
 NUM_SHARDS = 8
+MERGE_REPO_REV = "9b7eedd"
 
 
 def code_cell(source: str) -> dict[str, object]:
@@ -103,11 +104,91 @@ def render_metadata(shard_index: int) -> dict[str, object]:
     }
 
 
+def render_merge_notebook() -> dict[str, object]:
+    labels = [f"baseline-shard-{index:02d}-of-{NUM_SHARDS:02d}" for index in range(NUM_SHARDS)]
+    return {
+        "cells": [
+            markdown_cell("# EXP002 untouched Qwen3.5-2B baseline — merge and validate\n"),
+            code_cell(
+                "import os, subprocess, sys\n"
+                "from pathlib import Path\n"
+                f"REPO_REV = {MERGE_REPO_REV!r}\n"
+                "REPO_ROOT = Path('/kaggle/working/spider')\n"
+                "subprocess.run(['git', 'clone', "
+                "'https://github.com/yogesh-dhande/spider.git', str(REPO_ROOT)], check=True)\n"
+                "subprocess.run(['git', '-C', str(REPO_ROOT), 'checkout', REPO_REV], check=True)\n"
+                "os.chdir(REPO_ROOT)\n"
+                "sys.path.insert(0, str(REPO_ROOT / 'src'))\n"
+            ),
+            code_cell("%pip install -q -r requirements/experiment2-kaggle.txt\n"),
+            code_cell(
+                "from spider.workflow import find_prepared_data\n"
+                "prepared = find_prepared_data(\n"
+                f"    '/kaggle/input/notebooks/{OWNER}/{PREPARED_KERNEL}'\n"
+                ")\n"
+                "os.environ['SPIDER_DATA_DIR'] = str(prepared)\n"
+                "print({'prepared_data': str(prepared)})\n"
+            ),
+            code_cell(
+                "from spider.workflow import restore_evaluation_shards\n"
+                f"labels = {labels!r}\n"
+                "restored = restore_evaluation_shards(\n"
+                f"    ['/kaggle/input/notebooks/{OWNER}'], labels, REPO_ROOT\n"
+                ")\n"
+                "print({'restored_shards': [str(path) for path in restored]})\n"
+            ),
+            code_cell(
+                "from spider.merge import merge_evaluation_shards\n"
+                "predictions_path, metrics = merge_evaluation_shards(\n"
+                "    'configs/experiment2.yaml', 'baseline', labels,\n"
+                "    ['molmoweb', 'screenspot'], 'test'\n"
+                ")\n"
+                "completed = sum(1 for _ in predictions_path.open(encoding='utf-8'))\n"
+                "assert completed == 5272, completed\n"
+                "print({'event': 'baseline_merge_complete', 'completed': completed})\n"
+                "metrics\n"
+            ),
+        ],
+        "metadata": {
+            "kernelspec": {
+                "display_name": "Python 3",
+                "language": "python",
+                "name": "python3",
+            },
+            "language_info": {"name": "python", "version": "3.12"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+
+
+def render_merge_metadata() -> dict[str, object]:
+    shard_sources = [
+        f"{OWNER}/spider-exp002-baseline-shard-{index:02d}" for index in range(NUM_SHARDS)
+    ]
+    return {
+        "id": f"{OWNER}/spider-exp002-baseline-merge",
+        "title": "Spider EXP002 Baseline Merge",
+        "code_file": "exp002_baseline_merge.ipynb",
+        "language": "python",
+        "kernel_type": "notebook",
+        "is_private": "true",
+        "enable_gpu": "false",
+        "enable_tpu": "false",
+        "enable_internet": "true",
+        "dataset_sources": [],
+        "competition_sources": [],
+        "kernel_sources": [f"{OWNER}/{PREPARED_KERNEL}", *shard_sources],
+        "model_sources": [],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-root", type=Path, default=Path("kaggle"))
     parser.add_argument("--first-shard", type=int, default=1)
     parser.add_argument("--last-shard", type=int, default=7)
+    parser.add_argument("--include-merge", action="store_true")
     args = parser.parse_args()
     if not 0 <= args.first_shard <= args.last_shard < NUM_SHARDS:
         parser.error(f"shards must be within 0..{NUM_SHARDS - 1}")
@@ -123,6 +204,17 @@ def main() -> None:
             json.dumps(render_metadata(shard_index), indent=2) + "\n", encoding="utf-8"
         )
         print(json.dumps({"event": "rendered", "shard": shard_index, "path": str(output_dir)}))
+
+    if args.include_merge:
+        output_dir = args.output_root / "exp002_baseline_merge"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "exp002_baseline_merge.ipynb").write_text(
+            json.dumps(render_merge_notebook(), indent=1) + "\n", encoding="utf-8"
+        )
+        (output_dir / "kernel-metadata.json").write_text(
+            json.dumps(render_merge_metadata(), indent=2) + "\n", encoding="utf-8"
+        )
+        print(json.dumps({"event": "rendered", "stage": "merge", "path": str(output_dir)}))
 
 
 if __name__ == "__main__":

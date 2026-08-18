@@ -1,0 +1,25 @@
+{
+  "id": "yogeshkd/spider-exp002-baseline-merge",
+  "title": "Spider EXP002 Baseline Merge",
+  "code_file": "exp002_baseline_merge.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "yogeshkd/spider-exp002-finalize-prepared-data",
+    "yogeshkd/spider-exp002-baseline-shard-00",
+    "yogeshkd/spider-exp002-baseline-shard-01",
+    "yogeshkd/spider-exp002-baseline-shard-02",
+    "yogeshkd/spider-exp002-baseline-shard-03",
+    "yogeshkd/spider-exp002-baseline-shard-04",
+    "yogeshkd/spider-exp002-baseline-shard-05",
+    "yogeshkd/spider-exp002-baseline-shard-06",
+    "yogeshkd/spider-exp002-baseline-shard-07"
+  ],
+  "model_sources": []
+}
