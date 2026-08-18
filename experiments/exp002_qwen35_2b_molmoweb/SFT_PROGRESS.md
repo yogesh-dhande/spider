@@ -15,7 +15,7 @@ selected checkpoint.
 | 750 | 1.950 | 0.1780 | 0.5966 | 0.8331 | — | — | — | — | — | checkpoint validated; task probe deferred |
 | 1000 | 1.754 | 0.1330 | 0.5897 | 0.8373 | 0.3672 | 0.6874 | 0.5156 | 1.0000 | 28.8 px | corrected regression gate passed |
 | 1250 | 1.854 | 0.0962 | 0.5637 | 0.8396 | 0.3750 | 0.7000 | 0.5781 | 1.0000 | 23.9 px | regression gate passed |
-| 1500 | running | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-5 regression gate |
+| 1500 | 1.741 | 0.0760 | 0.5701 | 0.8427 | 0.3750 | 0.7059 | 0.5469 | 1.0000 | 32.3 px | mixed plateau; gate passed |
 | 1750 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | stage-6 regression gate |
 | 1875 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | final validation probe |
 
@@ -56,3 +56,10 @@ automatic continuation now pauses for the fixed task probe after every remaining
 At step 1,250, QA exact increased another 0.78 percentage points, token F1 increased 1.26
 points, and grounding click accuracy increased 6.25 points relative to step 1,000. Median click
 distance fell by 4.9 pixels. The checkpoint passed the regression gate and stage 5 began.
+
+At step 1,500, QA exact was unchanged and token F1 increased 0.59 percentage points relative to
+step 1,250. Grounding click accuracy decreased 3.13 points and median distance increased 8.4
+pixels on the 128-example probe. This is a mixed plateau signal rather than a broad regression:
+all metrics remain substantially above the step-250 gate anchor, parse rate remains perfect, and
+the probe is small. Stage 6 therefore continues as planned, while step 1,250 remains the best
+grounding checkpoint observed so far and all checkpoints remain eligible for final selection.

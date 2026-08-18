@@ -1,12 +1,11 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
 Status: pre-SFT baseline complete, independently validated, and immutably archived. Two-T4 QLoRA
-stages have produced validated resumable checkpoints through step 1,000 with steadily improving
-held-out language-model loss. The first step-1,000 task probe exposed an evaluation stop-token
-mismatch: training supervised Qwen3.5's chat end token, but generation did not stop on it. A saved-
-output diagnostic recovers QA above step 250, so no training regression is established. Stage 4 is
-paused until the corrected step-1,000 probe confirms the official task metrics. The frozen test
-sets remain untouched until the final SFT checkpoint.
+stages have produced validated resumable checkpoints through step 1,500, and stage 6 is running
+toward step 1,750. Corrected fixed validation probes run after every remaining stage. Step 1,500
+shows a mixed plateau signal: QA token F1 improved slightly while grounding dipped relative to
+step 1,250, which remains the best grounding checkpoint so far. The frozen test sets remain
+untouched until final checkpoint selection.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -158,3 +157,9 @@ affected run ID. Never silently replace a completed run's configuration or resul
   continues to fall faster than validation loss, task probes will run after every remaining stage
   at steps 1,250, 1,500, 1,750, and 1,875. Each probe gates the next stage; the frozen test set is
   still evaluated only once on the final selected checkpoint.
+- 2026-08-18: stage 5 completed through step 1,500. QA exact held at 0.3750 and token F1 improved
+  from 0.7000 to 0.7059, while grounding click accuracy declined from 0.5781 to 0.5469 and median
+  distance rose from 23.9 to 32.3 pixels on the 128-example grounding probe. The checkpoint still
+  passed the predeclared step-250 regression anchor, and the mixed movement on a small probe does
+  not establish broad regression. Stage 6 continues; final checkpoint selection will retain step
+  1,250 as a candidate rather than assuming the last checkpoint is best.
