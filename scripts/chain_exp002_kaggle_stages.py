@@ -24,6 +24,13 @@ STAGE_BOUNDS = {
     6: (1500, 1750),
     7: (1750, 1875),
 }
+PROBE_LOWER_IS_BETTER = {"grounding_median_pixel_distance": 25.0}
+PROBE_HIGHER_IS_BETTER = {
+    "qa_answer_accuracy": 0.03,
+    "qa_mean_token_f1": 0.03,
+    "grounding_click_accuracy": 0.03,
+    "grounding_parse_rate": 0.03,
+}
 
 
 def emit(event: str, **fields: Any) -> None:
@@ -50,8 +57,12 @@ def kernel_slug(stage: int) -> str:
     return f"{OWNER}/spider-exp002-sft-stage-{stage:02d}"
 
 
-def kernel_status(stage: int) -> str:
-    output = run(["kaggle", "kernels", "status", kernel_slug(stage)])
+def probe_kernel_slug(step: int) -> str:
+    return f"{OWNER}/spider-exp002-validation-probe-step-{step:04d}"
+
+
+def kernel_status(slug: str) -> str:
+    output = run(["kaggle", "kernels", "status", slug])
     match = re.search(r'KernelWorkerStatus\.([A-Z_]+)', output)
     if match is None:
         raise RuntimeError(f"Could not parse Kaggle status: {output}")
@@ -62,10 +73,25 @@ def wait_for_terminal(stage: int, poll_seconds: int, heartbeat_seconds: int) -> 
     last_status: str | None = None
     last_heartbeat = 0.0
     while True:
-        status = kernel_status(stage)
+        status = kernel_status(kernel_slug(stage))
         now = time.monotonic()
         if status != last_status or now - last_heartbeat >= heartbeat_seconds:
             emit("kaggle_stage_status", stage=stage, status=status)
+            last_status = status
+            last_heartbeat = now
+        if status not in {"QUEUED", "RUNNING"}:
+            return status
+        time.sleep(poll_seconds)
+
+
+def wait_for_probe_terminal(step: int, poll_seconds: int, heartbeat_seconds: int) -> str:
+    last_status: str | None = None
+    last_heartbeat = 0.0
+    while True:
+        status = kernel_status(probe_kernel_slug(step))
+        now = time.monotonic()
+        if status != last_status or now - last_heartbeat >= heartbeat_seconds:
+            emit("kaggle_probe_status", step=step, status=status)
             last_status = status
             last_heartbeat = now
         if status not in {"QUEUED", "RUNNING"}:
@@ -169,6 +195,75 @@ def launch(stage: int, repository_root: Path) -> None:
     emit("kaggle_stage_launched", stage=stage, output=output)
 
 
+def launch_probe(step: int, repository_root: Path) -> None:
+    output = run(
+        [
+            "kaggle",
+            "kernels",
+            "push",
+            "--path",
+            f"kaggle/exp002_validation_probe_step_{step:04d}",
+        ],
+        cwd=repository_root,
+    )
+    emit("kaggle_probe_launched", step=step, output=output)
+
+
+def download_probe_metrics(step: int, version: int = 1) -> dict[str, float]:
+    label = f"validation-probe-step-{step:04d}"
+    with tempfile.TemporaryDirectory(prefix=f"spider-exp002-probe-{step:04d}-") as directory:
+        run(
+            [
+                "kaggle",
+                "kernels",
+                "output",
+                f"{probe_kernel_slug(step)}/{version}",
+                "--path",
+                directory,
+                "--file-pattern",
+                rf"probes/{label}\.json",
+                "--page-size",
+                "200",
+                "--quiet",
+            ]
+        )
+        summaries = list(Path(directory).rglob(f"{label}.json"))
+        if len(summaries) != 1:
+            raise RuntimeError(f"Expected one step-{step} probe summary, found {summaries}")
+        summary = json.loads(summaries[0].read_text(encoding="utf-8"))
+    if summary.get("step") != step or summary.get("completed_predictions") != 256:
+        raise RuntimeError(f"Invalid step-{step} probe summary: {summary}")
+    metrics = {key: float(value) for key, value in summary["primary_metrics"].items()}
+    if not all(math.isfinite(value) for value in metrics.values()):
+        raise RuntimeError(f"Step-{step} probe has non-finite metrics: {metrics}")
+    return metrics
+
+
+def probe_regressions(
+    anchor: dict[str, float], candidate: dict[str, float]
+) -> dict[str, dict[str, float]]:
+    regressions: dict[str, dict[str, float]] = {}
+    for metric, tolerance in PROBE_HIGHER_IS_BETTER.items():
+        delta = candidate[metric] - anchor[metric]
+        if delta < -tolerance:
+            regressions[metric] = {"anchor": anchor[metric], "candidate": candidate[metric]}
+    for metric, tolerance in PROBE_LOWER_IS_BETTER.items():
+        delta = candidate[metric] - anchor[metric]
+        if delta > tolerance:
+            regressions[metric] = {"anchor": anchor[metric], "candidate": candidate[metric]}
+    return regressions
+
+
+def load_probe_anchor(repository_root: Path) -> dict[str, float]:
+    record = (
+        repository_root
+        / "experiments/exp002_qwen35_2b_molmoweb/runs/"
+        "20260818_validation_probe_step_0250_kaggle_v1.json"
+    )
+    payload = json.loads(record.read_text(encoding="utf-8"))
+    return {key: float(value) for key, value in payload["primary_metrics"].items()}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--start-stage", type=int, default=1)
@@ -181,6 +276,7 @@ def main() -> None:
     )
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--heartbeat-seconds", type=int, default=900)
+    parser.add_argument("--probe-after-stages", type=int, nargs="*", default=[])
     parser.add_argument("--repository-root", type=Path, default=Path.cwd())
     args = parser.parse_args()
     if args.start_stage not in STAGE_BOUNDS or args.end_stage not in STAGE_BOUNDS:
@@ -189,7 +285,12 @@ def main() -> None:
         parser.error("start stage must not exceed end stage")
     if args.poll_seconds <= 0 or args.heartbeat_seconds <= 0:
         parser.error("poll and heartbeat intervals must be positive")
+    invalid_probe_stages = set(args.probe_after_stages) - set(STAGE_BOUNDS)
+    if invalid_probe_stages:
+        parser.error(f"invalid probe stages: {sorted(invalid_probe_stages)}")
 
+    repository_root = args.repository_root.resolve()
+    probe_anchor = load_probe_anchor(repository_root)
     for stage in range(args.start_stage, args.end_stage + 1):
         terminal = wait_for_terminal(stage, args.poll_seconds, args.heartbeat_seconds)
         if terminal != "COMPLETE":
@@ -197,8 +298,27 @@ def main() -> None:
         version = args.first_stage_version if stage == args.start_stage else 1
         summary = download_and_validate(stage, version)
         emit("kaggle_stage_validated", **summary)
+        if stage in args.probe_after_stages:
+            step = STAGE_BOUNDS[stage][1]
+            launch_probe(step, repository_root)
+            probe_terminal = wait_for_probe_terminal(
+                step, args.poll_seconds, args.heartbeat_seconds
+            )
+            if probe_terminal != "COMPLETE":
+                raise RuntimeError(f"Step-{step} probe terminated with {probe_terminal}")
+            metrics = download_probe_metrics(step)
+            regressions = probe_regressions(probe_anchor, metrics)
+            emit(
+                "kaggle_probe_validated",
+                step=step,
+                metrics=metrics,
+                anchor_step=250,
+                regressions=regressions,
+            )
+            if regressions and stage < args.end_stage:
+                raise RuntimeError(f"Step-{step} regression gate failed: {regressions}")
         if stage < args.end_stage:
-            launch(stage + 1, args.repository_root.resolve())
+            launch(stage + 1, repository_root)
     emit("kaggle_stage_chain_complete", final_step=STAGE_BOUNDS[args.end_stage][1])
 
 

@@ -11,6 +11,7 @@ SPEC = spec_from_file_location("chain_exp002_kaggle_stages", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+probe_regressions = MODULE.probe_regressions
 validate_download = MODULE.validate_download
 
 
@@ -63,3 +64,24 @@ def test_validate_download_rejects_wrong_start(tmp_path: Path) -> None:
     state_path.write_text(json.dumps(state), encoding="utf-8")
     with pytest.raises(RuntimeError, match="start_step"):
         validate_download(tmp_path, 1)
+
+
+def test_probe_regressions_uses_task_tolerances() -> None:
+    anchor = {
+        "qa_answer_accuracy": 0.36,
+        "qa_mean_token_f1": 0.64,
+        "grounding_click_accuracy": 0.47,
+        "grounding_parse_rate": 1.0,
+        "grounding_median_pixel_distance": 39.0,
+    }
+    within_tolerance = {**anchor, "qa_answer_accuracy": 0.34}
+    assert probe_regressions(anchor, within_tolerance) == {}
+    regressed = {
+        **anchor,
+        "grounding_click_accuracy": 0.40,
+        "grounding_median_pixel_distance": 70.0,
+    }
+    assert set(probe_regressions(anchor, regressed)) == {
+        "grounding_click_accuracy",
+        "grounding_median_pixel_distance",
+    }

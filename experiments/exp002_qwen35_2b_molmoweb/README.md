@@ -5,8 +5,9 @@ compatibility passed and official timeout-safe stage 0 version 2 (steps 0–250)
 validated resumable checkpoint. The cross-kernel two-GPU resume gate and step-250 task regression
 gate passed. Stage 1 version 1 failed before its first new step in a known multi-GPU paged-optimizer
 resume path; a full step-250 non-paged AdamW8bit resume gate then passed and stage 1 is ready to
-retry. Stage 1 version 2 is queued with that configuration. The frozen test sets remain untouched
-until the final SFT checkpoint.
+retry. Stages 1 and 2 completed with validated checkpoints through step 750; stage 3 is running and
+will be followed by the scheduled step-1,000 regression probe. The frozen test sets remain
+untouched until the final SFT checkpoint.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
@@ -140,3 +141,8 @@ affected run ID. Never silently replace a completed run's configuration or resul
   resume under multi-GPU training. It produced no scientific output and is not resumable. Future
   stages use non-paged `adamw_8bit`, which preserves the AdamW8bit algorithm and saved state while
   changing only state allocation; a one-step resume from the full checkpoint must pass first.
+- 2026-08-18: fixed 256-example task probes are scheduled after stage 3 (step 1,000) and stage 7
+  (step 1,875). The step-1,000 probe is a regression gate before stage 4 launches. A drop greater
+  than three percentage points in QA exact, QA token F1, grounding click accuracy, or parse rate,
+  or a median grounding-distance increase greater than 25 pixels relative to step 250, pauses the
+  chain for review. The step-1,875 probe runs before the one-time final test evaluation.

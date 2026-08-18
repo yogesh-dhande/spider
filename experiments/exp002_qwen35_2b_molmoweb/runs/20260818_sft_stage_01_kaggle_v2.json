@@ -1,6 +1,6 @@
 {
   "stage": "official_sft_stage_01",
-  "status": "queued",
+  "status": "complete",
   "launched_at_utc": "2026-08-18T07:38:32Z",
   "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-01",
   "kaggle_version": 2,
@@ -23,6 +23,15 @@
   "expected_completed_step": 500,
   "planned_epoch_steps": 1875,
   "automatic_task_validation_probe": false,
+  "completed_at_utc": "2026-08-18T09:35:04Z",
+  "validated_at_utc": "2026-08-18T09:35:51Z",
+  "stage_runtime_seconds": 6843.363532992,
+  "training_metrics": {
+    "train_loss": 0.285349214553833,
+    "eval_loss": 0.6047827005386353,
+    "eval_mean_token_accuracy": 0.8307757610455155
+  },
+  "validated_checkpoint": "outputs/experiment2/adapter/checkpoint-500",
   "acceptance_requires": [
     "adapter/checkpoint-500/trainer_state.json",
     "training_state start_step 250 and completed_step 500",

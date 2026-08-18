@@ -1,0 +1,31 @@
+{
+  "stage": "official_sft_stage_02",
+  "status": "complete",
+  "launched_at_utc": "2026-08-18T09:35:54Z",
+  "running_observed_at_utc": "2026-08-18T09:39:57Z",
+  "completed_at_utc": "2026-08-18T11:39:04Z",
+  "validated_at_utc": "2026-08-18T11:39:42Z",
+  "kaggle_kernel": "yogeshkd/spider-exp002-sft-stage-02",
+  "kaggle_version": 1,
+  "source_commit": "0b93844",
+  "runner_repository_commit": "5ba7c2f",
+  "config_sha256": "ba550b0d5686e015abb98108a862d0a613c3ddf24e99d5a36025c946f0e7be33",
+  "runner_sha256": "1cc9ce67bfc6dc927338cc519d980e003a7bb732385f5e3b2d864158c21e55dd",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "resume_source": "yogeshkd/spider-exp002-sft-stage-01/2",
+  "num_processes": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_batch_size": 16,
+  "optimizer": "adamw_8bit",
+  "start_step": 500,
+  "completed_step": 750,
+  "planned_epoch_steps": 1875,
+  "stage_runtime_seconds": 7018.709657413,
+  "training_metrics": {
+    "train_loss": 0.17800696245829264,
+    "eval_loss": 0.5966124534606934,
+    "eval_mean_token_accuracy": 0.8330797888338566
+  },
+  "validated_checkpoint": "outputs/experiment2/adapter/checkpoint-750",
+  "automatic_task_validation_probe": false
+}
