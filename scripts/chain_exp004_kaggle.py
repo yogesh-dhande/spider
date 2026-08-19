@@ -250,6 +250,18 @@ def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) 
     require_complete(wait_jobs([BASELINE_MERGE], poll_seconds, heartbeat_seconds))
     baselines = validate_baselines()
     write_artifact(repository_root, Path("action_baseline/metrics.json"), baselines)
+    for label in ("action-base", "action-exp002"):
+        shard_metrics = download_json(
+            BASELINE_MERGE,
+            1,
+            rf"{label}/shard_metrics\.json",
+            "shard_metrics.json",
+        )
+        write_artifact(
+            repository_root,
+            Path("action_baseline") / f"{label}-shard-metrics.json",
+            shard_metrics,
+        )
     emit("exp004_baseline_validated", metrics=baselines)
 
     launch(COMPATIBILITY, repository_root)
