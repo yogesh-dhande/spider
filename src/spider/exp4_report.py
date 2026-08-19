@@ -183,8 +183,18 @@ def build_exp4_report(artifact_root: Path) -> str:
                 f"Preregistered positive-result gate: **{'PASS' if final['positive_result'] else 'FAIL'}**.",
             ]
         )
+        action_baseline_shards = artifact_root / "final_test/final-action-exp002-shard-metrics.json"
         action_shards = artifact_root / "final_test/final-action-shard-metrics.json"
         perception_shards = artifact_root / "final_test/final-perception-shard-metrics.json"
+        if action_baseline_shards.is_file():
+            lines.extend(
+                [
+                    "",
+                    "### Matched EXP002-parent action shard diagnostics",
+                    "",
+                    *_action_shard_table(_load(action_baseline_shards)),
+                ]
+            )
         if action_shards.is_file():
             lines.extend(
                 [
@@ -211,14 +221,15 @@ def build_exp4_report(artifact_root: Path) -> str:
                 "",
                 "## Deterministic closed loop",
                 "",
-                "| Variant | Episodes | Success rate | Mean reward | Parse error rate |",
-                "|---|---:|---:|---:|---:|",
+                "| Variant | Episodes | Success rate | Mean reward | Mean steps | Parse error rate |",
+                "|---|---:|---:|---:|---:|---:|",
             ]
         )
         for variant, metrics in summary["variants"].items():
             lines.append(
                 f"| {variant} | {metrics['episodes']} | {_pct(metrics['success_rate'])} | "
-                f"{metrics['mean_reward']:.4f} | {_pct(metrics['parse_error_rate'])} |"
+                f"{metrics['mean_reward']:.4f} | {metrics['mean_steps']:.2f} | "
+                f"{_pct(metrics['parse_error_rate'])} |"
             )
         comparisons = summary.get("comparisons", {})
         if comparisons:
