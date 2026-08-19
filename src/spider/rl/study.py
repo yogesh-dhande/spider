@@ -307,6 +307,9 @@ def run_study(
                     completed.add(episode_id)
         finally:
             environment.close()
+            close_policy = getattr(policy, "close", None)
+            if callable(close_policy):
+                close_policy()
         rows_by_variant[variant_id] = existing
 
     bootstrap_samples = int(study.get("bootstrap_samples", 2000))

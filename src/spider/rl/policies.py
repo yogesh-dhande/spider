@@ -24,17 +24,19 @@ class QwenActionPolicy:
         self.model, self.processor = load_model(self.config["experiment"], adapter)
         self.task: PolicyTask | None = None
         self.history: list[dict[str, object]] = []
+        self.last_raw_output: str | None = None
 
     def start_episode(self, task: PolicyTask, seed: int) -> None:
         del seed
         self.task = task
         self.history = []
+        self.last_raw_output = None
 
     def predict(self, observation: Observation) -> str:
         from PIL import Image
 
         from spider.prompts import action_prompt, inference_messages
-        from spider.web_actions import parse_action_response, to_rollout_action
+        from spider.web_actions import WebActionError, parse_action_response, to_rollout_action
 
         if self.task is None:
             raise RuntimeError("Qwen policy must start an episode before prediction")
@@ -74,7 +76,14 @@ class QwenActionPolicy:
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )[0].strip()
-        parsed = parse_action_response(raw)
+        self.last_raw_output = raw
+        try:
+            parsed = parse_action_response(raw)
+            action = to_rollout_action(parsed)
+        except WebActionError:
+            # Let the rollout runner record a parse error and the exact model response instead of
+            # aborting the complete study.
+            return raw
         self.history.append(
             {
                 "index": observation.step_index,
@@ -82,8 +91,18 @@ class QwenActionPolicy:
                 "action": parsed["action"],
             }
         )
-        action = to_rollout_action(parsed)
         return json.dumps(action.to_dict(), sort_keys=True, separators=(",", ":"))
+
+    def close(self) -> None:
+        import gc
+
+        import torch
+
+        self.model = None
+        self.processor = None
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 
 class OraclePolicy:
@@ -237,9 +256,10 @@ def make_policy(config: dict[str, object], tasks: Sequence[TaskSpec]):
         )
     if policy_type == "qwen":
         adapter_env = str(config.get("adapter_env", "SPIDER_POLICY_ADAPTER"))
+        adapter = os.environ.get(adapter_env) or config.get("adapter_path")
         return QwenActionPolicy(
             policy_id=policy_id,
             config_path=str(config.get("config_path", "configs/experiment4.yaml")),
-            adapter=os.environ.get(adapter_env),
+            adapter=str(adapter) if adapter else None,
         )
     raise ValueError(f"Unsupported policy type: {policy_type!r}")

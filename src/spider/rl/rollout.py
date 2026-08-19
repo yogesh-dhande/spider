@@ -101,6 +101,7 @@ def run_episode(
                 "step_index": index,
                 "observation": before,
                 "raw_policy_output": raw_output,
+                "model_policy_output": getattr(policy, "last_raw_output", None),
                 "action": parsed_action,
                 "parse_error": parse_error,
                 "environment_error": environment_error,
