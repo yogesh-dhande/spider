@@ -26,6 +26,70 @@ def _find_data_dirs(root: str | Path, name: str) -> list[Path]:
     return sorted(set(matches))
 
 
+def find_exp4_data(search_root: str | Path) -> Path:
+    matches = _find_data_dirs(search_root, EXP4_DATA_NAME)
+    complete = [path for path in matches if (path / "manifests/action_validation.jsonl").is_file()]
+    if len(complete) != 1:
+        raise FileNotFoundError(f"Expected one complete {EXP4_DATA_NAME}, found {complete}")
+    return complete[0]
+
+
+def find_exp2_initial_adapter(search_root: str | Path, step: int = 1875) -> Path:
+    root = Path(search_root)
+    matches = [
+        path
+        for path in root.rglob(f"checkpoint-{step}")
+        if path.is_dir()
+        and (path / "adapter_config.json").is_file()
+        and "experiment2" in path.parts
+    ]
+    matches = sorted(set(matches))
+    if len(matches) != 1:
+        raise FileNotFoundError(f"Expected one EXP002 checkpoint-{step}, found {matches}")
+    return matches[0]
+
+
+def restore_action_evaluation_shards(
+    search_root: str | Path, labels: list[str], repository_root: str | Path
+) -> list[Path]:
+    root = Path(search_root)
+    target_root = Path(repository_root) / "outputs/experiment4/action_evaluation"
+    restored = []
+    for label in labels:
+        matches = [
+            path
+            for path in root.rglob(label)
+            if path.is_dir() and (path / "predictions.raw.jsonl").is_file()
+        ]
+        matches = sorted(set(matches))
+        if len(matches) != 1:
+            raise FileNotFoundError(f"Expected one action shard {label}, found {matches}")
+        target = target_root / label
+        shutil.copytree(matches[0], target, dirs_exist_ok=False)
+        restored.append(target)
+    return restored
+
+
+def restore_exp4_training_output(
+    search_root: str | Path, repository_root: str | Path
+) -> Path:
+    root = Path(search_root)
+    matches = [
+        state.parent
+        for state in root.rglob("training_state.json")
+        if "experiment4" in state.parts
+        and (state.parent / str(json.loads(state.read_text()).get("checkpoint", ""))).is_dir()
+    ]
+    matches = sorted(set(matches))
+    if len(matches) != 1:
+        raise FileNotFoundError(f"Expected one EXP004 training output, found {matches}")
+    target = Path(repository_root) / "outputs/experiment4"
+    if target.exists():
+        raise FileExistsError(f"EXP004 training target exists: {target}")
+    shutil.copytree(matches[0], target)
+    return target
+
+
 def _copy_record_images(records: list[dict[str, Any]], source_root: Path, target_root: Path) -> None:
     for relative in sorted({str(record["image"]) for record in records}):
         source = source_root / relative
