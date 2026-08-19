@@ -17,6 +17,7 @@ from typing import Any
 OWNER = "yogeshkd"
 PREP_JOBS = (
     "spider-exp004-from-template-prepare",
+    "spider-exp004-heldout-supplement-prepare",
     "spider-exp004-multi-agent-prepare",
     "spider-exp004-node-traversal-prepare",
     "spider-exp004-synthetic-skills-prepare",

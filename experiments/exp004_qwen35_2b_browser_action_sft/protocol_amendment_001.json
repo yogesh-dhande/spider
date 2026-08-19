@@ -1,0 +1,42 @@
+{
+  "id": "exp004-protocol-amendment-001",
+  "timing": "before_baseline_or_training",
+  "reason": "Per-source proportional validation/test quotas were infeasible with domain-disjoint hashing because some Parquet shards contain only train-assigned domains.",
+  "failed_attempt": {
+    "source": "from_template",
+    "source_file": "data/from_template-00001.parquet",
+    "scanned_trajectories": 3672,
+    "accepted": {
+      "train": 6000,
+      "validation": 0,
+      "test": 0
+    },
+    "domain": "espn.com"
+  },
+  "invariants_preserved": {
+    "training_source_counts": {
+      "from_template": 6000,
+      "multi_agent": 9000,
+      "node_traversal": 4000,
+      "synthetic_skills": 1000
+    },
+    "total_action_train": 20000,
+    "total_action_validation": 512,
+    "total_action_test": 1024,
+    "domain_disjoint_hashing": true,
+    "sealed_test_unopened": true
+  },
+  "replacement": {
+    "heldout_only_source": "data/multi_agent-00008.parquet",
+    "heldout_only_targets": {
+      "train": 0,
+      "validation": 180,
+      "test": 563
+    },
+    "metadata_audit_through_row_group": 16,
+    "estimated_available_steps": {
+      "validation": 1419,
+      "test": 804
+    }
+  }
+}

@@ -233,6 +233,12 @@ def finalize_exp4_data(
     random.Random(int(config["experiment"]["seed"]) + 1).shuffle(combined_validation)
     write_jsonl(manifest_dir / "combined_train.jsonl", combined_train)
     write_jsonl(manifest_dir / "combined_validation.jsonl", combined_validation)
+    expected_actions = config["data"]["action_examples"]
+    actual_actions = {split: len(records) for split, records in action_records.items()}
+    if actual_actions != {split: int(expected_actions[split]) for split in SPLITS}:
+        raise RuntimeError(
+            f"Final action split totals do not match the registered design: {actual_actions}"
+        )
     summary = {
         "action_source_counts": source_counts,
         "action_counts": {split: len(records) for split, records in action_records.items()},

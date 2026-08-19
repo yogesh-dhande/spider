@@ -92,8 +92,19 @@ causal question and benchmark-hygiene requirement.
 
 Preparation streams from one pinned Parquet shard per source and stops at the registered quota. A
 schema smoke initially used the 156 MB skills preview, but its 10 trajectories yielded only 302
-usable split examples; the registered skills preparation therefore streams from
-`data/train-00000.parquet` and still stops after 1,077 accepted train/validation/test examples.
+usable train examples; the registered skills preparation therefore streams from
+`data/train-00000.parquet` and stops after 1,000 accepted train examples.
+
+### Pre-training feasibility amendment
+
+The first full preparation attempt showed that per-source proportional held-out quotas were not
+feasible under the frozen domain hash: `from_template-00001` contains only `espn.com`, which hashes
+to train, and correctly ended with 6,000 train examples but no validation/test examples. This was
+observed before any baseline inference or training. The replacement keeps the 20K training mixture
+unchanged and keeps domain-disjoint assignment, but allocates held-out examples only to sources and
+shards whose audited domains map to validation/test. The global totals remain exactly 20,000 train,
+512 validation, and 1,024 sealed test examples. A metadata-only Parquet audit selected
+`multi_agent-00008` for the 180-validation/563-test supplement; it is never used for training.
 
 ## Results
 

@@ -30,6 +30,13 @@ data:
     multi_agent: data/multi_agent-00004.parquet
     node_traversal: data/node_traversal-00002.parquet
     synthetic_skills: data/train-00000.parquet
+    heldout_supplement: data/multi_agent-00008.parquet
+  action_source_targets:
+    from_template: {train: 6000, validation: 0, test: 0}
+    multi_agent: {train: 9000, validation: 230, test: 461}
+    node_traversal: {train: 4000, validation: 102, test: 0}
+    synthetic_skills: {train: 1000, validation: 0, test: 0}
+    heldout_supplement: {train: 0, validation: 180, test: 563}
   excluded_contaminated_sources:
     - task_seeded_wv
     - task_seeded_om2w

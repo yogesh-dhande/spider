@@ -30,7 +30,12 @@ from spider.web_actions import (
     normalized_bbox,
 )
 
-TRAJECTORY_SOURCES = {"from_template", "multi_agent", "node_traversal"}
+TRAJECTORY_SOURCES = {
+    "from_template",
+    "heldout_supplement",
+    "multi_agent",
+    "node_traversal",
+}
 ALL_SOURCES = TRAJECTORY_SOURCES | {"synthetic_skills"}
 
 
@@ -260,12 +265,16 @@ def prepare_action_source(
     if source not in ALL_SOURCES:
         raise ValueError(f"unsupported action source: {source}")
     data_cfg = config["data"]
-    allocations = proportional_split_targets(
-        {key: int(value) for key, value in data_cfg["included_action_sources"].items()},
-        int(data_cfg["action_examples"]["validation"]),
-        int(data_cfg["action_examples"]["test"]),
-    )
-    targets = allocations[source]
+    configured_targets = data_cfg.get("action_source_targets")
+    if configured_targets:
+        targets = {split: int(configured_targets[source][split]) for split in SPLITS}
+    else:
+        allocations = proportional_split_targets(
+            {key: int(value) for key, value in data_cfg["included_action_sources"].items()},
+            int(data_cfg["action_examples"]["validation"]),
+            int(data_cfg["action_examples"]["test"]),
+        )
+        targets = allocations[source]
     manifest_dir = data_dir / "manifests"
     paths = {split: manifest_dir / f"action_{source}_{split}.jsonl" for split in SPLITS}
     if all(path.exists() for path in paths.values()) and not overwrite:
