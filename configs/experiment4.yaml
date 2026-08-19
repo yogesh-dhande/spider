@@ -29,7 +29,7 @@ data:
     from_template: data/from_template-00001.parquet
     multi_agent: data/multi_agent-00004.parquet
     node_traversal: data/node_traversal-00002.parquet
-    synthetic_skills: data/preview-00000.parquet
+    synthetic_skills: data/train-00000.parquet
   excluded_contaminated_sources:
     - task_seeded_wv
     - task_seeded_om2w

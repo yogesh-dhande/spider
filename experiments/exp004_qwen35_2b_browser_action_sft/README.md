@@ -79,6 +79,11 @@ training implementation. The published full training mixture is not reproduced: 
 benchmark-seeded configs and human trajectories, which conflict with this experiment's narrower
 causal question and benchmark-hygiene requirement.
 
+Preparation streams from one pinned Parquet shard per source and stops at the registered quota. A
+schema smoke initially used the 156 MB skills preview, but its 10 trajectories yielded only 302
+usable split examples; the registered skills preparation therefore streams from
+`data/train-00000.parquet` and still stops after 1,077 accepted train/validation/test examples.
+
 ## Results
 
 Pending.
