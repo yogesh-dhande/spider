@@ -1,0 +1,43 @@
+{
+  "stage": "frozen_full_test_step_1875",
+  "status": "complete",
+  "archived_at_utc": "2026-08-19T14:28:37Z",
+  "shard_kernels": [
+    "yogeshkd/spider-exp002-sft-final-shard-00/1",
+    "yogeshkd/spider-exp002-sft-final-shard-01/1",
+    "yogeshkd/spider-exp002-sft-final-shard-02/1",
+    "yogeshkd/spider-exp002-sft-final-shard-03/1",
+    "yogeshkd/spider-exp002-sft-final-shard-04/1",
+    "yogeshkd/spider-exp002-sft-final-shard-05/1",
+    "yogeshkd/spider-exp002-sft-final-shard-06/1",
+    "yogeshkd/spider-exp002-sft-final-shard-07/1"
+  ],
+  "merge_kernel": "yogeshkd/spider-exp002-sft-final-merge/2",
+  "failed_merge_kernel": "yogeshkd/spider-exp002-sft-final-merge/1",
+  "shard_source_commit": "158061b",
+  "merge_source_commit": "ccec6e7",
+  "prepared_data_source": "yogeshkd/spider-exp002-finalize-prepared-data/3",
+  "training_source": "yogeshkd/spider-exp002-sft-stage-07/1",
+  "checkpoint_step": 1875,
+  "split": "test",
+  "num_shards": 8,
+  "completed_predictions": 5272,
+  "evaluation_protocol": "v2-model-and-chat-eos",
+  "test_sets_touched_before_selection": false,
+  "primary_metrics": {
+    "qa_answer_accuracy": 0.262,
+    "qa_mean_token_f1": 0.6102849938609739,
+    "grounding_click_accuracy": 0.734,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 8.522429866427213
+  },
+  "delta_from_baseline": {
+    "qa_answer_accuracy": 0.038,
+    "qa_mean_token_f1": 0.11391599837783832,
+    "grounding_click_accuracy": 0.16749999999999998,
+    "grounding_parse_rate": 0.0004999999999999449,
+    "grounding_median_pixel_distance": -22.630439066719386
+  },
+  "merge_v1_failure": "equivalent_kaggle_adapter_mount_prefixes_failed_string_identity_check",
+  "merge_v2_validation": "exact_5272_id_nonoverlapping_coverage_passed"
+}

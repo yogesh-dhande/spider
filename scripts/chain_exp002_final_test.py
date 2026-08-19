@@ -86,7 +86,7 @@ def wait_for_merge(poll_seconds: int, heartbeat_seconds: int) -> None:
         time.sleep(poll_seconds)
 
 
-def archive_merge(repository_root: Path) -> None:
+def archive_merge(repository_root: Path, version: int = 1) -> None:
     destination = (
         repository_root
         / "experiments/exp002_qwen35_2b_molmoweb/artifacts/final_test/step_1875"
@@ -102,7 +102,7 @@ def archive_merge(repository_root: Path) -> None:
                 "kaggle",
                 "kernels",
                 "output",
-                f"{OWNER}/spider-exp002-sft-final-merge/1",
+                f"{OWNER}/spider-exp002-sft-final-merge/{version}",
                 "--path",
                 directory,
                 "--file-pattern",
@@ -132,6 +132,7 @@ def main() -> None:
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--heartbeat-seconds", type=int, default=900)
     parser.add_argument("--initial-shards", default="0,1")
+    parser.add_argument("--merge-version", type=int, default=1)
     args = parser.parse_args()
     repository_root = Path(__file__).resolve().parents[1]
     active = {int(value) for value in args.initial_shards.split(",") if value}
@@ -162,7 +163,7 @@ def main() -> None:
         raise RuntimeError(f"Incomplete shard set: {sorted(completed)}")
     launch_merge(repository_root)
     wait_for_merge(args.poll_seconds, args.heartbeat_seconds)
-    archive_merge(repository_root)
+    archive_merge(repository_root, args.merge_version)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,48 @@
+{
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "adapter": "/kaggle/input/notebooks/yogeshkd/spider-exp002-sft-stage-07/spider/outputs/experiment2/adapter/final",
+  "split": "test",
+  "manifests": [
+    "/kaggle/input/notebooks/yogeshkd/spider-exp002-finalize-prepared-data/spider/data/molmoweb_30k_domain17/manifests/qa_test.jsonl",
+    "/kaggle/input/notebooks/yogeshkd/spider-exp002-finalize-prepared-data/spider/data/molmoweb_30k_domain17/manifests/grounding_test.jsonl",
+    "/kaggle/input/notebooks/yogeshkd/spider-exp002-finalize-prepared-data/spider/data/molmoweb_30k_domain17/manifests/screenspot_test.jsonl"
+  ],
+  "selection": {
+    "kind": "merged_shards",
+    "num_shards": 8,
+    "source_labels": [
+      "sft-final-shard-00-of-08",
+      "sft-final-shard-01-of-08",
+      "sft-final-shard-02-of-08",
+      "sft-final-shard-03-of-08",
+      "sft-final-shard-04-of-08",
+      "sft-final-shard-05-of-08",
+      "sft-final-shard-06-of-08",
+      "sft-final-shard-07-of-08"
+    ],
+    "source_signatures": [
+      "1692eecfa2a9e77152bfa0f1c2ba75027089ce1cc1d75c719d1e422dc06a8f35",
+      "1e10c5b94b8b876b4e5ffa0f07a3ef340222bd87fcfb59013021419a5afec431",
+      "dd546ab35118fbbad04d39729ead45748fe74a600275113040518014b2cdbdaf",
+      "5e638d8bc2768dc5937b59c63d55838579fa81f2bf3c8778ef98c6f89b8d222d",
+      "bf3c397cc1e2834bd784968e43226d4456f3cdd8b43690b6bf9b038266214d87",
+      "12b4f2ee0376b28e0384261777c90ee3ee90aa51dee0d74268d3e7d151683e76",
+      "45365f184e5701152d79504395ee3c7ecaf28a31b54dececb266801ddbe7c5e0",
+      "478e6f6725a927f5fa7376b07578335874f5ca7e6a1ac9e5311ee8f6e6107f9e"
+    ]
+  },
+  "evaluation_protocol_version": "v2-model-and-chat-eos",
+  "signature": "96dade17e5a26c04384432957c2b23e435dfe6879858c377b4c1cafc1b0c2d00",
+  "package_versions": {
+    "torch": "2.10.0+cpu",
+    "transformers": "5.15.0",
+    "trl": "1.10.0",
+    "peft": "0.20.0",
+    "accelerate": "1.14.0",
+    "bitsandbytes": "0.50.1",
+    "datasets": "5.0.1"
+  },
+  "planned_examples": 5272,
+  "completed_examples": 5272
+}

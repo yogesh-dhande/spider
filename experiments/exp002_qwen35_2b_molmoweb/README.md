@@ -1,10 +1,10 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
-Status: pre-SFT baseline complete, independently validated, and immutably archived. The full
-one-epoch two-T4 QLoRA run reached step 1,875, every checkpoint passed structural validation, and
-the corrected final task probe passed. Step 1,875 has the best QA token F1 and improved grounding
-relative to step 1,750, so it is selected for the one-time frozen full-test evaluation. The frozen
-test sets remain untouched pending that run.
+Status: complete. The full one-epoch two-T4 QLoRA run reached step 1,875, every checkpoint passed
+structural validation, and the selected final checkpoint completed the one-time 5,272-example
+frozen test. Relative to the untouched baseline, MolmoWeb QA exact improved from 0.2240 to 0.2620,
+QA token F1 from 0.4964 to 0.6103, and grounding click accuracy from 0.5665 to 0.7340. See
+`FINAL_RESULTS.md` for the authoritative comparison and shard diagnostics.
 
 Parent: EXP001, superseded before any official baseline or training run.
 

@@ -4,8 +4,8 @@ Task metrics use the same fixed held-out validation probe: 128 ScreenshotQA exam
 grounding examples. Step 250 is the first post-SFT regression gate. After the corrected step-1,000
 probe showed diminishing gains, task probes are scheduled after every remaining stage (steps
 1,250, 1,500, 1,750, and 1,875); per-stage language-model validation loss remains a training
-health signal. The frozen 5,272-example test suite and ScreenSpot remain untouched until the final
-selected checkpoint.
+health signal. The frozen 5,272-example test suite and ScreenSpot were evaluated exactly once on
+the selected step-1,875 checkpoint after validation-based selection.
 
 | Step | Runtime (h) | Train loss | Eval loss | Eval token acc. | QA exact | QA token F1 | Ground click acc. | Ground parse rate | Median distance | Status |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|

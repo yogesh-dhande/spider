@@ -1,0 +1,106 @@
+{
+  "molmoweb": {
+    "qa": {
+      "examples": 2000,
+      "answer_accuracy": 0.262,
+      "mean_token_f1": 0.6102849938609739,
+      "by_question_type": {
+        "OCR": {
+          "examples": 1044,
+          "answer_accuracy": 0.47701149425287354,
+          "mean_token_f1": 0.6791955740120685
+        },
+        "affordance": {
+          "examples": 573,
+          "answer_accuracy": 0.038394415357766144,
+          "mean_token_f1": 0.5829545639043363
+        },
+        "summarization": {
+          "examples": 383,
+          "answer_accuracy": 0.010443864229765013,
+          "mean_token_f1": 0.46333379461139323
+        }
+      }
+    },
+    "grounding": {
+      "examples": 2000,
+      "parse_rate": 1.0,
+      "point_on_grid_rate": 1.0,
+      "click_accuracy": 0.734,
+      "click_accuracy_given_parse": 0.734,
+      "mean_pixel_distance": 95.64523536719045,
+      "median_pixel_distance": 8.522429866427213,
+      "accuracy_within_25px": 0.658,
+      "accuracy_within_50px": 0.723,
+      "accuracy_within_100px": 0.7945
+    }
+  },
+  "screenspot": {
+    "grounding": {
+      "examples": 1272,
+      "parse_rate": 1.0,
+      "point_on_grid_rate": 1.0,
+      "click_accuracy": 0.589622641509434,
+      "click_accuracy_given_parse": 0.589622641509434,
+      "mean_pixel_distance": 74.6872059557251,
+      "median_pixel_distance": 26.349197143158285,
+      "accuracy_within_25px": 0.4827044025157233,
+      "accuracy_within_50px": 0.6737421383647799,
+      "accuracy_within_100px": 0.8113207547169812,
+      "by_element_type": {
+        "icon": {
+          "examples": 575,
+          "click_accuracy": 0.4678260869565217,
+          "mean_pixel_distance": 93.07648297133119
+        },
+        "text": {
+          "examples": 697,
+          "click_accuracy": 0.6901004304160688,
+          "mean_pixel_distance": 59.516712004543635
+        }
+      },
+      "by_data_source": {
+        "android": {
+          "examples": 247,
+          "click_accuracy": 0.4574898785425101,
+          "mean_pixel_distance": 66.36493225102308
+        },
+        "forum": {
+          "examples": 89,
+          "click_accuracy": 0.6179775280898876,
+          "mean_pixel_distance": 85.25046718203802
+        },
+        "gitlab": {
+          "examples": 89,
+          "click_accuracy": 0.5842696629213483,
+          "mean_pixel_distance": 131.9598248374423
+        },
+        "ios": {
+          "examples": 255,
+          "click_accuracy": 0.5058823529411764,
+          "mean_pixel_distance": 60.191440188394836
+        },
+        "macos": {
+          "examples": 172,
+          "click_accuracy": 0.5581395348837209,
+          "mean_pixel_distance": 97.0302154031165
+        },
+        "shop": {
+          "examples": 119,
+          "click_accuracy": 0.7394957983193278,
+          "mean_pixel_distance": 44.47214166620977
+        },
+        "tool": {
+          "examples": 139,
+          "click_accuracy": 0.6762589928057554,
+          "mean_pixel_distance": 89.42943128313777
+        },
+        "windows": {
+          "examples": 162,
+          "click_accuracy": 0.7592592592592593,
+          "mean_pixel_distance": 58.749269234160856
+        }
+      }
+    }
+  }
+}
