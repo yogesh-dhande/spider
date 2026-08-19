@@ -155,6 +155,52 @@ def _archive_final_outputs(repository_root: Path) -> None:
     emit("exp004_final_artifacts_archived", artifact_root=str(artifact_root))
 
 
+def _validate_closed_loop(summary: dict[str, Any]) -> None:
+    if summary.get("paired_design") is not True:
+        raise RuntimeError(f"Closed-loop study is not paired: {summary}")
+    variants = summary.get("variants")
+    if not isinstance(variants, dict) or set(variants) != {"exp002_parent", "exp004_selected"}:
+        raise RuntimeError(f"Closed-loop variants are incomplete: {summary}")
+    if any(metrics.get("episodes") != 12 for metrics in variants.values()):
+        raise RuntimeError(f"Closed-loop episode coverage is incomplete: {variants}")
+    comparison = summary.get("comparisons", {}).get("exp004_selected")
+    if not isinstance(comparison, dict) or comparison.get("paired_episodes") != 12:
+        raise RuntimeError(f"Closed-loop paired comparison is incomplete: {summary}")
+
+
+def _archive_closed_loop_outputs(repository_root: Path) -> Path:
+    from chain_exp004_kaggle import run, slug
+
+    with tempfile.TemporaryDirectory(prefix="spider-exp004-closed-loop-") as directory:
+        download_root = Path(directory)
+        run(
+            [
+                "kaggle",
+                "kernels",
+                "output",
+                slug(CLOSED_LOOP),
+                "--path",
+                str(download_root),
+                "--file-pattern",
+                r"exp004_sandbox_closed_loop/.*",
+                "--page-size",
+                "200",
+                "--quiet",
+            ]
+        )
+        summaries = list(download_root.rglob("summary.json"))
+        summaries = [path for path in summaries if "exp004_sandbox_closed_loop" in path.parts]
+        if len(summaries) != 1:
+            raise RuntimeError(f"Expected one closed-loop run, found {summaries}")
+        run_root = summaries[0].parent
+        target = repository_root / EXPERIMENT_DIR / "artifacts/closed_loop/run"
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(run_root, target)
+    emit("exp004_closed_loop_artifacts_archived", path=str(target))
+    return target
+
+
 def run_final(
     repository_root: Path,
     poll_seconds: int,
@@ -201,7 +247,9 @@ def run_final(
         r"exp004_sandbox_closed_loop/.*/summary\.json",
         "summary.json",
     )
+    _validate_closed_loop(summary)
     write_artifact(repository_root, Path("closed_loop/summary.json"), summary)
+    _archive_closed_loop_outputs(repository_root)
     emit("exp004_closed_loop_validated", summary=summary)
     return {"comparison": comparison, "closed_loop": summary}
 

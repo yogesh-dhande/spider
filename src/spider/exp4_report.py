@@ -220,6 +220,24 @@ def build_exp4_report(artifact_root: Path) -> str:
                 f"| {variant} | {metrics['episodes']} | {_pct(metrics['success_rate'])} | "
                 f"{metrics['mean_reward']:.4f} | {_pct(metrics['parse_error_rate'])} |"
             )
+        comparisons = summary.get("comparisons", {})
+        if comparisons:
+            lines.extend(
+                [
+                    "",
+                    "| Candidate vs control | Paired N | Success delta | 95% paired bootstrap CI | Reward delta |",
+                    "|---|---:|---:|---:|---:|",
+                ]
+            )
+            for variant, comparison in comparisons.items():
+                lower, upper = comparison["success_rate_delta_ci95"]
+                lines.append(
+                    f"| {variant} vs {summary['control_variant']} | "
+                    f"{comparison['paired_episodes']} | "
+                    f"{comparison['success_rate_delta']:+.2%} | "
+                    f"[{lower:+.2%}, {upper:+.2%}] | "
+                    f"{comparison['mean_reward_delta']:+.4f} |"
+                )
     if final_path.is_file():
         lines.extend(
             [
