@@ -3,10 +3,10 @@
     "license": "MolmoWeb-SyntheticQA and SyntheticGround — ODC-BY 1.0",
     "checkpoint_labels": {
       "baseline": "Baseline",
-      "latest": "Latest · step 1750"
+      "latest": "Latest · step 1875"
     },
     "latest_label": "latest",
-    "latest_step": 1750
+    "latest_step": 1875
   },
   "qa": {
     "meta": {
@@ -30,7 +30,7 @@
       },
       "latest": {
         "exact_accuracy": 0.3828125,
-        "mean_token_f1": 0.7197350646814509
+        "mean_token_f1": 0.7225509150713144
       }
     },
     "records": [
@@ -47,11 +47,11 @@
         "question_form": "third_person",
         "predictions": {
           "baseline": "Click on the \"Critical reception\" link in the left navigation menu.",
-          "latest": "Click the “Critical reception” link."
+          "latest": "Click the “Critical reception” link under the “Reception and legacy” section."
         },
         "display_predictions": {
           "baseline": "Click on the \"Critical reception\" link in the left navigation menu.",
-          "latest": "Click the “Critical reception” link."
+          "latest": "Click the “Critical reception” link under the “Reception and legacy” section."
         },
         "leaked_turn": false,
         "scores": {
@@ -61,7 +61,7 @@
           },
           "latest": {
             "exact": false,
-            "token_f1": 0.4210526315789474
+            "token_f1": 0.7499999999999999
           }
         }
       },
@@ -233,11 +233,11 @@
         "question_form": "first_person",
         "predictions": {
           "baseline": "Search this website",
-          "latest": "Click the Search this website field, type your query, and then select the Search button."
+          "latest": "Type your query into the Search this website field and then select the Search button."
         },
         "display_predictions": {
           "baseline": "Search this website",
-          "latest": "Click the Search this website field, type your query, and then select the Search button."
+          "latest": "Type your query into the Search this website field and then select the Search button."
         },
         "leaked_turn": false,
         "scores": {
@@ -3364,11 +3364,11 @@
         "question_form": "first_person",
         "predictions": {
           "baseline": "Support for caregivers, stress reduction, and self-care resources.",
-          "latest": "The page highlights resources for caregivers, including burnout prevention, safety net support, side-gig recommendations, yoga as a stress reducer, and self-care guidance, along with a featured book titled “GOD’S GIFT WITHIN: THE STORY OF THE JOSHUA QUILT.”"
+          "latest": "The page highlights resources for caregivers, including burnout prevention, safety net support, side-gigs, yoga as a stress reducer, and self-care guidance, along with a featured book titled “GOD’S GIFT WITHIN: THE STORY OF THE JOSHUA QUILT.”"
         },
         "display_predictions": {
           "baseline": "Support for caregivers, stress reduction, and self-care resources.",
-          "latest": "The page highlights resources for caregivers, including burnout prevention, safety net support, side-gig recommendations, yoga as a stress reducer, and self-care guidance, along with a featured book titled “GOD’S GIFT WITHIN: THE STORY OF THE JOSHUA QUILT.”"
+          "latest": "The page highlights resources for caregivers, including burnout prevention, safety net support, side-gigs, yoga as a stress reducer, and self-care guidance, along with a featured book titled “GOD’S GIFT WITHIN: THE STORY OF THE JOSHUA QUILT.”"
         },
         "leaked_turn": false,
         "scores": {
@@ -3378,7 +3378,7 @@
           },
           "latest": {
             "exact": false,
-            "token_f1": 0.5185185185185185
+            "token_f1": 0.55
           }
         }
       },
@@ -4023,12 +4023,12 @@
       },
       "latest": {
         "parse_rate": 1.0,
-        "click_accuracy": 0.5625,
-        "mean_pixel_distance": 74.37505089955131,
+        "click_accuracy": 0.5703125,
+        "mean_pixel_distance": 79.12220209538714,
         "median_pixel_distance": 24.806025761501086,
         "accuracy_within_25px": 0.5,
         "accuracy_within_50px": 0.6796875,
-        "accuracy_within_100px": 0.8046875
+        "accuracy_within_100px": 0.796875
       }
     },
     "records": [
@@ -4485,7 +4485,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\":[100, 694],\"label\":\"most valuable brands\"}\n]\n```",
-          "latest": "[{\"point_2d\":[342,695],\"label\":\"open the list of most valuable brands\"}]"
+          "latest": "[{\"point_2d\":[342,694],\"label\":\"open the list of most valuable brands\"}]"
         },
         "scores": {
           "baseline": {
@@ -4505,12 +4505,12 @@
           "latest": {
             "parsed_point": [
               342.0,
-              695.0
+              694.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": true,
-            "pixel_distance": 2.4099601273355966,
+            "pixel_distance": 2.2296857861473534,
             "error_category": null,
             "within_25px": true,
             "within_50px": true,
@@ -5241,7 +5241,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\": [312, 575], \"label\": \"open the 2025 Polish presidential election article\"}\n]\n```",
-          "latest": "[{\"point_2d\":[546,676],\"label\":\"open the 2025 Polish presidential election article\"}]"
+          "latest": "[{\"point_2d\":[536,676],\"label\":\"open the 2025 Polish presidential election article\"}]"
         },
         "scores": {
           "baseline": {
@@ -5260,13 +5260,13 @@
           },
           "latest": {
             "parsed_point": [
-              546.0,
+              536.0,
               676.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": false,
-            "pixel_distance": 50.14613401038663,
+            "pixel_distance": 62.89810144819686,
             "error_category": "spatial_grounding",
             "within_25px": false,
             "within_50px": false,
@@ -5295,7 +5295,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\":[70, 377],\"label\": \"open the Self-driving car article\"}\n]\n```",
-          "latest": "[{\"point_2d\":[353,935],\"label\":\"open the Self-driving car article\"}]"
+          "latest": "[{\"point_2d\":[353,934],\"label\":\"open the Self-driving car article\"}]"
         },
         "scores": {
           "baseline": {
@@ -5315,12 +5315,12 @@
           "latest": {
             "parsed_point": [
               353.0,
-              935.0
+              934.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": true,
-            "pixel_distance": 13.4851860355705,
+            "pixel_distance": 12.817419889055145,
             "error_category": null,
             "within_25px": true,
             "within_50px": true,
@@ -5781,7 +5781,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\": [277, 492], \"label\": \"go to citation 11\"}\n]\n```",
-          "latest": "[{\"point_2d\":[396,698],\"label\":\"go to citation 11\"}]"
+          "latest": "[{\"point_2d\":[196,698],\"label\":\"go to citation 11\"}]"
         },
         "scores": {
           "baseline": {
@@ -5800,17 +5800,17 @@
           },
           "latest": {
             "parsed_point": [
-              396.0,
+              196.0,
               698.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": false,
-            "pixel_distance": 21.014764215992898,
+            "pixel_distance": 275.40372336454305,
             "error_category": "spatial_grounding",
-            "within_25px": true,
-            "within_50px": true,
-            "within_100px": true
+            "within_25px": false,
+            "within_50px": false,
+            "within_100px": false
           }
         }
       },
@@ -6375,7 +6375,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\": [561, 564], \"label\": \"open the Wiktionary entry for Google\"}\n]\n```",
-          "latest": "[{\"point_2d\":[137,595],\"label\":\"open the Wiktionary entry for Google\"}]"
+          "latest": "[{\"point_2d\":[137,594],\"label\":\"open the Wiktionary entry for Google\"}]"
         },
         "scores": {
           "baseline": {
@@ -6395,12 +6395,12 @@
           "latest": {
             "parsed_point": [
               137.0,
-              595.0
+              594.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": false,
-            "pixel_distance": 529.2823731084011,
+            "pixel_distance": 529.3270986586467,
             "error_category": "spatial_grounding",
             "within_25px": false,
             "within_50px": false,
@@ -8535,7 +8535,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\": [241, 521], \"label\": \"read about the term 'dark horse' in politics\"}\n]\n```",
-          "latest": "[{\"point_2d\":[156,936],\"label\":\"read about the term 'dark horse' in politics\"}]"
+          "latest": "[{\"point_2d\":[156,946],\"label\":\"read about the term 'dark horse' in politics\"}]"
         },
         "scores": {
           "baseline": {
@@ -8555,12 +8555,12 @@
           "latest": {
             "parsed_point": [
               156.0,
-              936.0
+              946.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": true,
-            "pixel_distance": 18.179293687561778,
+            "pixel_distance": 19.44496847461117,
             "error_category": null,
             "within_25px": true,
             "within_50px": true,
@@ -10641,7 +10641,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\": [222, 211], \"label\": \"open the Website article\"}\n]\n```",
-          "latest": "[{\"point_2d\":[407,416],\"label\":\"open the Website article\"}]"
+          "latest": "[{\"point_2d\":[400,509],\"label\":\"open the Website article\"}]"
         },
         "scores": {
           "baseline": {
@@ -10660,16 +10660,16 @@
           },
           "latest": {
             "parsed_point": [
-              407.0,
-              416.0
+              400.0,
+              509.0
             ],
             "parse_success": true,
             "point_on_grid": true,
-            "within_element_bounds": false,
-            "pixel_distance": 67.64922584213294,
-            "error_category": "spatial_grounding",
-            "within_25px": false,
-            "within_50px": false,
+            "within_element_bounds": true,
+            "pixel_distance": 2.7071291479919912,
+            "error_category": null,
+            "within_25px": true,
+            "within_50px": true,
             "within_100px": true
           }
         }
@@ -10695,7 +10695,7 @@
         ],
         "predictions": {
           "baseline": "```json\n[\n\t{\"point_2d\":[248, 208],\"label\": \"open the Research and development article\"}\n]\n```",
-          "latest": "[{\"point_2d\":[316,816],\"label\":\"open the Research and development article\"}]"
+          "latest": "[{\"point_2d\":[316,81],\"label\":\"open the Research and development article\"}]"
         },
         "scores": {
           "baseline": {
@@ -10715,12 +10715,12 @@
           "latest": {
             "parsed_point": [
               316.0,
-              816.0
+              81.0
             ],
             "parse_success": true,
             "point_on_grid": true,
             "within_element_bounds": false,
-            "pixel_distance": 273.5496037390654,
+            "pixel_distance": 678.5237670642405,
             "error_category": "spatial_grounding",
             "within_25px": false,
             "within_50px": false,

@@ -17,7 +17,7 @@ selected checkpoint.
 | 1250 | 1.854 | 0.0962 | 0.5637 | 0.8396 | 0.3750 | 0.7000 | 0.5781 | 1.0000 | 23.9 px | regression gate passed |
 | 1500 | 1.741 | 0.0760 | 0.5701 | 0.8427 | 0.3750 | 0.7059 | 0.5469 | 1.0000 | 32.3 px | mixed plateau; gate passed |
 | 1750 | 1.777 | 0.0625 | 0.5667 | 0.8449 | 0.3828 | 0.7197 | 0.5625 | 1.0000 | 24.8 px | regression gate passed |
-| 1875 | scheduled | pending | pending | pending | scheduled | scheduled | scheduled | scheduled | scheduled | final validation probe |
+| 1875 | 0.906 | 0.0289 | 0.5663 | 0.8451 | 0.3828 | 0.7226 | 0.5703 | 1.0000 | 24.8 px | final probe passed; selected for test |
 
 `Train loss` is the stage aggregate reported by Trainer. Task metrics, rather than language-model
 loss alone, determine improvement relative to the baseline. Runtime is training-stage wall time;
@@ -69,3 +69,10 @@ relative to step 1,500. Grounding click accuracy recovered 1.56 points and media
 7.5 pixels. This checkpoint has the best QA exact and token F1 observed so far; step 1,250 still
 has the highest click-in-bounds accuracy by 1.56 points and the smallest median distance by 0.9
 pixels. The regression gate passed and the shortened final stage began toward step 1,875.
+
+At step 1,875, QA exact remained unchanged, token F1 increased 0.28 percentage points, and
+grounding click accuracy increased 0.78 points relative to step 1,750. Median distance remained
+24.8 pixels. Step 1,875 has the best QA token F1, ties step 1,750 for best QA exact, and is one
+grounding example below step 1,250's peak click-in-bounds result. Because the final checkpoint
+improved the combined task signal without a primary-metric regression, it is selected for the
+one-time frozen full-test evaluation.

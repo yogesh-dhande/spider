@@ -15,7 +15,7 @@ experiments:
   - id: exp002
     name: qwen35_2b_molmoweb_exp2
     title: Qwen3.5-2B browser screenshot understanding and GUI grounding
-    status: sft_stage_07_running_validation_each_stage
+    status: sft_complete_final_probe_complete_pending_frozen_test
     config: configs/experiment2.yaml
     record: experiments/exp002_qwen35_2b_molmoweb/README.md
     implementation_commit: df765eb
