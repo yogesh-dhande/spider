@@ -47,16 +47,16 @@ def test_status_or_missing_does_not_hide_network_failure(
 def test_validate_stage_requires_exact_resumable_state(monkeypatch: pytest.MonkeyPatch) -> None:
     state = {
         "status": "complete",
-        "start_step": 500,
-        "completed_step": 750,
-        "stop_step": 750,
+        "start_step": 250,
+        "completed_step": 375,
+        "stop_step": 375,
         "planned_epoch_steps": 1875,
         "world_size": 2,
         "gradient_accumulation_steps": 8,
         "effective_batch_size": 16,
     }
     monkeypatch.setattr(MODULE, "download_json", lambda *args, **kwargs: state)
-    assert MODULE.validate_stage(2)["completed_step"] == 750
+    assert MODULE.validate_stage(2)["completed_step"] == 375
     state["world_size"] = 1
     with pytest.raises(RuntimeError, match="world_size"):
         MODULE.validate_stage(2)

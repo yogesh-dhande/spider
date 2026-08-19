@@ -6,21 +6,12 @@ import argparse
 import json
 from pathlib import Path
 
+from spider.exp4_stages import PLANNED_STEPS, STAGE_BOUNDS
+
 OWNER = "yogeshkd"
 PREPARED = f"{OWNER}/spider-exp004-finalize-prepared-data"
 EXP2_ADAPTER = f"{OWNER}/spider-exp002-sft-stage-07"
 BASELINE_MERGE = f"{OWNER}/spider-exp004-action-baseline-merge"
-PLANNED_STEPS = 1875
-STAGE_BOUNDS = {
-    0: (0, 250),
-    1: (250, 500),
-    2: (500, 750),
-    3: (750, 1000),
-    4: (1000, 1250),
-    5: (1250, 1500),
-    6: (1500, 1750),
-    7: (1750, 1875),
-}
 
 
 def code_cell(source: str) -> dict[str, object]:
@@ -283,7 +274,7 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=Path("kaggle"))
     args = parser.parse_args()
     if args.stage is not None and args.stage not in STAGE_BOUNDS:
-        parser.error("stage must be 0 through 7")
+        parser.error(f"stage must be 0 through {len(STAGE_BOUNDS) - 1}")
     if args.job in {"stage", "validation"} and args.stage is None:
         parser.error("--stage is required for stage or validation jobs")
     if args.job in {"compatibility", "all"}:

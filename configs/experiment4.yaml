@@ -91,12 +91,12 @@ training:
   logging_steps: 10
   eval_steps: 250
   eval_examples: 256
-  save_steps: 250
-  save_total_limit: 3
+  save_steps: 25
+  save_total_limit: 1
   dataloader_num_workers: 2
   report_to: none
   loss_type: chunked_nll
-  stage_steps: 250
+  stage_steps: 125
 
 evaluation:
   max_new_tokens_qa: 96

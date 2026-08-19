@@ -20,8 +20,8 @@ from chain_exp004_kaggle import (
 )
 
 from spider.exp4_selection import select_from_directory
+from spider.exp4_stages import STEPS
 
-STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
 FINAL_SHARDS = tuple(f"spider-exp004-final-shard-{index:02d}" for index in range(4))
 FINAL_MERGE = "spider-exp004-final-merge"
 CLOSED_LOOP = "spider-exp004-closed-loop"

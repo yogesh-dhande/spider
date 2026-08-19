@@ -6,10 +6,11 @@ import argparse
 import json
 from pathlib import Path
 
+from spider.exp4_stages import STEPS
+
 OWNER = "yogeshkd"
 PREPARED = f"{OWNER}/spider-exp004-finalize-prepared-data"
 EXP2_ADAPTER = f"{OWNER}/spider-exp002-sft-stage-07"
-STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
 
 
 def code_cell(source: str) -> dict[str, object]:

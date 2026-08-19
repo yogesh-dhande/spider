@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from spider.exp4_stages import STEPS
+
 OWNER = "yogeshkd"
 PREP_JOBS = (
     "spider-exp004-from-template-prepare",
@@ -29,7 +31,6 @@ BASELINE_SHARDS = (
 )
 BASELINE_MERGE = "spider-exp004-action-baseline-merge"
 COMPATIBILITY = "spider-exp004-ddp-initial-adapter-smoke"
-STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
 EXPERIMENT_DIR = Path("experiments/exp004_qwen35_2b_browser_action_sft")
 
 
