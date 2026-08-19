@@ -38,6 +38,28 @@ type GroundingRecord = {
   predictions: Record<string, string>;
   scores: Record<string, GroundingScore>;
 };
+type ActionScore = {
+  parse_valid: boolean;
+  name_correct: boolean;
+  arguments_correct: boolean;
+  click_inside_bbox: boolean | null;
+  click_distance_px: number | null;
+  parsed_point: [number, number] | null;
+};
+type ActionRecord = {
+  id: string;
+  image: string;
+  image_width: number;
+  image_height: number;
+  domain: string;
+  instruction: string;
+  source: string;
+  step_index: number;
+  target_action: Record<string, string | number>;
+  bbox_normalized: [number, number, number, number] | null;
+  predictions: Record<string, string>;
+  scores: Record<string, ActionScore>;
+};
 type Metric = { exact_accuracy: number; mean_token_f1: number };
 type GroundingMetric = {
   parse_rate: number;
@@ -47,6 +69,14 @@ type GroundingMetric = {
   accuracy_within_25px: number;
   accuracy_within_50px: number;
   accuracy_within_100px: number;
+};
+type ActionMetric = {
+  examples: number;
+  json_parse_rate: number;
+  action_name_accuracy: number;
+  action_argument_accuracy: number;
+  click_inside_bbox_accuracy: number | null;
+  click_median_distance_px: number | null;
 };
 type DashboardPayload = {
   meta: { license: string; checkpoint_labels: Record<string, string>; latest_label: string; latest_step: number };
@@ -59,6 +89,11 @@ type DashboardPayload = {
     meta: { examples: number; unique_screenshots: number };
     metrics: Record<string, GroundingMetric>;
     records: GroundingRecord[];
+  };
+  action?: {
+    meta: { scored_examples: number; display_examples: number; unique_screenshots: number; target_action_counts: Record<string, number> };
+    metrics: Record<string, ActionMetric>;
+    records: ActionRecord[];
   };
 };
 
@@ -145,8 +180,43 @@ function GroundingCard({ record, eager }: { record: GroundingRecord; eager: bool
   );
 }
 
+function ActionCard({ record, eager }: { record: ActionRecord; eager: boolean }) {
+  const bbox = record.bbox_normalized;
+  const isClick = record.target_action.name === "click";
+  const targetX = Number(record.target_action.x);
+  const targetY = Number(record.target_action.y);
+  return (
+    <article className="recordCard groundingCard">
+      <div className="imageFrame groundingImage" style={{ aspectRatio: `${record.image_width}/${record.image_height}` }}>
+        <img alt={`Browser action screenshot for: ${record.instruction}`} height={record.image_height} loading={eager ? "eager" : "lazy"} src={record.image} width={record.image_width} />
+        {bbox && <span className="targetBox" style={{ left: `${bbox[0] * 100}%`, top: `${bbox[1] * 100}%`, width: `${(bbox[2] - bbox[0]) * 100}%`, height: `${(bbox[3] - bbox[1]) * 100}%` }} />}
+        {isClick && Number.isFinite(targetX) && Number.isFinite(targetY) && <span className="clickMarker targetPoint" style={{ left: `${targetX}%`, top: `${targetY}%` }} title="Ground-truth action point">GT</span>}
+        {CHECKPOINTS.map((checkpoint) => {
+          const point = record.scores[checkpoint].parsed_point;
+          return point ? <span className={`clickMarker ${checkpoint}`} key={checkpoint} style={{ left: `${point[0]}%`, top: `${point[1]}%` }} title={`${CHECKPOINT_LABELS[checkpoint]} action point`}>{checkpoint === "baseline" ? "B" : "L"}</span> : null;
+        })}
+        <div className="imageMeta"><span>{record.domain}</span><span>{record.image_width} × {record.image_height}</span></div>
+      </div>
+      <div className="recordBody">
+        <div className="markerLegend"><span className="legendTarget">GT target + bounds</span><span className="legendBaseline">EXP002 parent</span><span className="legendLatest">{CHECKPOINT_LABELS[data.meta.latest_label]}</span></div>
+        <div className="recordTags"><span>{record.target_action.name}</span><span>{record.source}</span><span>step {record.step_index}</span></div>
+        <h3>{record.instruction}</h3>
+        <div className="answerBlock reference"><p>Target action</p><div>{JSON.stringify(record.target_action)}</div></div>
+        <div className="groundingScores">
+          {CHECKPOINTS.map((checkpoint) => {
+            const score = record.scores[checkpoint];
+            const correct = isClick ? score.click_inside_bbox === true : score.arguments_correct;
+            return <div className={correct ? "groundScore hit" : "groundScore miss"} key={checkpoint}><p>{CHECKPOINT_LABELS[checkpoint]}</p><strong>{correct ? "Correct" : "Miss"}</strong><span>{score.parse_valid ? (score.name_correct ? "action name correct" : "wrong action name") : "invalid JSON"}</span><small>{score.click_distance_px == null ? (score.arguments_correct ? "arguments correct" : "arguments differ") : `${score.click_distance_px.toFixed(1)} px from target`}</small></div>;
+          })}
+        </div>
+        <details><summary>Show raw model outputs</summary><pre>{CHECKPOINTS.map((checkpoint) => `${CHECKPOINT_LABELS[checkpoint]}\n${record.predictions[checkpoint]}`).join("\n\n")}</pre></details>
+      </div>
+    </article>
+  );
+}
+
 export default function Home() {
-  const [task, setTask] = useState<"qa" | "grounding">("qa");
+  const [task, setTask] = useState<"qa" | "grounding" | "action">("qa");
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
@@ -171,8 +241,20 @@ export default function Home() {
     });
   }, [query, status]);
 
-  const filtered = task === "qa" ? qaFiltered : groundFiltered;
-  const switchTask = (next: "qa" | "grounding") => { setTask(next); setQuery(""); setType("all"); setStatus("all"); setVisible(PAGE_SIZE); };
+  const actionFiltered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return (data.action?.records ?? []).filter((record) => {
+      const score = record.scores[data.meta.latest_label];
+      const correct = record.target_action.name === "click" ? score.click_inside_bbox === true : score.arguments_correct;
+      const matchesType = type === "all" || record.target_action.name === type;
+      const matchesStatus = status === "all" || (status === "hit" && correct) || (status === "miss" && !correct);
+      const matchesQuery = !needle || [record.instruction, record.domain, record.source, record.target_action.name].join(" ").toLowerCase().includes(needle);
+      return matchesType && matchesStatus && matchesQuery;
+    });
+  }, [query, status, type]);
+
+  const filtered = task === "qa" ? qaFiltered : task === "grounding" ? groundFiltered : actionFiltered;
+  const switchTask = (next: "qa" | "grounding" | "action") => { setTask(next); setQuery(""); setType("all"); setStatus("all"); setVisible(PAGE_SIZE); };
   const resetFilters = () => { setQuery(""); setType("all"); setStatus("all"); setVisible(PAGE_SIZE); };
 
   return (
@@ -191,6 +273,7 @@ export default function Home() {
             <MetricCard label="QA · baseline" value={percent(data.qa.metrics.baseline.exact_accuracy)} note={`token F1 ${data.qa.metrics.baseline.mean_token_f1.toFixed(3)}`} />
             <MetricCard label={`Grounding · latest (step ${data.meta.latest_step})`} value={percent(data.grounding.metrics[data.meta.latest_label].click_accuracy)} note={`median ${data.grounding.metrics[data.meta.latest_label].median_pixel_distance?.toFixed(1)} px`} tone="teal" />
             <MetricCard label="Grounding · baseline" value={percent(data.grounding.metrics.baseline.click_accuracy)} note={`median ${data.grounding.metrics.baseline.median_pixel_distance?.toFixed(1)} px`} tone="orange" />
+            {data.action && <><MetricCard label={`Actions · latest (step ${data.meta.latest_step})`} value={percent(data.action.metrics[data.meta.latest_label].action_name_accuracy)} note={`click-in-bounds ${percent(data.action.metrics[data.meta.latest_label].click_inside_bbox_accuracy ?? 0)}`} tone="teal" /><MetricCard label="Actions · EXP002 parent" value={percent(data.action.metrics.baseline.action_name_accuracy)} note={`click-in-bounds ${percent(data.action.metrics.baseline.click_inside_bbox_accuracy ?? 0)}`} tone="orange" /></>}
           </div>
         </div>
       </header>
@@ -198,23 +281,25 @@ export default function Home() {
       <section className="taskTabs" aria-label="Dataset task">
         <button className={task === "qa" ? "active" : ""} onClick={() => switchTask("qa")}><span>01</span> Screenshot QA <b>{data.qa.meta.examples}</b></button>
         <button className={task === "grounding" ? "active" : ""} onClick={() => switchTask("grounding")}><span>02</span> GUI grounding <b>{data.grounding.meta.examples}</b></button>
+        {data.action && <button className={task === "action" ? "active" : ""} onClick={() => switchTask("action")}><span>03</span> Browser actions <b>{data.action.meta.scored_examples}</b></button>}
       </section>
 
       <section className="explorer" id="examples">
         <aside className="filters">
           <div><p className="filterLabel">Search</p><input aria-label="Search dataset examples" onChange={(event) => { setQuery(event.target.value); setVisible(PAGE_SIZE); }} placeholder={task === "qa" ? "button, price, headline…" : "settings, link, menu…"} type="search" value={query} /></div>
           {task === "qa" && <div><p className="filterLabel">Question type</p><div className="filterStack"><button className={type === "all" ? "active" : ""} onClick={() => setType("all")}><span>All examples</span><b>{data.qa.meta.examples}</b></button>{Object.entries(data.qa.meta.question_types).map(([name, count]) => <button className={type === name ? "active" : ""} key={name} onClick={() => { setType(name); setVisible(PAGE_SIZE); }}><span>{name}</span><b>{count}</b></button>)}</div></div>}
+          {task === "action" && data.action && <div><p className="filterLabel">Target action</p><div className="filterStack"><button className={type === "all" ? "active" : ""} onClick={() => setType("all")}><span>All actions</span><b>{data.action.meta.scored_examples}</b></button>{Object.entries(data.action.meta.target_action_counts).map(([name, count]) => <button className={type === name ? "active" : ""} key={name} onClick={() => { setType(name); setVisible(PAGE_SIZE); }}><span>{name}</span><b>{count}</b></button>)}</div></div>}
           <div><p className="filterLabel">{task === "qa" ? "Latest result" : "Latest click"}</p><div className="filterStack"><button className={status === "all" ? "active" : ""} onClick={() => setStatus("all")}><span>Any result</span></button>{task === "qa" ? <><button className={status === "recovered" ? "active" : ""} onClick={() => setStatus("recovered")}><span>Exact answer</span></button><button className={status === "still-wrong" ? "active" : ""} onClick={() => setStatus("still-wrong")}><span>Needs review</span></button></> : <><button className={status === "hit" ? "active" : ""} onClick={() => setStatus("hit")}><span>Inside target</span></button><button className={status === "miss" ? "active" : ""} onClick={() => setStatus("miss")}><span>Missed target</span></button></>}</div></div>
-          <div className="datasetNote"><strong>{task === "qa" ? "What one QA record contains" : "How to read the overlay"}</strong><p>{task === "qa" ? "Screenshot, natural-language question, concise reference answer, QA type, form, domain, and URL." : `Green marks the annotated element bounds and center. Gray is baseline; teal is the latest model click at step ${data.meta.latest_step}.`}</p><small>{data.meta.license}</small></div>
+          <div className="datasetNote"><strong>{task === "qa" ? "What one QA record contains" : "How to read the overlay"}</strong><p>{task === "qa" ? "Screenshot, natural-language question, concise reference answer, QA type, form, domain, and URL." : `Green marks the annotated target. Gray is the EXP002 parent; teal is the latest model point at step ${data.meta.latest_step}.`}</p><small>{data.meta.license}</small></div>
         </aside>
 
         <div className="results">
-          <div className="resultsHeader"><div><p className="eyebrow">{task === "qa" ? "QA records" : "Grounding records"}</p><h2>{filtered.length} matching examples</h2></div>{(query || type !== "all" || status !== "all") && <button className="reset" onClick={resetFilters}>Reset filters</button>}</div>
-          <div className="cards">{task === "qa" ? qaFiltered.slice(0, visible).map((record, index) => <QaCard eager={index < 4} key={record.id} record={record} />) : groundFiltered.slice(0, visible).map((record, index) => <GroundingCard eager={index < 4} key={record.id} record={record} />)}</div>
+          <div className="resultsHeader"><div><p className="eyebrow">{task === "qa" ? "QA records" : task === "grounding" ? "Grounding records" : "Action records"}</p><h2>{filtered.length} matching examples</h2></div>{(query || type !== "all" || status !== "all") && <button className="reset" onClick={resetFilters}>Reset filters</button>}</div>
+          <div className="cards">{task === "qa" ? qaFiltered.slice(0, visible).map((record, index) => <QaCard eager={index < 4} key={record.id} record={record} />) : task === "grounding" ? groundFiltered.slice(0, visible).map((record, index) => <GroundingCard eager={index < 4} key={record.id} record={record} />) : actionFiltered.slice(0, visible).map((record, index) => <ActionCard eager={index < 4} key={record.id} record={record} />)}</div>
           {visible < filtered.length && <button className="loadMore" onClick={() => setVisible((value) => value + PAGE_SIZE)}>Load {Math.min(PAGE_SIZE, filtered.length - visible)} more</button>}
         </div>
       </section>
-      <footer><span>Spider EXP002 · generated from immutable Kaggle probe artifacts</span><span>MolmoWeb · ODC-BY 1.0</span></footer>
+      <footer><span>Spider EXP002/EXP004 · generated from immutable Kaggle probe artifacts</span><span>MolmoWeb · ODC-BY 1.0</span></footer>
     </main>
   );
 }

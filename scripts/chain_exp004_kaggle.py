@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -28,6 +29,7 @@ BASELINE_SHARDS = (
 BASELINE_MERGE = "spider-exp004-action-baseline-merge"
 COMPATIBILITY = "spider-exp004-ddp-initial-adapter-smoke"
 STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
+EXPERIMENT_DIR = Path("experiments/exp004_qwen35_2b_browser_action_sft")
 
 
 def emit(event: str, **fields: Any) -> None:
@@ -112,6 +114,60 @@ def download_json(job: str, version: int, pattern: str, filename: str) -> dict[s
         return json.loads(matches[0].read_text(encoding="utf-8"))
 
 
+def write_artifact(repository_root: Path, relative: Path, payload: dict[str, Any]) -> Path:
+    target = repository_root / EXPERIMENT_DIR / "artifacts" / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return target
+
+
+def sync_dashboard(job: str, version: int, repository_root: Path, step: int) -> Path:
+    with tempfile.TemporaryDirectory(prefix=f"{job}-dashboard-") as directory:
+        run(
+            [
+                "kaggle",
+                "kernels",
+                "output",
+                f"{slug(job)}/{version}",
+                "--path",
+                directory,
+                "--file-pattern",
+                r"experiment4/dashboard/.*",
+                "--page-size",
+                "200",
+                "--quiet",
+            ]
+        )
+        root = Path(directory)
+        payloads = [
+            path for path in root.rglob("qa-probe.json") if "dashboard" in path.parts
+        ]
+        if len(payloads) != 1:
+            raise RuntimeError(f"Expected one EXP004 dashboard payload, found {payloads}")
+        dashboard_root = repository_root / "dataset-dashboard"
+        target_payload = dashboard_root / "app/qa-probe.json"
+        shutil.copy2(payloads[0], target_payload)
+        images = [
+            path
+            for path in root.rglob("*.jpg")
+            if "dashboard" in path.parts and "action" in path.parts
+        ]
+        target_images = dashboard_root / "public/images/action"
+        target_images.mkdir(parents=True, exist_ok=True)
+        for image in images:
+            shutil.copy2(image, target_images / image.name)
+        archive = repository_root / EXPERIMENT_DIR / "artifacts/validation_steps" / f"step_{step:04d}"
+        archive.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(payloads[0], archive / "dashboard.json")
+        emit(
+            "exp004_dashboard_refreshed",
+            step=step,
+            payload=str(target_payload.relative_to(repository_root)),
+            action_images=len(images),
+        )
+        return target_payload
+
+
 def validate_baselines(job: str = BASELINE_MERGE, version: int = 1) -> dict[str, Any]:
     base = download_json(
         job, version, r"action-base/metrics\.json", "metrics.json"
@@ -193,6 +249,7 @@ def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) 
     launch(BASELINE_MERGE, repository_root)
     require_complete(wait_jobs([BASELINE_MERGE], poll_seconds, heartbeat_seconds))
     baselines = validate_baselines()
+    write_artifact(repository_root, Path("action_baseline/metrics.json"), baselines)
     emit("exp004_baseline_validated", metrics=baselines)
 
     launch(COMPATIBILITY, repository_root)
@@ -204,11 +261,22 @@ def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) 
         launch(stage_job, repository_root)
         require_complete(wait_jobs([stage_job], poll_seconds, heartbeat_seconds))
         state = validate_stage(stage)
+        write_artifact(
+            repository_root,
+            Path("training_stages") / f"step_{step:04d}.json",
+            state,
+        )
         emit("exp004_stage_validated", stage=stage, step=step, state=state)
         validation_job = f"spider-exp004-validation-step-{step:04d}"
         launch(validation_job, repository_root)
         require_complete(wait_jobs([validation_job], poll_seconds, heartbeat_seconds))
         gate = validate_gate(step)
+        write_artifact(
+            repository_root,
+            Path("validation_steps") / f"step_{step:04d}" / "gate.json",
+            gate,
+        )
+        sync_dashboard(validation_job, 1, repository_root, step)
         emit("exp004_validation_gate", stage=stage, step=step, gate=gate)
         if not gate.get("advance") and stage < len(STEPS) - 1:
             raise RuntimeError(f"EXP004 regression gate stopped training at step {step}: {gate}")

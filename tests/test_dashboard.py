@@ -3,7 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from spider.dashboard import build_grounding_probe_dashboard, build_qa_probe_dashboard, first_answer
+from spider.dashboard import (
+    build_action_probe_dashboard,
+    build_grounding_probe_dashboard,
+    build_qa_probe_dashboard,
+    copy_action_dashboard_images,
+    first_answer,
+)
 
 
 def _write_predictions(path: Path, prediction: str) -> None:
@@ -88,3 +94,67 @@ def test_build_grounding_dashboard_keeps_visual_click_points(tmp_path: Path) -> 
     assert record["scores"]["baseline"]["within_element_bounds"] is False
     assert record["scores"]["latest"]["parsed_point"] == [150.0, 150.0]
     assert payload["metrics"]["latest"]["click_accuracy"] == 1.0
+
+
+def _write_action_predictions(path: Path, point: list[int]) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "id": "action-1",
+                "task": "action",
+                "image": "images/action/example.jpg",
+                "image_width": 1000,
+                "image_height": 500,
+                "domain": "example.com",
+                "url": "https://example.com",
+                "question": "Open settings",
+                "source": "from_template",
+                "step_index": 2,
+                "target_action": {
+                    "name": "click",
+                    "x": 15,
+                    "y": 30,
+                    "button": "left",
+                    "click_type": "single",
+                },
+                "bbox_normalized": [0.1, 0.2, 0.2, 0.4],
+                "prediction": json.dumps(
+                    {
+                        "thought": "Click settings.",
+                        "action": {
+                            "name": "click",
+                            "x": point[0],
+                            "y": point[1],
+                            "button": "left",
+                            "click_type": "single",
+                        },
+                    }
+                ),
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_build_action_dashboard_keeps_target_and_predictions(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline.jsonl"
+    latest = tmp_path / "latest.jsonl"
+    _write_action_predictions(baseline, [80, 80])
+    _write_action_predictions(latest, [15, 30])
+
+    payload = build_action_probe_dashboard({"baseline": baseline, "latest": latest})
+
+    record = payload["records"][0]
+    assert record["target_action"]["x"] == 15
+    assert record["scores"]["baseline"]["click_inside_bbox"] is False
+    assert record["scores"]["latest"]["parsed_point"] == [15.0, 30.0]
+    assert payload["metrics"]["latest"]["click_inside_bbox_accuracy"] == 1.0
+
+    source_root = tmp_path / "source"
+    image = source_root / "images/action/example.jpg"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"jpeg")
+    target_root = tmp_path / "public/images/action"
+    assert copy_action_dashboard_images(payload, source_root, target_root) == 1
+    assert (target_root / "example.jpg").read_bytes() == b"jpeg"
