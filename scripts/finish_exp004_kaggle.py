@@ -146,11 +146,13 @@ def _archive_final_outputs(repository_root: Path) -> None:
         dashboard_payload = _find_unique_suffix(download_root, "dashboard/qa-probe.json")
         dashboard_root = repository_root / "dataset-dashboard"
         shutil.copy2(dashboard_payload, dashboard_root / "app/qa-probe.json")
-        dashboard_images = dashboard_payload.parent / "images/action"
-        target_images = dashboard_root / "public/images/action"
-        if target_images.exists():
-            shutil.rmtree(target_images)
-        shutil.copytree(dashboard_images, target_images)
+        dashboard_images = dashboard_payload.parent / "images"
+        for task in ("qa", "grounding", "action"):
+            source_images = dashboard_images / task
+            target_images = dashboard_root / "public/images" / task
+            if target_images.exists():
+                shutil.rmtree(target_images)
+            shutil.copytree(source_images, target_images)
         shutil.copy2(dashboard_payload, artifact_root / "dashboard.json")
     emit("exp004_final_artifacts_archived", artifact_root=str(artifact_root))
 

@@ -3,13 +3,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from PIL import Image
+
 from spider.dashboard import (
     build_action_probe_dashboard,
     build_grounding_probe_dashboard,
+    build_probe_dashboard,
     build_qa_probe_dashboard,
     copy_action_dashboard_images,
+    copy_perception_dashboard_images,
     first_answer,
 )
+from spider.prepare import write_jsonl
 
 
 def _write_predictions(path: Path, prediction: str) -> None:
@@ -46,9 +51,7 @@ def test_build_qa_probe_dashboard_scores_display_answer(tmp_path: Path) -> None:
     _write_predictions(baseline, "Start")
     _write_predictions(latest, "Get started\nuser\nRepeat the question")
 
-    payload = build_qa_probe_dashboard(
-        {"baseline": baseline, "latest": latest}
-    )
+    payload = build_qa_probe_dashboard({"baseline": baseline, "latest": latest})
 
     assert payload["meta"]["examples"] == 1
     assert payload["meta"]["turn_leak_examples"] == 1
@@ -85,9 +88,7 @@ def test_build_grounding_dashboard_keeps_visual_click_points(tmp_path: Path) -> 
     _write_grounding_predictions(baseline, [500, 500])
     _write_grounding_predictions(latest, [150, 150])
 
-    payload = build_grounding_probe_dashboard(
-        {"baseline": baseline, "latest": latest}
-    )
+    payload = build_grounding_probe_dashboard({"baseline": baseline, "latest": latest})
 
     record = payload["records"][0]
     assert record["target_point_normalized"] == [150, 150]
@@ -158,3 +159,52 @@ def test_build_action_dashboard_keeps_target_and_predictions(tmp_path: Path) -> 
     target_root = tmp_path / "public/images/action"
     assert copy_action_dashboard_images(payload, source_root, target_root) == 1
     assert (target_root / "example.jpg").read_bytes() == b"jpeg"
+
+
+def test_compact_perception_dashboard_copies_only_displayed_images(tmp_path: Path) -> None:
+    records = []
+    for index in range(3):
+        image = tmp_path / f"images/{index}.jpg"
+        image.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (20, 10), "white").save(image)
+        records.extend(
+            [
+                {
+                    "id": f"qa-{index}",
+                    "task": "qa",
+                    "image": f"images/{index}.jpg",
+                    "image_width": 20,
+                    "image_height": 10,
+                    "question": "Read",
+                    "answer": "ok",
+                    "prediction": "wrong" if index < 2 else "ok",
+                    "question_type": "OCR",
+                },
+                {
+                    "id": f"ground-{index}",
+                    "task": "grounding",
+                    "image": f"images/{index}.jpg",
+                    "image_width": 20,
+                    "image_height": 10,
+                    "question": "Button",
+                    "answer": "(500,500)",
+                    "prediction": "(900,900)" if index < 2 else "(500,500)",
+                    "bbox_normalized": [400, 400, 600, 600],
+                    "target_point_normalized": [500, 500],
+                },
+            ]
+        )
+    predictions = tmp_path / "predictions.jsonl"
+    write_jsonl(predictions, records)
+    payload = build_probe_dashboard(
+        {"latest": predictions},
+        latest_label="latest",
+        perception_display_limit=2,
+    )
+    assert payload["qa"]["meta"]["examples"] == 3
+    assert payload["qa"]["meta"]["display_examples"] == 2
+    assert payload["grounding"]["meta"]["examples"] == 3
+    assert payload["grounding"]["meta"]["display_examples"] == 2
+    assert copy_perception_dashboard_images(payload, tmp_path, tmp_path / "export") == 4
+    assert len(list((tmp_path / "export/qa").glob("*.jpg"))) == 2
+    assert len(list((tmp_path / "export/grounding").glob("*.jpg"))) == 2

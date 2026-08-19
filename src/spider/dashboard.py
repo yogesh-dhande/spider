@@ -14,9 +14,7 @@ from spider.metrics import normalize_answer, score_grounding, token_f1
 from spider.prepare import read_jsonl
 from spider.web_actions import WebActionError, parse_action_response
 
-TURN_BOUNDARY = re.compile(
-    r"\n(?:user|assistant)\n|<think>|<\|im_(?:start|end)\|>", re.IGNORECASE
-)
+TURN_BOUNDARY = re.compile(r"\n(?:user|assistant)\n|<think>|<\|im_(?:start|end)\|>", re.IGNORECASE)
 
 
 def first_answer(prediction: str) -> str:
@@ -35,10 +33,14 @@ def build_qa_probe_dashboard(
     prediction_paths: Mapping[str, Path],
     *,
     latest_label: str = "latest",
+    display_limit: int | None = None,
+    split: str = "validation",
 ) -> dict[str, Any]:
     """Join aligned QA probe predictions into a compact dashboard payload."""
     if latest_label not in prediction_paths:
         raise ValueError(f"Missing latest prediction label: {latest_label}")
+    if display_limit is not None and display_limit <= 0:
+        raise ValueError("QA display_limit must be positive")
 
     by_label: dict[str, dict[str, dict[str, Any]]] = {}
     for label, path in prediction_paths.items():
@@ -68,6 +70,7 @@ def build_qa_probe_dashboard(
             {
                 "id": record_id,
                 "image": f"/images/qa/{Path(str(record['image'])).name}",
+                "source_image": record["image"],
                 "image_width": record["image_width"],
                 "image_height": record["image_height"],
                 "domain": record.get("domain"),
@@ -88,37 +91,50 @@ def build_qa_probe_dashboard(
             }
         )
 
-    rows.sort(key=lambda item: (str(item["question_type"]).lower(), item["id"]))
+    rows.sort(
+        key=lambda item: (
+            bool(item["scores"][latest_label]["exact"]),
+            str(item["question_type"]).lower(),
+            item["id"],
+        )
+    )
     question_types = Counter(str(row["question_type"]) for row in rows)
     metrics: dict[str, dict[str, float]] = {}
     for label in prediction_paths:
         metrics[label] = {
-            "exact_accuracy": sum(bool(row["scores"][label]["exact"]) for row in rows)
-            / len(rows),
+            "exact_accuracy": sum(bool(row["scores"][label]["exact"]) for row in rows) / len(rows),
             "mean_token_f1": sum(float(row["scores"][label]["token_f1"]) for row in rows)
             / len(rows),
         }
 
+    displayed = rows if display_limit is None else rows[:display_limit]
     return {
         "meta": {
-            "title": "EXP002 fixed validation QA probe",
-            "split": "validation",
+            "title": f"Browser ScreenshotQA {split} probe",
+            "split": split,
             "examples": len(rows),
-            "unique_screenshots": len({row["image"] for row in rows}),
+            "display_examples": len(displayed),
+            "unique_screenshots": len({row["image"] for row in displayed}),
             "question_types": dict(sorted(question_types.items())),
             "latest_label": latest_label,
             "turn_leak_examples": sum(bool(row["leaked_turn"]) for row in rows),
             "license": "MolmoWeb-SyntheticQA — ODC-BY 1.0",
         },
         "metrics": metrics,
-        "records": rows,
+        "records": displayed,
     }
 
 
 def build_grounding_probe_dashboard(
     prediction_paths: Mapping[str, Path],
+    *,
+    latest_label: str | None = None,
+    display_limit: int | None = None,
+    split: str = "validation",
 ) -> dict[str, Any]:
     """Join aligned grounding predictions and compute per-checkpoint click diagnostics."""
+    if display_limit is not None and display_limit <= 0:
+        raise ValueError("Grounding display_limit must be positive")
     by_label: dict[str, dict[str, dict[str, Any]]] = {}
     for label, path in prediction_paths.items():
         records = [record for record in read_jsonl(path) if record["task"] == "grounding"]
@@ -128,6 +144,9 @@ def build_grounding_probe_dashboard(
         by_label[label] = indexed
 
     reference_label = next(iter(prediction_paths))
+    diagnostic_label = latest_label or reference_label
+    if diagnostic_label not in prediction_paths:
+        raise ValueError(f"Missing latest grounding prediction label: {diagnostic_label}")
     reference_ids = set(by_label[reference_label])
     for label, indexed in by_label.items():
         if set(indexed) != reference_ids:
@@ -147,6 +166,7 @@ def build_grounding_probe_dashboard(
             {
                 "id": record_id,
                 "image": f"/images/grounding/{Path(str(record['image'])).name}",
+                "source_image": record["image"],
                 "image_width": record["image_width"],
                 "image_height": record["image_height"],
                 "domain": record.get("domain"),
@@ -159,7 +179,19 @@ def build_grounding_probe_dashboard(
                 "scores": scores,
             }
         )
-    rows.sort(key=lambda item: (str(item["domain"]), item["id"]))
+
+    def diagnostic_order(item: dict[str, Any]) -> tuple[int, float, str, str]:
+        score = item["scores"][diagnostic_label]
+        if not score["parse_success"]:
+            priority = 0
+        elif not score["within_element_bounds"]:
+            priority = 1
+        else:
+            priority = 2
+        distance = score["pixel_distance"]
+        return priority, -float(distance or 0.0), str(item["domain"]), str(item["id"])
+
+    rows.sort(key=diagnostic_order)
 
     metrics: dict[str, dict[str, float | None]] = {}
     for label in prediction_paths:
@@ -183,15 +215,17 @@ def build_grounding_probe_dashboard(
             / len(rows),
         }
 
+    displayed = rows if display_limit is None else rows[:display_limit]
     return {
         "meta": {
-            "title": "EXP002 fixed validation grounding probe",
-            "split": "validation",
+            "title": f"Browser grounding {split} probe",
+            "split": split,
             "examples": len(rows),
-            "unique_screenshots": len({row["image"] for row in rows}),
+            "display_examples": len(displayed),
+            "unique_screenshots": len({row["image"] for row in displayed}),
         },
         "metrics": metrics,
-        "records": rows,
+        "records": displayed,
     }
 
 
@@ -210,6 +244,7 @@ def build_action_probe_dashboard(
     *,
     latest_label: str = "latest",
     display_limit: int = 64,
+    split: str = "development",
 ) -> dict[str, Any]:
     """Join aligned action predictions and retain a diagnostic visual sample."""
     if latest_label not in prediction_paths:
@@ -286,8 +321,8 @@ def build_action_probe_dashboard(
     displayed = rows[:display_limit]
     return {
         "meta": {
-            "title": "EXP004 fixed browser-action development probe",
-            "split": "development",
+            "title": f"EXP004 fixed browser-action {split} probe",
+            "split": split,
             "scored_examples": len(rows),
             "display_examples": len(displayed),
             "unique_screenshots": len({row["image"] for row in displayed}),
@@ -317,6 +352,24 @@ def copy_action_dashboard_images(
     return copied
 
 
+def copy_perception_dashboard_images(
+    payload: dict[str, Any], source_root: Path, target_root: Path
+) -> int:
+    """Copy only QA and grounding images retained in a compact dashboard payload."""
+    copied = 0
+    for task in ("qa", "grounding"):
+        for record in payload[task]["records"]:
+            source = source_root / str(record["source_image"])
+            target = target_root / task / Path(str(record["image"])).name
+            if not source.is_file():
+                raise FileNotFoundError(f"Missing perception dashboard image: {source}")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if not target.exists():
+                shutil.copy2(source, target)
+                copied += 1
+    return copied
+
+
 def build_probe_dashboard(
     prediction_paths: Mapping[str, Path],
     *,
@@ -325,6 +378,8 @@ def build_probe_dashboard(
     latest_step: int | None = None,
     action_prediction_paths: Mapping[str, Path] | None = None,
     action_display_limit: int = 64,
+    perception_display_limit: int | None = None,
+    split: str = "validation",
 ) -> dict[str, Any]:
     """Build the combined QA and grounding explorer payload."""
     labels = dict(checkpoint_labels or {label: label for label in prediction_paths})
@@ -337,8 +392,18 @@ def build_probe_dashboard(
             "latest_label": latest_label,
             "latest_step": latest_step,
         },
-        "qa": build_qa_probe_dashboard(prediction_paths, latest_label=latest_label),
-        "grounding": build_grounding_probe_dashboard(prediction_paths),
+        "qa": build_qa_probe_dashboard(
+            prediction_paths,
+            latest_label=latest_label,
+            display_limit=perception_display_limit,
+            split=split,
+        ),
+        "grounding": build_grounding_probe_dashboard(
+            prediction_paths,
+            latest_label=latest_label,
+            display_limit=perception_display_limit,
+            split=split,
+        ),
     }
     if action_prediction_paths is not None:
         if set(action_prediction_paths) != set(prediction_paths):
@@ -347,6 +412,7 @@ def build_probe_dashboard(
             action_prediction_paths,
             latest_label=latest_label,
             display_limit=action_display_limit,
+            split="development" if split == "validation" else split,
         )
     return payload
 
