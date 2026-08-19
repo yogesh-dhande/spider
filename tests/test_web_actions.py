@@ -9,6 +9,7 @@ from spider.web_actions import (
     normalize_action_output,
     normalized_bbox,
     parse_action_response,
+    to_rollout_action,
 )
 
 
@@ -67,3 +68,21 @@ def test_action_prompt_and_training_system() -> None:
     assert "## Step 0" in prompt
     assert messages[0]["content"] == ACTION_SYSTEM_PROMPT
     assert completion[0]["role"] == "assistant"
+
+
+def test_molmoweb_actions_translate_to_rollout_schema() -> None:
+    click = to_rollout_action(
+        {"thought": "click", "action": {"name": "click", "x": 25, "y": 75}}
+    )
+    scroll = to_rollout_action(
+        {"thought": "scroll", "action": {"name": "scroll", "delta_x": 0, "delta_y": -50}}
+    )
+    done = to_rollout_action(
+        {
+            "thought": "finish",
+            "action": {"name": "send_msg_to_user", "msg": "[ANSWER] complete"},
+        }
+    )
+    assert click.to_dict() == {"action": "click", "x": 0.25, "y": 0.75}
+    assert scroll.to_dict() == {"action": "scroll", "direction": "up", "amount": 0.5}
+    assert done.to_dict() == {"action": "done", "result": "complete"}

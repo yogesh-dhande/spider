@@ -23,7 +23,7 @@ def code_cell(source: str) -> dict[str, object]:
 
 def notebook(repo_revision: str, source: str, smoke_trajectories: int | None) -> dict[str, object]:
     args = [
-        "python",
+        "__PYTHON_EXECUTABLE__",
         "-m",
         "spider.action_data",
         "--config",
@@ -61,6 +61,7 @@ def notebook(repo_revision: str, source: str, smoke_trajectories: int | None) ->
             code_cell("%pip install -q --progress-bar off -r requirements/experiment2-data-kaggle.txt\n"),
             code_cell(
                 f"command = {args!r}\n"
+                "command[0] = sys.executable\n"
                 "print({'event': 'action_data_job_start', 'command': command}, flush=True)\n"
                 "subprocess.run(command, check=True)\n"
                 "print({'event': 'action_data_job_complete'}, flush=True)\n"

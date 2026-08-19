@@ -4,6 +4,8 @@ import json
 import math
 from typing import Any
 
+from spider.rl.actions import BrowserAction
+
 COORDINATE_ACTIONS = {"click", "scroll_at", "mouse_drag_and_drop"}
 
 
@@ -147,3 +149,46 @@ def normalized_bbox(bbox_pixels: list[float] | None, width: int, height: int) ->
         raise WebActionError("image dimensions must be positive")
     x1, y1, x2, y2 = bbox_pixels
     return [x1 / width, y1 / height, x2 / width, y2 / height]
+
+
+def to_rollout_action(payload: dict[str, Any]) -> BrowserAction:
+    """Translate the MolmoWeb action schema into the minimal rollout environment schema."""
+    action = payload.get("action")
+    if not isinstance(action, dict):
+        raise WebActionError("parsed response has no action object")
+    name = action.get("name")
+    if name == "click":
+        try:
+            return BrowserAction(
+                action="click", x=float(action["x"]) / 100.0, y=float(action["y"]) / 100.0
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise WebActionError("click requires x and y") from error
+    if name == "keyboard_type":
+        text = action.get("text")
+        if not isinstance(text, str) or not text:
+            raise WebActionError("keyboard_type requires text")
+        return BrowserAction(action="type", text=text)
+    if name == "scroll":
+        try:
+            delta_y = float(action["delta_y"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise WebActionError("scroll requires delta_y") from error
+        if delta_y == 0:
+            raise WebActionError("vertical rollout scroll cannot have zero delta_y")
+        return BrowserAction(
+            action="scroll",
+            direction="down" if delta_y > 0 else "up",
+            amount=min(abs(delta_y) / 100.0, 1.0),
+        )
+    if name == "go_back":
+        return BrowserAction(action="go_back")
+    if name == "send_msg_to_user":
+        message = action.get("msg")
+        if not isinstance(message, str):
+            raise WebActionError("send_msg_to_user requires msg")
+        for prefix in ("[ANSWER]", "[EXIT]"):
+            if message.startswith(prefix):
+                message = message[len(prefix) :].strip()
+        return BrowserAction(action="done", result=message)
+    raise WebActionError(f"unsupported rollout action: {name!r}")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import os
 from collections.abc import Sequence
@@ -9,6 +10,80 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from spider.rl.types import Observation, PolicyTask, TaskSpec
+
+
+class QwenActionPolicy:
+    """Direct Qwen vision policy using EXP004's rationale-plus-action text protocol."""
+
+    def __init__(self, *, policy_id: str, config_path: str, adapter: str | None) -> None:
+        from spider.config import load_config
+        from spider.evaluate import load_model
+
+        self.policy_id = policy_id
+        self.config = load_config(config_path)
+        self.model, self.processor = load_model(self.config["experiment"], adapter)
+        self.task: PolicyTask | None = None
+        self.history: list[dict[str, object]] = []
+
+    def start_episode(self, task: PolicyTask, seed: int) -> None:
+        del seed
+        self.task = task
+        self.history = []
+
+    def predict(self, observation: Observation) -> str:
+        from PIL import Image
+
+        from spider.prompts import action_prompt, inference_messages
+        from spider.web_actions import parse_action_response, to_rollout_action
+
+        if self.task is None:
+            raise RuntimeError("Qwen policy must start an episode before prediction")
+        image = Image.open(io.BytesIO(observation.screenshot)).convert("RGB")
+        prompt = action_prompt(
+            self.task.instruction,
+            self.history[-int(self.config["data"]["max_past_steps"]) :],
+            page_url=observation.url,
+        )
+        # The manifest evaluator loads images from disk; live rollouts use the same prompt and
+        # generation protocol directly from the in-memory screenshot.
+        messages = inference_messages("action", prompt, image)
+        inputs = self.processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_dict=True,
+            return_tensors="pt",
+            **self.config["experiment"].get("chat_template_kwargs", {}),
+        ).to(self.model.device)
+        import torch
+
+        from spider.evaluate import generation_eos_token_ids
+
+        kwargs: dict[str, object] = {
+            "max_new_tokens": int(self.config["evaluation"]["max_new_tokens_action"]),
+            "do_sample": False,
+            "use_cache": True,
+        }
+        eos_ids = generation_eos_token_ids(self.model, self.processor)
+        if eos_ids:
+            kwargs["eos_token_id"] = eos_ids
+        with torch.inference_mode():
+            generated = self.model.generate(**inputs, **kwargs)
+        raw = self.processor.batch_decode(
+            generated[:, inputs.input_ids.shape[1] :],
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0].strip()
+        parsed = parse_action_response(raw)
+        self.history.append(
+            {
+                "index": observation.step_index,
+                "thought": parsed["thought"],
+                "action": parsed["action"],
+            }
+        )
+        action = to_rollout_action(parsed)
+        return json.dumps(action.to_dict(), sort_keys=True, separators=(",", ":"))
 
 
 class OraclePolicy:
@@ -159,5 +234,12 @@ def make_policy(config: dict[str, object], tasks: Sequence[TaskSpec]):
             timeout_seconds=float(config.get("timeout_seconds", 120.0)),
             bearer_token=token,
             max_history=int(config.get("max_history", 4)),
+        )
+    if policy_type == "qwen":
+        adapter_env = str(config.get("adapter_env", "SPIDER_POLICY_ADAPTER"))
+        return QwenActionPolicy(
+            policy_id=policy_id,
+            config_path=str(config.get("config_path", "configs/experiment4.yaml")),
+            adapter=os.environ.get(adapter_env),
         )
     raise ValueError(f"Unsupported policy type: {policy_type!r}")
