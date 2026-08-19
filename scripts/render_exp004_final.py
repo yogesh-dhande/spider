@@ -85,19 +85,13 @@ def write_job(
     )
 
 
-def render_shards(
-    repo_revision: str, root: Path, selected_stage: int, num_shards: int
-) -> None:
+def render_shards(repo_revision: str, root: Path, selected_stage: int, num_shards: int) -> None:
     step = STEPS[selected_stage]
     for shard in range(num_shards):
         slug = f"spider-exp004-final-shard-{shard:02d}"
         action_base_label = f"final-action-exp002-shard-{shard:02d}-of-{num_shards:02d}"
-        action_sft_label = (
-            f"final-action-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
-        )
-        perception_label = (
-            f"final-perception-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
-        )
+        action_sft_label = f"final-action-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
+        perception_label = f"final-perception-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
         cells = base_cells(repo_revision)
         cells.extend(
             [
@@ -157,8 +151,7 @@ def render_merge(repo_revision: str, root: Path, selected_stage: int, num_shards
     step = STEPS[selected_stage]
     slug = "spider-exp004-final-merge"
     action_base_labels = [
-        f"final-action-exp002-shard-{shard:02d}-of-{num_shards:02d}"
-        for shard in range(num_shards)
+        f"final-action-exp002-shard-{shard:02d}-of-{num_shards:02d}" for shard in range(num_shards)
     ]
     action_sft_labels = [
         f"final-action-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
@@ -222,6 +215,38 @@ def render_merge(repo_revision: str, root: Path, selected_stage: int, num_shards
                 "path = REPO_ROOT / 'outputs/experiment4/final_comparison.json'\n"
                 "path.write_text(json.dumps(comparison, indent=2) + '\\n')\n"
                 "print({'event': 'exp004_final_merge_complete', **comparison}, flush=True)\n"
+            ),
+            code_cell(
+                "from spider.dashboard import (\n"
+                "    build_probe_dashboard, copy_action_dashboard_images, write_dashboard_json,\n"
+                ")\n\n"
+                "output_root = REPO_ROOT / 'outputs/experiment4'\n"
+                "perception_base_predictions = REPO_ROOT / "
+                "'experiments/exp002_qwen35_2b_molmoweb/artifacts/final_test/step_1875/'"
+                "'predictions.jsonl'\n"
+                "perception_sft_predictions = output_root / "
+                "'evaluation/final-perception/predictions.jsonl'\n"
+                "action_base_predictions = output_root / "
+                "'action_evaluation/final-action-exp002/predictions.jsonl'\n"
+                "action_sft_predictions = output_root / "
+                "'action_evaluation/final-action/predictions.jsonl'\n"
+                "labels = {'baseline': 'EXP002 parent · sealed test', "
+                f"'latest': 'EXP004 step {step} · sealed test'}}\n"
+                "payload = build_probe_dashboard(\n"
+                "    {'baseline': perception_base_predictions, 'latest': perception_sft_predictions},\n"
+                "    checkpoint_labels=labels, latest_label='latest', "
+                f"latest_step={step},\n"
+                "    action_prediction_paths={\n"
+                "        'baseline': action_base_predictions, 'latest': action_sft_predictions,\n"
+                "    },\n"
+                ")\n"
+                "dashboard_root = output_root / 'dashboard'\n"
+                "write_dashboard_json(payload, dashboard_root / 'qa-probe.json')\n"
+                "copied = copy_action_dashboard_images(\n"
+                "    payload['action'], prepared, dashboard_root / 'images/action'\n"
+                ")\n"
+                "print({'event': 'final_dashboard_export_complete', "
+                "'images_copied': copied}, flush=True)\n"
             ),
         ]
     )

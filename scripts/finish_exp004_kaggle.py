@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,7 @@ STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
 FINAL_SHARDS = tuple(f"spider-exp004-final-shard-{index:02d}" for index in range(4))
 FINAL_MERGE = "spider-exp004-final-merge"
 CLOSED_LOOP = "spider-exp004-closed-loop"
+EXPERIMENT_DIR = Path("experiments/exp004_qwen35_2b_browser_action_sft")
 
 
 def _download_json(job: str, pattern: str, filename: str) -> dict[str, Any]:
@@ -74,6 +77,77 @@ def _validate_final(comparison: dict[str, Any], selected_step: int) -> None:
         raise RuntimeError(f"Incomplete sealed grounding result: {perception}")
 
 
+def _find_unique_suffix(root: Path, suffix: str) -> Path:
+    suffix_parts = Path(suffix).parts
+    matches = [
+        path
+        for path in root.rglob(Path(suffix).name)
+        if path.parts[-len(suffix_parts) :] == suffix_parts
+    ]
+    if len(matches) != 1:
+        raise RuntimeError(f"Expected one output ending in {suffix}, found {matches}")
+    return matches[0]
+
+
+def _archive_final_outputs(repository_root: Path) -> None:
+    """Persist sealed predictions, failure galleries, and the final dashboard."""
+    from chain_exp004_kaggle import run, slug
+
+    with tempfile.TemporaryDirectory(prefix="spider-exp004-final-") as directory:
+        download_root = Path(directory)
+        run(
+            [
+                "kaggle",
+                "kernels",
+                "output",
+                f"{slug(FINAL_MERGE)}/1",
+                "--path",
+                str(download_root),
+                "--file-pattern",
+                r"experiment4/.*",
+                "--page-size",
+                "500",
+                "--quiet",
+            ]
+        )
+        artifact_root = repository_root / EXPERIMENT_DIR / "artifacts/final_test"
+        predictions_root = artifact_root / "predictions"
+        predictions_root.mkdir(parents=True, exist_ok=True)
+        prediction_sources = {
+            "action_exp002.jsonl": ("action_evaluation/final-action-exp002/predictions.jsonl"),
+            "action_sft.jsonl": "action_evaluation/final-action/predictions.jsonl",
+            "perception_sft.jsonl": "evaluation/final-perception/predictions.jsonl",
+        }
+        for filename, suffix in prediction_sources.items():
+            shutil.copy2(_find_unique_suffix(download_root, suffix), predictions_root / filename)
+        perception_parent = (
+            repository_root
+            / "experiments/exp002_qwen35_2b_molmoweb/artifacts/final_test/step_1875/"
+            "predictions.jsonl"
+        )
+        shutil.copy2(perception_parent, predictions_root / "perception_exp002.jsonl")
+
+        failures_root = artifact_root / "failures"
+        for label, suffix in {
+            "action_exp002": "action_evaluation/final-action-exp002/report",
+            "action_sft": "action_evaluation/final-action/report",
+            "perception_sft": "evaluation/final-perception/report",
+        }.items():
+            source_report = _find_unique_suffix(download_root, suffix + "/failures.html").parent
+            shutil.copytree(source_report, failures_root / label, dirs_exist_ok=True)
+
+        dashboard_payload = _find_unique_suffix(download_root, "dashboard/qa-probe.json")
+        dashboard_root = repository_root / "dataset-dashboard"
+        shutil.copy2(dashboard_payload, dashboard_root / "app/qa-probe.json")
+        dashboard_images = dashboard_payload.parent / "images/action"
+        target_images = dashboard_root / "public/images/action"
+        if target_images.exists():
+            shutil.rmtree(target_images)
+        shutil.copytree(dashboard_images, target_images)
+        shutil.copy2(dashboard_payload, artifact_root / "dashboard.json")
+    emit("exp004_final_artifacts_archived", artifact_root=str(artifact_root))
+
+
 def run_final(
     repository_root: Path,
     poll_seconds: int,
@@ -110,6 +184,7 @@ def run_final(
             Path("final_test") / f"{label}-shard-metrics.json",
             shard_metrics,
         )
+    _archive_final_outputs(repository_root)
     emit("exp004_sealed_test_validated", comparison=comparison)
 
     launch(CLOSED_LOOP, repository_root)

@@ -9,7 +9,7 @@ from typing import Any
 from PIL import Image, ImageDraw
 
 from spider.coordinates import bbox_to_pixels, point_to_pixels
-from spider.prepare import stable_int
+from spider.prepare import stable_int, write_jsonl
 
 
 def _annotated_image(record: dict[str, Any], source: Path, target: Path) -> None:
@@ -62,6 +62,23 @@ def create_failure_report(
         selected[bucket] = items[:limit]
 
     report_dir.mkdir(parents=True, exist_ok=True)
+    representative = [record for bucket in sorted(selected) for record in selected[bucket]]
+    write_jsonl(report_dir / "representative_predictions.jsonl", representative)
+    (report_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "examples": len(records),
+                "selected_examples": len(representative),
+                "error_category_counts": {
+                    bucket: len(items) for bucket, items in sorted(buckets.items())
+                },
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     assets = report_dir / "assets"
     sections: list[str] = []
     for bucket, items in sorted(selected.items()):

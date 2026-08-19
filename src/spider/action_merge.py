@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from spider.action_metrics import score_action_records
+from spider.action_reports import create_action_failure_report
 from spider.config import experiment_path, load_config
 from spider.prepare import read_jsonl, write_jsonl
 
@@ -40,7 +41,9 @@ def merge_action_shards(
     missing = sorted(expected_ids - set(by_id))
     extra = sorted(set(by_id) - expected_ids)
     if missing or extra:
-        raise RuntimeError(f"Action shard coverage mismatch: missing={missing[:5]}, extra={extra[:5]}")
+        raise RuntimeError(
+            f"Action shard coverage mismatch: missing={missing[:5]}, extra={extra[:5]}"
+        )
     ordered = [by_id[record["id"]] for record in expected]
     scored, metrics = score_action_records(
         ordered, [int(value) for value in config["evaluation"]["distance_thresholds_px"]]
@@ -66,6 +69,14 @@ def merge_action_shards(
         ),
         encoding="utf-8",
     )
+    failure_examples = int(config["evaluation"].get("failure_examples_per_bucket", 0))
+    if failure_examples > 0:
+        create_action_failure_report(
+            scored,
+            data_dir,
+            target / "report",
+            failure_examples,
+        )
     return predictions_path, metrics
 
 
