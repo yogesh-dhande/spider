@@ -9,7 +9,6 @@ from pathlib import Path
 OWNER = "yogeshkd"
 PREPARED = f"{OWNER}/spider-exp004-finalize-prepared-data"
 EXP2_ADAPTER = f"{OWNER}/spider-exp002-sft-stage-07"
-BASELINE_MERGE = f"{OWNER}/spider-exp004-action-baseline-merge"
 STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
 
 
@@ -92,7 +91,10 @@ def render_shards(
     step = STEPS[selected_stage]
     for shard in range(num_shards):
         slug = f"spider-exp004-final-shard-{shard:02d}"
-        action_label = f"final-action-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
+        action_base_label = f"final-action-exp002-shard-{shard:02d}-of-{num_shards:02d}"
+        action_sft_label = (
+            f"final-action-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
+        )
         perception_label = (
             f"final-perception-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
         )
@@ -100,18 +102,32 @@ def render_shards(
         cells.extend(
             [
                 code_cell(
-                    "from spider.exp4_data import find_exp4_checkpoint, find_exp4_data\n"
+                    "from spider.exp4_data import (\n"
+                    "    find_exp2_initial_adapter, find_exp4_checkpoint, find_exp4_data,\n"
+                    ")\n"
                     "from spider.workflow import gpu_summary\n\n"
                     "prepared = find_exp4_data('/kaggle/input')\n"
+                    "base_adapter = find_exp2_initial_adapter('/kaggle/input')\n"
                     f"adapter = find_exp4_checkpoint('/kaggle/input', {step})\n"
                     "os.environ['SPIDER_DATA_DIR'] = str(prepared)\n"
                     "print({'event': 'final_inputs', 'prepared': str(prepared), "
-                    "'adapter': str(adapter), **gpu_summary()}, flush=True)\n"
+                    "'base_adapter': str(base_adapter), 'adapter': str(adapter), "
+                    "**gpu_summary()}, flush=True)\n"
                 ),
                 code_cell(
                     "from spider.action_evaluate import evaluate_actions\n\n"
+                    f"_, action_base_metrics = evaluate_actions('configs/experiment4.yaml', "
+                    f"{action_base_label!r}, str(base_adapter), split='test', "
+                    f"shard_index={shard}, num_shards={num_shards})\n"
+                    "print({'event': 'final_action_base_shard_complete', "
+                    "'metrics': action_base_metrics}, flush=True)\n"
+                ),
+                code_cell(
+                    "import torch\n"
+                    "gc.collect()\n"
+                    "torch.cuda.empty_cache()\n\n"
                     f"_, action_metrics = evaluate_actions('configs/experiment4.yaml', "
-                    f"{action_label!r}, str(adapter), split='test', shard_index={shard}, "
+                    f"{action_sft_label!r}, str(adapter), split='test', shard_index={shard}, "
                     f"num_shards={num_shards})\n"
                     "print({'event': 'final_action_shard_complete', 'metrics': action_metrics}, "
                     "flush=True)\n"
@@ -129,14 +145,22 @@ def render_shards(
                 ),
             ]
         )
-        sources = [PREPARED, f"{OWNER}/spider-exp004-sft-stage-{selected_stage:02d}"]
+        sources = [
+            PREPARED,
+            EXP2_ADAPTER,
+            f"{OWNER}/spider-exp004-sft-stage-{selected_stage:02d}",
+        ]
         write_job(root, slug, cells, sources)
 
 
 def render_merge(repo_revision: str, root: Path, selected_stage: int, num_shards: int) -> None:
     step = STEPS[selected_stage]
     slug = "spider-exp004-final-merge"
-    action_labels = [
+    action_base_labels = [
+        f"final-action-exp002-shard-{shard:02d}-of-{num_shards:02d}"
+        for shard in range(num_shards)
+    ]
+    action_sft_labels = [
         f"final-action-step-{step:04d}-shard-{shard:02d}-of-{num_shards:02d}"
         for shard in range(num_shards)
     ]
@@ -154,23 +178,25 @@ def render_merge(repo_revision: str, root: Path, selected_stage: int, num_shards
                 ")\n\n"
                 "prepared = find_exp4_data('/kaggle/input')\n"
                 "os.environ['SPIDER_DATA_DIR'] = str(prepared)\n"
-                f"action_labels = {action_labels!r}\n"
+                f"action_base_labels = {action_base_labels!r}\n"
+                f"action_sft_labels = {action_sft_labels!r}\n"
                 f"perception_labels = {perception_labels!r}\n"
-                "restore_action_evaluation_shards('/kaggle/input', action_labels, REPO_ROOT)\n"
+                "restore_action_evaluation_shards(\n"
+                "    '/kaggle/input', action_base_labels + action_sft_labels, REPO_ROOT\n"
+                ")\n"
                 "restore_exp4_evaluation_shards('/kaggle/input', perception_labels, REPO_ROOT)\n"
             ),
             code_cell(
                 "from spider.action_merge import merge_action_shards\n"
                 "from spider.merge import merge_evaluation_shards\n\n"
+                "_, action_baseline = merge_action_shards('configs/experiment4.yaml', "
+                "'final-action-exp002', action_base_labels, 'test')\n"
                 "_, action_metrics = merge_action_shards('configs/experiment4.yaml', "
-                "'final-action', action_labels, 'test')\n"
+                "'final-action', action_sft_labels, 'test')\n"
                 "_, perception_metrics = merge_evaluation_shards('configs/experiment4.yaml', "
                 "'final-perception', perception_labels, ['molmoweb'], 'test')\n"
             ),
             code_cell(
-                "baseline_paths = list(Path('/kaggle/input').rglob('action-exp002/metrics.json'))\n"
-                "assert len(baseline_paths) == 1, baseline_paths\n"
-                "action_baseline = json.loads(baseline_paths[0].read_text())\n"
                 "perception_baseline = json.loads((REPO_ROOT / "
                 "'experiments/exp002_qwen35_2b_molmoweb/artifacts/final_test/step_1875/metrics.json'"
                 ").read_text())\n"
@@ -199,7 +225,7 @@ def render_merge(repo_revision: str, root: Path, selected_stage: int, num_shards
             ),
         ]
     )
-    sources = [PREPARED, BASELINE_MERGE] + [
+    sources = [PREPARED] + [
         f"{OWNER}/spider-exp004-final-shard-{shard:02d}" for shard in range(num_shards)
     ]
     write_job(root, slug, cells, sources, gpu=False)
