@@ -3,7 +3,12 @@ from pathlib import Path
 
 from PIL import Image
 
-from spider.exp4_data import EXP2_DATA_NAME, EXP4_DATA_NAME, finalize_exp4_data
+from spider.exp4_data import (
+    EXP2_DATA_NAME,
+    EXP4_DATA_NAME,
+    finalize_exp4_data,
+    restore_exp4_evaluation_shards,
+)
 from spider.prepare import read_jsonl, write_jsonl
 
 
@@ -75,3 +80,18 @@ def test_finalize_combines_actions_and_perception(tmp_path: Path) -> None:
     assert len(read_jsonl(target / "manifests" / "action_development.jsonl")) == 2
     assert len(read_jsonl(target / "manifests" / "qa_test.jsonl")) == 1
     assert (target / "file_checksums.json").is_file()
+
+
+def test_restore_exp4_evaluation_shards(tmp_path: Path) -> None:
+    search = tmp_path / "inputs"
+    label = "final-perception-step-1875-shard-00-of-04"
+    source = search / "kernel" / "outputs" / "experiment4" / "evaluation" / label
+    source.mkdir(parents=True)
+    (source / "predictions.raw.jsonl").write_text("{}\n", encoding="utf-8")
+    repository = tmp_path / "repository"
+
+    restored = restore_exp4_evaluation_shards(search, [label], repository)
+
+    expected = repository / "outputs" / "experiment4" / "evaluation" / label
+    assert restored == [expected]
+    assert (expected / "predictions.raw.jsonl").read_text(encoding="utf-8") == "{}\n"

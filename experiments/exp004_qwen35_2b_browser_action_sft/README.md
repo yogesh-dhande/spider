@@ -1,6 +1,6 @@
 # EXP004 — Qwen3.5-2B browser action SFT
 
-Status: preregistered; implementation and data smoke in progress.
+Status: preregistered; implementation complete; Kaggle data preparation in progress.
 
 Parent: EXP002 checkpoint 1875, selected on its validation split before EXP002 final-test
 evaluation.
@@ -66,6 +66,12 @@ reported even if the gate is missed.
 The sealed action test is opened once, after checkpoint selection. External live-browser benchmark
 tasks remain untouched for a later experiment; EXP004's closed-loop test uses only deterministic
 local tasks with programmatic verifiers.
+
+After development-stage selection, the sealed action and perception tests run in four independent
+GPU shards. A CPU merge job verifies completeness, aggregates both tasks, and applies the frozen
+positive-result rule. A separate paired closed-loop job compares the EXP002 parent adapter with the
+selected EXP004 adapter on identical deterministic tasks and seeds. This keeps checkpoint selection,
+sealed evaluation, and agent-level evaluation as distinct reproducible phases.
 
 ## Source audit
 

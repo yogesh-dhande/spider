@@ -85,6 +85,29 @@ def restore_action_evaluation_shards(
     return restored
 
 
+def restore_exp4_evaluation_shards(
+    search_root: str | Path, labels: list[str], repository_root: str | Path
+) -> list[Path]:
+    root = Path(search_root)
+    target_root = Path(repository_root) / "outputs/experiment4/evaluation"
+    restored = []
+    for label in labels:
+        matches = [
+            path
+            for path in root.rglob(label)
+            if path.is_dir()
+            and (path / "predictions.raw.jsonl").is_file()
+            and "evaluation" in path.parts
+        ]
+        matches = sorted(set(matches))
+        if len(matches) != 1:
+            raise FileNotFoundError(f"Expected one EXP004 perception shard {label}, found {matches}")
+        target = target_root / label
+        shutil.copytree(matches[0], target, dirs_exist_ok=False)
+        restored.append(target)
+    return restored
+
+
 def restore_exp4_training_output(
     search_root: str | Path, repository_root: str | Path
 ) -> Path:
