@@ -339,16 +339,57 @@ def prepare_action_source(
     return summary
 
 
+def smoke_action_source(
+    config: dict[str, Any], source: str, trajectories: int = 2
+) -> dict[str, Any]:
+    if source not in ALL_SOURCES:
+        raise ValueError(f"unsupported action source: {source}")
+    if trajectories <= 0:
+        raise ValueError("trajectories must be positive")
+    action_counts: Counter[str] = Counter()
+    valid_examples = 0
+    decoded_trajectories = 0
+    for row in _stream_source(config, source):
+        examples = trajectory_examples(
+            row,
+            source,
+            int(config["data"]["max_past_steps"]),
+            int(config["data"]["max_steps_per_trajectory"]),
+        )
+        if not examples:
+            continue
+        decoded_trajectories += 1
+        valid_examples += len(examples)
+        action_counts.update(record["target_action"]["name"] for record in examples)
+        if decoded_trajectories >= trajectories:
+            break
+    if decoded_trajectories < trajectories:
+        raise RuntimeError(
+            f"Only decoded {decoded_trajectories}/{trajectories} {source} trajectories"
+        )
+    return {
+        "source": source,
+        "source_file": config["data"]["source_files"][source],
+        "decoded_trajectories": decoded_trajectories,
+        "valid_examples": valid_examples,
+        "action_counts": dict(sorted(action_counts.items())),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare one resumable EXP004 action source")
     parser.add_argument("--config", default="configs/experiment4.yaml")
     parser.add_argument("--source", required=True, choices=sorted(ALL_SOURCES))
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--smoke-trajectories", type=int, default=None)
     args = parser.parse_args()
     config = load_config(args.config)
-    summary = prepare_action_source(
-        config, args.source, experiment_path(config, "data_dir"), args.overwrite
-    )
+    if args.smoke_trajectories is not None:
+        summary = smoke_action_source(config, args.source, args.smoke_trajectories)
+    else:
+        summary = prepare_action_source(
+            config, args.source, experiment_path(config, "data_dir"), args.overwrite
+        )
     print(json.dumps(summary, indent=2))
 
 
