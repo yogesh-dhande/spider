@@ -57,19 +57,32 @@ def slug(job: str) -> str:
 
 
 def status(job: str) -> str:
-    output = run(["kaggle", "kernels", "status", slug(job)])
-    match = re.search(r"KernelWorkerStatus\.([A-Z_]+)", output)
-    if match is None:
-        raise RuntimeError(f"Could not parse Kaggle status for {job}: {output}")
-    return match.group(1)
+    for attempt in range(5):
+        try:
+            output = run(["kaggle", "kernels", "status", slug(job)])
+        except subprocess.CalledProcessError:
+            if attempt == 4:
+                raise
+            delay = 2**attempt
+            emit("kaggle_status_retry", job=job, attempt=attempt + 1, delay_seconds=delay)
+            time.sleep(delay)
+            continue
+        match = re.search(r"KernelWorkerStatus\.([A-Z_]+)", output)
+        if match is None:
+            raise RuntimeError(f"Could not parse Kaggle status for {job}: {output}")
+        return match.group(1)
+    raise AssertionError("unreachable")
 
 
 def status_or_missing(job: str) -> str:
     """Return the latest job state, treating an unpublished kernel as missing."""
     try:
         return status(job)
-    except subprocess.CalledProcessError:
-        return "MISSING"
+    except subprocess.CalledProcessError as error:
+        message = f"{error.stdout or ''}\n{error.stderr or ''}"
+        if "Cannot access kernel" in message:
+            return "MISSING"
+        raise
 
 
 def wait_jobs(
