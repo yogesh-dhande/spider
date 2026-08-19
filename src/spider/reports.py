@@ -110,12 +110,12 @@ def create_failure_report(
     output = report_dir / "failures.html"
     output.write_text(
         "<!doctype html><html><head><meta charset='utf-8'>"
-        "<title>Spider Experiment 1 predictions</title>"
+        "<title>Spider perception predictions</title>"
         "<style>body{font:15px system-ui;margin:24px;background:#f4f5f7;color:#17191c}"
         ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px}"
         ".card{background:white;border-radius:10px;padding:12px;box-shadow:0 1px 5px #0002}"
         "img{width:100%;height:auto;border-radius:6px}pre{white-space:pre-wrap;overflow-wrap:anywhere}"
-        "h2{margin-top:36px}</style></head><body><h1>Experiment 1 prediction gallery</h1>"
+        "h2{margin-top:36px}</style></head><body><h1>Perception prediction gallery</h1>"
         "<p>Grounding overlays: green box/dot = target; red cross = prediction.</p>"
         + "".join(sections)
         + "</body></html>",
