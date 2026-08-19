@@ -81,7 +81,9 @@ def main() -> None:
     parser.add_argument("--config", default="configs/experiment4.yaml")
     parser.add_argument("--label", required=True)
     parser.add_argument("--adapter", default=None)
-    parser.add_argument("--split", default="validation", choices=("validation", "test"))
+    parser.add_argument(
+        "--split", default="validation", choices=("development", "validation", "test")
+    )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--shard-index", type=int, default=None)
     parser.add_argument("--num-shards", type=int, default=None)

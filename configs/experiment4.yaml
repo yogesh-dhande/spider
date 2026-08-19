@@ -92,7 +92,10 @@ training:
   stage_steps: 250
 
 evaluation:
+  max_new_tokens_qa: 96
+  max_new_tokens_grounding: 96
   max_new_tokens_action: 256
+  qa_case_sensitive: false
   distance_thresholds_px: [25, 50, 100]
   development_examples: 256
   final_test_examples: 1024

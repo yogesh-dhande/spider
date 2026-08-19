@@ -42,9 +42,10 @@ The fixed training mixture is:
 | EXP002 grounding replay | 5,000 |
 | **Total** | **30,000** |
 
-Action validation contains 512 examples and the sealed action test contains 1,024. The development
-perception probe contains 256 QA and 256 grounding examples. Final perception retention uses the
-already sealed EXP002 test manifests.
+Action validation contains 512 examples; its fixed first 256 examples form the development subset
+used for stage selection. The sealed action test contains 1,024. The development perception probe
+contains 256 QA and 256 grounding examples. Final perception retention uses the already sealed
+EXP002 test manifests.
 
 ## Metrics and decision rule
 

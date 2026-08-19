@@ -56,6 +56,7 @@ def test_finalize_combines_actions_and_perception(tmp_path: Path) -> None:
             )
     config = {
         "experiment": {"seed": 7},
+        "evaluation": {"development_examples": 2},
         "data": {
             "excluded_contaminated_sources": ["task_seeded_wv", "task_seeded_om2w"],
             "perception_replay": {
@@ -71,5 +72,6 @@ def test_finalize_combines_actions_and_perception(tmp_path: Path) -> None:
     assert summary["combined_train"] == 6
     assert summary["combined_validation"] == 6
     assert len(read_jsonl(target / "manifests" / "action_test.jsonl")) == 4
+    assert len(read_jsonl(target / "manifests" / "action_development.jsonl")) == 2
     assert len(read_jsonl(target / "manifests" / "qa_test.jsonl")) == 1
     assert (target / "file_checksums.json").is_file()

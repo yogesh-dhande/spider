@@ -156,6 +156,11 @@ def finalize_exp4_data(
     for split, records in action_records.items():
         random.Random(int(config["experiment"]["seed"]) + SPLITS.index(split)).shuffle(records)
         write_jsonl(manifest_dir / f"action_{split}.jsonl", records)
+    development_count = int(config["evaluation"]["development_examples"])
+    write_jsonl(
+        manifest_dir / "action_development.jsonl",
+        action_records["validation"][:development_count],
+    )
 
     exp2_root = _source_root(search_roots, "qa_train.jsonl", EXP2_DATA_NAME)
     replay_cfg = config["data"]["perception_replay"]

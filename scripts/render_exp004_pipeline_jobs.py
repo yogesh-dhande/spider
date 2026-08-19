@@ -140,7 +140,8 @@ def render_baselines(repo_revision: str, output_root: Path, num_shards: int) -> 
                 code_cell(
                     "from spider.action_evaluate import evaluate_actions\n\n"
                     f"_, base_metrics = evaluate_actions('configs/experiment4.yaml', {base_label!r}, "
-                    f"None, shard_index={shard}, num_shards={num_shards})\n"
+                    f"None, split='development', shard_index={shard}, "
+                    f"num_shards={num_shards})\n"
                     "print({'event': 'base_action_shard_complete', 'metrics': base_metrics}, flush=True)\n"
                 ),
                 code_cell(
@@ -148,7 +149,8 @@ def render_baselines(repo_revision: str, output_root: Path, num_shards: int) -> 
                     "gc.collect()\n"
                     "torch.cuda.empty_cache()\n"
                     f"_, exp2_metrics = evaluate_actions('configs/experiment4.yaml', {exp2_label!r}, "
-                    f"str(initial_adapter), shard_index={shard}, num_shards={num_shards})\n"
+                    f"str(initial_adapter), split='development', shard_index={shard}, "
+                    f"num_shards={num_shards})\n"
                     "print({'event': 'exp002_action_shard_complete', 'metrics': exp2_metrics}, "
                     "flush=True)\n"
                 ),
@@ -183,9 +185,9 @@ def render_merge(repo_revision: str, output_root: Path, num_shards: int) -> None
             code_cell(
                 "from spider.action_merge import merge_action_shards\n\n"
                 f"_, base_metrics = merge_action_shards('configs/experiment4.yaml', 'action-base', "
-                f"{base_labels!r}, 'validation')\n"
+                f"{base_labels!r}, 'development')\n"
                 f"_, exp2_metrics = merge_action_shards('configs/experiment4.yaml', 'action-exp002', "
-                f"{exp2_labels!r}, 'validation')\n"
+                f"{exp2_labels!r}, 'development')\n"
                 "print({'event': 'action_baselines_merged', 'base': base_metrics, "
                 "'exp002': exp2_metrics}, flush=True)\n"
             ),

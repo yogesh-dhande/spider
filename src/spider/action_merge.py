@@ -74,7 +74,9 @@ def main() -> None:
     parser.add_argument("--config", default="configs/experiment4.yaml")
     parser.add_argument("--output-label", required=True)
     parser.add_argument("--shard-labels", required=True)
-    parser.add_argument("--split", default="validation", choices=("validation", "test"))
+    parser.add_argument(
+        "--split", default="validation", choices=("development", "validation", "test")
+    )
     args = parser.parse_args()
     _, metrics = merge_action_shards(
         args.config,
