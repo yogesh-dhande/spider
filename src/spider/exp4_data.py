@@ -49,6 +49,21 @@ def find_exp2_initial_adapter(search_root: str | Path, step: int = 1875) -> Path
     return matches[0]
 
 
+def find_exp4_checkpoint(search_root: str | Path, step: int) -> Path:
+    root = Path(search_root)
+    matches = [
+        path
+        for path in root.rglob(f"checkpoint-{step}")
+        if path.is_dir()
+        and (path / "adapter_config.json").is_file()
+        and "experiment4" in path.parts
+    ]
+    matches = sorted(set(matches))
+    if len(matches) != 1:
+        raise FileNotFoundError(f"Expected one EXP004 checkpoint-{step}, found {matches}")
+    return matches[0]
+
+
 def restore_action_evaluation_shards(
     search_root: str | Path, labels: list[str], repository_root: str | Path
 ) -> list[Path]:
@@ -174,12 +189,9 @@ def finalize_exp4_data(
             int(config["experiment"]["seed"]),
             f"replay-{task}-train",
         )
-        validation_records = _select(
-            read_jsonl(exp2_root / "manifests" / f"{task}_validation.jsonl"),
-            int(replay_cfg[f"validation_{task}"]),
-            int(config["experiment"]["seed"]),
-            f"replay-{task}-validation",
-        )
+        validation_records = read_jsonl(
+            exp2_root / "manifests" / f"{task}_validation.jsonl"
+        )[: int(replay_cfg[f"validation_{task}"])]
         test_records = read_jsonl(exp2_root / "manifests" / f"{task}_test.jsonl")
         perception_train.extend(train_records)
         perception_validation.extend(validation_records)
