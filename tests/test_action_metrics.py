@@ -37,6 +37,23 @@ def test_action_metrics_score_click_bounds_and_name() -> None:
     assert scored[2]["action_parse_valid"] is False
 
 
+def test_click_accuracy_counts_invalid_outputs_as_misses() -> None:
+    good = _record(
+        {"name": "click", "x": 25, "y": 50},
+        {"name": "click", "x": 25, "y": 50},
+        [0.2, 0.4, 0.3, 0.6],
+    )
+    invalid = {
+        **_record({}, {"name": "click", "x": 25, "y": 50}, [0.2, 0.4, 0.3, 0.6]),
+        "prediction": "not json",
+    }
+    _, metrics = score_action_records([good, invalid], [25])
+    assert metrics["click_target_examples_with_bbox"] == 2
+    assert metrics["click_inside_bbox_accuracy"] == 0.5
+    assert metrics["click_within_25px_accuracy"] == 0.5
+    assert metrics["click_predictions_with_distance"] == 1
+
+
 def test_noncoordinate_arguments_require_exact_match() -> None:
     records = [
         _record(

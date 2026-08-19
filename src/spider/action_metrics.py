@@ -73,6 +73,7 @@ def score_action_records(
     scored: list[dict[str, Any]] = []
     parse_count = name_count = argument_count = exact_count = 0
     click_inside: list[bool] = []
+    click_threshold_distances: list[float | None] = []
     click_distances: list[float] = []
     target_counts: Counter[str] = Counter()
     name_correct_by_action: Counter[str] = Counter()
@@ -81,6 +82,8 @@ def score_action_records(
         target = record["target_action"]
         target_name = str(target["name"])
         target_counts[target_name] += 1
+        target_has_bbox = target_name == "click" and bool(record.get("bbox_normalized"))
+        target_is_click = target_name == "click"
         diagnostic: dict[str, Any] = {
             "action_parse_valid": False,
             "action_name_correct": False,
@@ -106,12 +109,15 @@ def score_action_records(
             diagnostic["action_exact"] = exact
             if exact:
                 exact_count += 1
-            if "click_inside_bbox" in details:
-                click_inside.append(bool(details["click_inside_bbox"]))
             if "click_distance_px" in details:
                 click_distances.append(float(details["click_distance_px"]))
         except WebActionError as error:
             diagnostic["action_parse_error"] = str(error)
+        if target_has_bbox:
+            click_inside.append(bool(diagnostic.get("click_inside_bbox", False)))
+        if target_is_click:
+            distance = diagnostic.get("click_distance_px")
+            click_threshold_distances.append(float(distance) if distance is not None else None)
         scored.append({**record, **diagnostic})
 
     total = len(records)
@@ -126,19 +132,23 @@ def score_action_records(
         "action_name_accuracy_by_action": {
             name: name_correct_by_action[name] / count for name, count in sorted(target_counts.items())
         },
-        "click_examples_with_bbox": len(click_inside),
+        "click_target_examples_with_bbox": len(click_inside),
         "click_inside_bbox_accuracy": (
             sum(click_inside) / len(click_inside) if click_inside else None
         ),
-        "click_examples_with_distance": len(click_distances),
+        "click_predictions_with_distance": len(click_distances),
         "click_median_distance_px": (
             statistics.median(click_distances) if click_distances else None
         ),
     }
     for threshold in distance_thresholds_px:
         metrics[f"click_within_{threshold}px_accuracy"] = (
-            sum(distance <= threshold for distance in click_distances) / len(click_distances)
-            if click_distances
+            sum(
+                distance is not None and distance <= threshold
+                for distance in click_threshold_distances
+            )
+            / len(click_threshold_distances)
+            if click_threshold_distances
             else None
         )
     return scored, metrics
