@@ -1,0 +1,19 @@
+{
+ "id": "yogeshkd/spider-exp002-sft-final-shard-01",
+ "title": "Spider EXP002 SFT Final Shard 01",
+ "code_file": "exp002_sft_final_shard_01.ipynb",
+ "language": "python",
+ "kernel_type": "notebook",
+ "is_private": "true",
+ "enable_gpu": "true",
+ "enable_tpu": "false",
+ "enable_internet": "true",
+ "machine_shape": "NvidiaTeslaT4",
+ "dataset_sources": [],
+ "competition_sources": [],
+ "kernel_sources": [
+  "yogeshkd/spider-exp002-finalize-prepared-data",
+  "yogeshkd/spider-exp002-sft-stage-07"
+ ],
+ "model_sources": []
+}

@@ -1,0 +1,25 @@
+{
+ "id": "yogeshkd/spider-exp002-sft-final-merge",
+ "title": "Spider EXP002 SFT Final Merge",
+ "code_file": "exp002_sft_final_merge.ipynb",
+ "language": "python",
+ "kernel_type": "notebook",
+ "is_private": "true",
+ "enable_gpu": "false",
+ "enable_tpu": "false",
+ "enable_internet": "true",
+ "dataset_sources": [],
+ "competition_sources": [],
+ "kernel_sources": [
+  "yogeshkd/spider-exp002-finalize-prepared-data",
+  "yogeshkd/spider-exp002-sft-final-shard-00",
+  "yogeshkd/spider-exp002-sft-final-shard-01",
+  "yogeshkd/spider-exp002-sft-final-shard-02",
+  "yogeshkd/spider-exp002-sft-final-shard-03",
+  "yogeshkd/spider-exp002-sft-final-shard-04",
+  "yogeshkd/spider-exp002-sft-final-shard-05",
+  "yogeshkd/spider-exp002-sft-final-shard-06",
+  "yogeshkd/spider-exp002-sft-final-shard-07"
+ ],
+ "model_sources": []
+}
