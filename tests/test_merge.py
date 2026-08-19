@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from spider.merge import (
+    _canonical_adapter_identity,
     _canonical_manifest_names,
     _load_complete_shard,
     summarize_shard_metrics,
@@ -80,3 +81,29 @@ def test_manifest_identity_ignores_environment_specific_mount_root() -> None:
         ]
     }
     assert _canonical_manifest_names(legacy) == _canonical_manifest_names(current)
+
+
+def test_adapter_identity_ignores_environment_specific_mount_root() -> None:
+    legacy = {
+        "adapter": (
+            "/kaggle/input/notebooks/owner/spider-exp002-sft-stage-07/"
+            "spider/outputs/experiment2/adapter/final"
+        )
+    }
+    current = {
+        "adapter": (
+            "/kaggle/input/spider-exp002-sft-stage-07/"
+            "spider/outputs/experiment2/adapter/final"
+        )
+    }
+    assert _canonical_adapter_identity(legacy) == _canonical_adapter_identity(current)
+
+
+def test_adapter_identity_retains_source_kernel() -> None:
+    first = {
+        "adapter": "/kaggle/input/spider-exp002-sft-stage-06/spider/outputs/adapter/final"
+    }
+    second = {
+        "adapter": "/kaggle/input/spider-exp002-sft-stage-07/spider/outputs/adapter/final"
+    }
+    assert _canonical_adapter_identity(first) != _canonical_adapter_identity(second)

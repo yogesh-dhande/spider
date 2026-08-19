@@ -25,6 +25,23 @@ def _canonical_manifest_names(metadata: dict[str, Any]) -> tuple[str, ...]:
     return tuple(Path(str(path)).name for path in manifests)
 
 
+def _canonical_adapter_identity(metadata: dict[str, Any]) -> tuple[str, ...] | None:
+    """Ignore Kaggle's legacy mount prefix while retaining source and adapter path."""
+    adapter = metadata.get("adapter")
+    if adapter is None:
+        return None
+    parts = Path(str(adapter)).parts
+    try:
+        source_index = next(
+            index
+            for index, part in enumerate(parts)
+            if part.startswith("spider-exp002-sft-stage-")
+        )
+    except StopIteration:
+        return parts
+    return parts[source_index:]
+
+
 def summarize_shard_metrics(
     shard_labels: list[str], shard_metrics: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -127,11 +144,14 @@ def merge_evaluation_shards(
 
     if set(merged_by_id) != set(expected_by_id):
         raise ValueError("Merged shards do not cover the complete evaluation set")
-    invariant_fields = ("model", "model_revision", "adapter", "split")
+    invariant_fields = ("model", "model_revision", "split")
     for field in invariant_fields:
         values = {json.dumps(metadata.get(field), sort_keys=True) for metadata in shard_metadata}
         if len(values) != 1:
             raise ValueError(f"Shard metadata disagree on {field}")
+    adapter_identities = {_canonical_adapter_identity(metadata) for metadata in shard_metadata}
+    if len(adapter_identities) != 1:
+        raise ValueError("Shard metadata disagree on adapter")
     manifest_names = {_canonical_manifest_names(metadata) for metadata in shard_metadata}
     if len(manifest_names) != 1:
         raise ValueError("Shard metadata disagree on manifests")
