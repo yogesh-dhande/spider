@@ -1,0 +1,102 @@
+experiment:
+  id: exp004
+  name: qwen35_2b_browser_action_sft
+  interpretation: preregistered_confirmatory
+  record_dir: experiments/exp004_qwen35_2b_browser_action_sft
+  seed: 41
+  model_name: Qwen/Qwen3.5-2B
+  model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  model_loader: auto_multimodal
+  initial_adapter_dataset: yogeshkd/spider-exp002-sft-stage-07
+  initial_adapter_version: 1
+  initial_adapter_subdir: adapter/checkpoint-1875
+  chat_template_kwargs:
+    enable_thinking: false
+  data_dir: data/exp004_browser_action_30k
+  output_dir: outputs/experiment4
+
+data:
+  trajectory_dataset: allenai/MolmoWeb-SyntheticTrajs
+  trajectory_revision: 9b80ce0271c5fbdcea048f4b2bb4eb0cc457e2eb
+  skill_dataset: allenai/MolmoWeb-SyntheticSkills
+  skill_revision: 34f786938a2b8e2d590c754093b2dc0a8a51c62e
+  included_action_sources:
+    from_template: 6000
+    multi_agent: 9000
+    node_traversal: 4000
+    synthetic_skills: 1000
+  source_files:
+    from_template: data/from_template-00001.parquet
+    multi_agent: data/multi_agent-00004.parquet
+    node_traversal: data/node_traversal-00002.parquet
+    synthetic_skills: data/preview-00000.parquet
+  excluded_contaminated_sources:
+    - task_seeded_wv
+    - task_seeded_om2w
+  action_examples:
+    train: 20000
+    validation: 512
+    test: 1024
+  perception_replay:
+    source_dataset: yogeshkd/spider-exp002-finalize-prepared-data
+    source_version: 3
+    train_qa: 5000
+    train_grounding: 5000
+    validation_qa: 256
+    validation_grounding: 256
+  split_percent:
+    train: 80
+    validation: 10
+    test: 10
+  max_past_steps: 10
+  max_steps_per_trajectory: 40
+  max_width: 1280
+  max_height: 720
+  jpeg_quality: 88
+
+training:
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0001
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  optimizer: adamw_8bit
+  lora_rank: 32
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_trainable_dtype: float32
+  lora_target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+    - in_proj_qkv
+    - in_proj_z
+    - in_proj_b
+    - in_proj_a
+    - out_proj
+  gradient_checkpointing: true
+  logging_steps: 10
+  eval_steps: 250
+  eval_examples: 256
+  save_steps: 250
+  save_total_limit: 3
+  dataloader_num_workers: 2
+  report_to: none
+  loss_type: chunked_nll
+  stage_steps: 250
+
+evaluation:
+  max_new_tokens_action: 256
+  distance_thresholds_px: [25, 50, 100]
+  development_examples: 256
+  final_test_examples: 1024
+  perception_regression_tolerance_absolute: 0.03
+  action_name_improvement_gate_absolute: 0.05
+  click_inside_improvement_gate_absolute: 0.10
+  failure_examples_per_bucket: 25

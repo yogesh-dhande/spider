@@ -61,6 +61,22 @@ def checkpoint_step(checkpoint: str | None) -> int:
     return int(match.group(1)) if match else 0
 
 
+def configured_initial_adapter(experiment: dict[str, Any]) -> str | None:
+    """Resolve a prior PEFT adapter without baking a Kaggle mount path into the config."""
+    override = os.environ.get("SPIDER_INITIAL_ADAPTER")
+    configured = experiment.get("initial_adapter_path")
+    if override:
+        return str(Path(override).expanduser().resolve())
+    if configured:
+        return str(Path(str(configured)).expanduser().resolve())
+    if experiment.get("initial_adapter_dataset"):
+        raise RuntimeError(
+            "This experiment requires an initial adapter; set SPIDER_INITIAL_ADAPTER to its "
+            "mounted checkpoint directory"
+        )
+    return None
+
+
 def training_step_plan(
     examples: int,
     per_device_batch: int,
@@ -109,7 +125,7 @@ def train(
     optimizer_name: str | None = None,
 ) -> Path:
     import torch
-    from peft import LoraConfig
+    from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
     from transformers import TrainerCallback
     from trl import SFTConfig, SFTTrainer
 
@@ -206,20 +222,31 @@ def train(
     device_map: str | dict[str, int] = {"": local_rank}
     model, processor, compute_dtype = load_quantized_model(experiment, device_map)
     model.config.use_cache = False
+    initial_adapter = configured_initial_adapter(experiment)
+    if initial_adapter:
+        model = prepare_model_for_kbit_training(
+            model,
+            use_gradient_checkpointing=bool(training["gradient_checkpointing"]),
+            gradient_checkpointing_kwargs={"use_reentrant": False},
+        )
+        model = PeftModel.from_pretrained(model, initial_adapter, is_trainable=True)
     _print_event(
         "training_model_loaded",
         local_rank=local_rank,
         compute_dtype=str(compute_dtype),
+        initial_adapter=initial_adapter,
     )
 
-    peft_config = LoraConfig(
-        r=int(training["lora_rank"]),
-        lora_alpha=int(training["lora_alpha"]),
-        lora_dropout=float(training["lora_dropout"]),
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=list(training["lora_target_modules"]),
-    )
+    peft_config = None
+    if not initial_adapter:
+        peft_config = LoraConfig(
+            r=int(training["lora_rank"]),
+            lora_alpha=int(training["lora_alpha"]),
+            lora_dropout=float(training["lora_dropout"]),
+            bias="none",
+            task_type="CAUSAL_LM",
+            target_modules=list(training["lora_target_modules"]),
+        )
 
     sft_kwargs: dict[str, Any] = {
         "output_dir": str(output_dir),
@@ -324,6 +351,7 @@ def train(
                         * world_size
                     ),
                     "optimizer": optimizer,
+                    "initial_adapter": initial_adapter,
                     "trainable_parameter_dtypes": trainable_dtypes,
                     "package_versions": runtime_versions(),
                 },
@@ -367,6 +395,7 @@ def train(
                 * world_size
             ),
             "optimizer": optimizer,
+            "initial_adapter": initial_adapter,
             "checkpoint": checkpoint_relative,
             "resumed_from": checkpoint,
             "stage_runtime_seconds": stage_runtime,

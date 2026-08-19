@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from spider.train import build_training_dataset, training_step_plan
+from spider.train import build_training_dataset, configured_initial_adapter, training_step_plan
 
 
 def test_training_dataset_preserves_qwen35_template_kwargs(tmp_path: Path) -> None:
@@ -55,3 +55,16 @@ def test_chunk_plan_caps_stop_at_epoch_target() -> None:
 def test_chunk_plan_rejects_non_positive_inputs() -> None:
     with pytest.raises(ValueError, match="positive"):
         training_step_plan(30_000, 1, 16, 1, 1.0, 0, 0)
+
+
+def test_initial_adapter_requires_explicit_mount(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SPIDER_INITIAL_ADAPTER", raising=False)
+    with pytest.raises(RuntimeError, match="SPIDER_INITIAL_ADAPTER"):
+        configured_initial_adapter({"initial_adapter_dataset": "owner/checkpoint"})
+
+
+def test_initial_adapter_mount_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SPIDER_INITIAL_ADAPTER", str(tmp_path))
+    assert configured_initial_adapter({"initial_adapter_dataset": "owner/checkpoint"}) == str(
+        tmp_path.resolve()
+    )

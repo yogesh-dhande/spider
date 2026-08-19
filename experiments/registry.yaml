@@ -38,3 +38,16 @@ experiments:
       A deterministic, paired, resumable rollout pipeline can shorten browser-agent architecture
       and training ablations while preserving a direct migration path from local and Kaggle jobs
       to Google Cloud.
+  - id: exp004
+    name: qwen35_2b_browser_action_sft
+    title: Qwen3.5-2B synthetic browser-action SFT with perception replay
+    status: preregistered
+    config: configs/experiment4.yaml
+    record: experiments/exp004_qwen35_2b_browser_action_sft/README.md
+    implementation_commit: null
+    parent: exp002
+    interpretation: preregistered_confirmatory
+    hypothesis: >-
+      The EXP002 perception checkpoint can acquire materially stronger browser action selection and
+      click precision from 20K contamination-safe synthetic action steps while retaining browser
+      ScreenshotQA and grounding performance through a 10K perception-replay mixture.

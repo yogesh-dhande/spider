@@ -1,0 +1,83 @@
+# EXP004 — Qwen3.5-2B browser action SFT
+
+Status: preregistered; implementation and data smoke in progress.
+
+Parent: EXP002 checkpoint 1875, selected on its validation split before EXP002 final-test
+evaluation.
+
+## Question
+
+Can the EXP002 Qwen3.5-2B perception checkpoint learn reliable browser actions from a small,
+contamination-safe set of successful MolmoWeb synthetic trajectories while retaining its browser
+OCR and grounding ability?
+
+## Frozen design
+
+- Continue from the EXP002 LoRA weights with a fresh optimizer and cosine schedule.
+- Train on 20,000 action steps and 10,000 perception-replay examples for one epoch.
+- Use only `from_template`, `multi_agent`, `node_traversal`, and synthetic skills for actions.
+- Exclude `task_seeded_wv` and `task_seeded_om2w` because those configs are seeded from external
+  benchmark tasks. Never use WebVoyager, Online-Mind2Web, or BrowserGym benchmark test tasks for
+  training or model selection.
+- Do not use human trajectories. This isolates the cleaner synthetic-action hypothesis and follows
+  the published MolmoWeb ablation in which adding human trajectories reduced overall performance.
+- Preserve ordinary rationale-plus-JSON text targets. Do not add custom action tokens.
+- Normalize point and scroll values to `[0, 100]`, use a deterministic bounding-box center for
+  click targets, retain at most 10 prior actions, and resize screenshots within 1280×720 without
+  changing aspect ratio.
+- Split whole trajectories by registrable domain where available, then by trajectory ID. No
+  trajectory may cross train, validation, or test.
+- Use two Kaggle T4 GPUs after a compatibility smoke. Run resumable 250-optimizer-step stages, each
+  shorter than the Kaggle session limit, and save optimizer checkpoints plus sparse JSON progress.
+
+The fixed training mixture is:
+
+| Source | Train examples |
+|---|---:|
+| Synthetic trajectories: `from_template` | 6,000 |
+| Synthetic trajectories: `multi_agent` | 9,000 |
+| Synthetic trajectories: `node_traversal` | 4,000 |
+| Synthetic skills | 1,000 |
+| EXP002 ScreenshotQA replay | 5,000 |
+| EXP002 grounding replay | 5,000 |
+| **Total** | **30,000** |
+
+Action validation contains 512 examples and the sealed action test contains 1,024. The development
+perception probe contains 256 QA and 256 grounding examples. Final perception retention uses the
+already sealed EXP002 test manifests.
+
+## Metrics and decision rule
+
+Offline action metrics are strict JSON parse rate, action-name accuracy, action-argument accuracy,
+click-in-element-bounds accuracy, click pixel distance, and per-action counts. Rationales are saved
+for diagnosis but are not scored. Closed-loop metrics are verified task success, invalid-action
+rate, steps to completion, and reward components on deterministic browser tasks.
+
+Before any action training, measure both the untouched Qwen3.5-2B base and the EXP002 adapter on the
+same fixed action validation subset. Model selection compares each staged checkpoint with the
+EXP002 adapter baseline. A stage advances when action metrics improve and neither QA exact accuracy
+nor grounding click accuracy regresses by more than 3 absolute percentage points on the fixed
+development probe. The preregistered positive result requires, on the sealed action test, at least
++5 points action-name accuracy or +10 points click-in-bounds accuracy over the EXP002 adapter,
+without a greater-than-3-point regression on either sealed EXP002 perception task. All results are
+reported even if the gate is missed.
+
+The sealed action test is opened once, after checkpoint selection. External live-browser benchmark
+tasks remain untouched for a later experiment; EXP004's closed-loop test uses only deterministic
+local tasks with programmatic verifiers.
+
+## Source audit
+
+| Dataset | Pinned revision | Rows / size | License | Use |
+|---|---|---:|---|---|
+| `allenai/MolmoWeb-SyntheticTrajs` | `9b80ce0…` | 108,254 / 284 GB | ODC-BY-1.0 | Selected uncontaminated configs |
+| `allenai/MolmoWeb-SyntheticSkills` | `34f7869…` | 5,545 / 16.6 GB | ODC-BY-1.0 | 1,000 action steps |
+
+The audit was made against the official Hugging Face dataset cards and the official MolmoWeb
+training implementation. The published full training mixture is not reproduced: it includes both
+benchmark-seeded configs and human trajectories, which conflict with this experiment's narrower
+causal question and benchmark-hygiene requirement.
+
+## Results
+
+Pending.
