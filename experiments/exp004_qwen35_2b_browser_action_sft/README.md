@@ -47,6 +47,11 @@ used for stage selection. The sealed action test contains 1,024. The development
 contains 256 QA and 256 grounding examples. Final perception retention uses the already sealed
 EXP002 test manifests.
 
+Checkpoint selection is fixed before observing any EXP004 stage metrics. Eligible stages must pass
+the registered action and perception regression gate. Among them, select lexicographically by
+development click-in-bounds accuracy, action-name accuracy, then action-argument accuracy; an exact
+tie selects the earlier optimizer step. The sealed test is not consulted during selection.
+
 ## Metrics and decision rule
 
 Offline action metrics are strict JSON parse rate, action-name accuracy, action-argument accuracy,

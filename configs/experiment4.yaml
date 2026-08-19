@@ -103,3 +103,10 @@ evaluation:
   action_name_improvement_gate_absolute: 0.05
   click_inside_improvement_gate_absolute: 0.10
   failure_examples_per_bucket: 25
+  checkpoint_selection:
+    eligibility: no_registered_regression
+    maximize:
+      - click_inside_bbox_accuracy
+      - action_name_accuracy
+      - action_argument_accuracy
+    final_tie_breaker: earliest_step
