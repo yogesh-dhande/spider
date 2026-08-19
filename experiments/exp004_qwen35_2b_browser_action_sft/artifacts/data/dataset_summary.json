@@ -1,0 +1,17 @@
+{
+  "action_source_counts": {
+    "from_template": {"train": 6000, "validation": 0, "test": 0},
+    "heldout_supplement": {"train": 0, "validation": 180, "test": 563},
+    "multi_agent": {"train": 9000, "validation": 230, "test": 461},
+    "node_traversal": {"train": 4000, "validation": 102, "test": 0},
+    "synthetic_skills": {"train": 1000, "validation": 0, "test": 0}
+  },
+  "action_counts": {"train": 20000, "validation": 512, "test": 1024},
+  "perception_counts": {
+    "qa": {"train": 5000, "validation": 256, "test": 2000},
+    "grounding": {"train": 5000, "validation": 256, "test": 2000}
+  },
+  "combined_train": 30000,
+  "combined_validation": 1024,
+  "excluded_sources": ["task_seeded_om2w", "task_seeded_wv"]
+}
