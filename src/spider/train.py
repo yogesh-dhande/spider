@@ -211,9 +211,7 @@ def train(
         world_size=world_size,
         gradient_accumulation_steps=gradient_accumulation,
         effective_batch_size=(
-            int(training["per_device_train_batch_size"])
-            * gradient_accumulation
-            * world_size
+            int(training["per_device_train_batch_size"]) * gradient_accumulation * world_size
         ),
         optimizer=optimizer,
     )
@@ -299,6 +297,8 @@ def train(
 
     class SparseProgressCallback(TrainerCallback):
         def on_log(self, args, state, control, logs=None, **kwargs):
+            if not state.is_world_process_zero:
+                return control
             elapsed = max(time.monotonic() - stage_started, 1e-9)
             completed = max(int(state.global_step) - current_step, 0)
             steps_per_second = completed / elapsed
@@ -319,7 +319,8 @@ def train(
             return control
 
         def on_save(self, args, state, control, **kwargs):
-            _print_event("training_checkpoint_saved", global_step=int(state.global_step))
+            if state.is_world_process_zero:
+                _print_event("training_checkpoint_saved", global_step=int(state.global_step))
             return control
 
     callbacks.append(SparseProgressCallback())
@@ -390,9 +391,7 @@ def train(
             "world_size": world_size,
             "gradient_accumulation_steps": gradient_accumulation,
             "effective_batch_size": (
-                int(training["per_device_train_batch_size"])
-                * gradient_accumulation
-                * world_size
+                int(training["per_device_train_batch_size"]) * gradient_accumulation * world_size
             ),
             "optimizer": optimizer,
             "initial_adapter": initial_adapter,
