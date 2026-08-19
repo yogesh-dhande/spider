@@ -10,7 +10,13 @@ OWNER = "yogeshkd"
 PREPARED = "spider-exp004-finalize-prepared-data"
 EXP2_DATA = "spider-exp002-finalize-prepared-data"
 EXP2_ADAPTER = "spider-exp002-sft-stage-07"
-ACTION_SOURCES = ("from-template", "multi-agent", "node-traversal", "synthetic-skills")
+ACTION_SOURCES = (
+    "from-template",
+    "heldout-supplement",
+    "multi-agent",
+    "node-traversal",
+    "synthetic-skills",
+)
 
 
 def code_cell(source: str) -> dict[str, object]:

@@ -12,6 +12,7 @@
   "competition_sources": [],
   "kernel_sources": [
     "yogeshkd/spider-exp004-from-template-prepare",
+    "yogeshkd/spider-exp004-heldout-supplement-prepare",
     "yogeshkd/spider-exp004-multi-agent-prepare",
     "yogeshkd/spider-exp004-node-traversal-prepare",
     "yogeshkd/spider-exp004-synthetic-skills-prepare",
