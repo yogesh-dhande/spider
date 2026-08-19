@@ -22,18 +22,18 @@ def code_cell(source: str) -> dict[str, object]:
 
 
 def notebook(repo_revision: str, source: str, smoke_trajectories: int | None) -> dict[str, object]:
-    args = [
-        "__PYTHON_EXECUTABLE__",
-        "-m",
-        "spider.action_data",
-        "--config",
-        "configs/experiment4.yaml",
-        "--source",
-        source,
-    ]
-    if smoke_trajectories is not None:
-        args.extend(["--smoke-trajectories", str(smoke_trajectories)])
     label = "schema smoke" if smoke_trajectories is not None else "CPU preparation"
+    if smoke_trajectories is not None:
+        job = (
+            "from spider.action_data import smoke_action_source\n"
+            f"summary = smoke_action_source(config, {source!r}, {smoke_trajectories})\n"
+        )
+    else:
+        job = (
+            "from spider.action_data import prepare_action_source\n"
+            "from spider.config import experiment_path\n"
+            f"summary = prepare_action_source(config, {source!r}, experiment_path(config, 'data_dir'))\n"
+        )
     return {
         "cells": [
             {
@@ -60,11 +60,11 @@ def notebook(repo_revision: str, source: str, smoke_trajectories: int | None) ->
             ),
             code_cell("%pip install -q --progress-bar off -r requirements/experiment2-data-kaggle.txt\n"),
             code_cell(
-                f"command = {args!r}\n"
-                "command[0] = sys.executable\n"
-                "print({'event': 'action_data_job_start', 'command': command}, flush=True)\n"
-                "subprocess.run(command, check=True)\n"
-                "print({'event': 'action_data_job_complete'}, flush=True)\n"
+                "from spider.config import load_config\n\n"
+                "config = load_config('configs/experiment4.yaml')\n"
+                f"print({{'event': 'action_data_job_start', 'source': {source!r}}}, flush=True)\n"
+                + job
+                + "print({'event': 'action_data_job_complete', 'summary': summary}, flush=True)\n"
             ),
         ],
         "metadata": {

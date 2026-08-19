@@ -47,6 +47,7 @@ spider-study-merge = "spider.rl.study:merge_main"
 spider-prepare-actions = "spider.action_data:main"
 spider-evaluate-actions = "spider.action_evaluate:main"
 spider-finalize-exp4-data = "spider.exp4_data:main"
+spider-merge-actions = "spider.action_merge:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spider"]
