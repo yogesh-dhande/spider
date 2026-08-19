@@ -1,0 +1,55 @@
+{
+  "kind": "fixed_validation_probe",
+  "completed_at_utc": "2026-08-19T00:54:53+00:00",
+  "label": "validation-probe-step-1750",
+  "step": 1750,
+  "adapter": "/kaggle/input/notebooks/yogeshkd/spider-exp002-sft-stage-06/spider/outputs/experiment2/adapter/final",
+  "split": "validation",
+  "limit_per_task": 128,
+  "completed_predictions": 256,
+  "primary_metrics": {
+    "qa_answer_accuracy": 0.3828125,
+    "qa_mean_token_f1": 0.7197350646814509,
+    "grounding_click_accuracy": 0.5625,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 24.806025761501086
+  },
+  "metrics": {
+    "molmoweb": {
+      "qa": {
+        "examples": 128,
+        "answer_accuracy": 0.3828125,
+        "mean_token_f1": 0.7197350646814509,
+        "by_question_type": {
+          "OCR": {
+            "examples": 73,
+            "answer_accuracy": 0.6712328767123288,
+            "mean_token_f1": 0.8172005100087292
+          },
+          "affordance": {
+            "examples": 31,
+            "answer_accuracy": 0.0,
+            "mean_token_f1": 0.6576289747086189
+          },
+          "summarization": {
+            "examples": 24,
+            "answer_accuracy": 0.0,
+            "mean_token_f1": 0.5034980346925537
+          }
+        }
+      },
+      "grounding": {
+        "examples": 128,
+        "parse_rate": 1.0,
+        "point_on_grid_rate": 1.0,
+        "click_accuracy": 0.5625,
+        "click_accuracy_given_parse": 0.5625,
+        "mean_pixel_distance": 74.37505089955131,
+        "median_pixel_distance": 24.806025761501086,
+        "accuracy_within_25px": 0.5,
+        "accuracy_within_50px": 0.6796875,
+        "accuracy_within_100px": 0.8046875
+      }
+    }
+  }
+}

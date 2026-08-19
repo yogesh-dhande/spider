@@ -1,11 +1,11 @@
 # EXP002 — Qwen3.5-2B + MolmoWeb perception foundation
 
 Status: pre-SFT baseline complete, independently validated, and immutably archived. Two-T4 QLoRA
-stages have produced validated resumable checkpoints through step 1,500, and stage 6 is running
-toward step 1,750. Corrected fixed validation probes run after every remaining stage. Step 1,500
-shows a mixed plateau signal: QA token F1 improved slightly while grounding dipped relative to
-step 1,250, which remains the best grounding checkpoint so far. The frozen test sets remain
-untouched until final checkpoint selection.
+stages have produced validated resumable checkpoints through step 1,750, and the shortened final
+stage is running toward step 1,875. Corrected fixed validation probes run after every remaining
+stage. Step 1,750 improved QA and grounding relative to step 1,500 and passed the regression gate;
+all checkpoints remain eligible for final selection. The frozen test sets remain untouched until
+final checkpoint selection.
 
 Parent: EXP001, superseded before any official baseline or training run.
 
