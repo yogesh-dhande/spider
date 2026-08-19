@@ -1,0 +1,62 @@
+{
+  "base": {
+    "action_argument_accuracy": 0.09375,
+    "action_name_accuracy": 0.41015625,
+    "action_name_accuracy_by_action": {
+      "click": 0.36363636363636365,
+      "goto": 0.0,
+      "keyboard_press": 0.18181818181818182,
+      "keyboard_type": 0.17647058823529413,
+      "scroll": 0.6463414634146342,
+      "send_msg_to_user": 0.32608695652173914
+    },
+    "click_inside_bbox_accuracy": 0.045454545454545456,
+    "click_median_distance_px": 175.60486996596984,
+    "click_predictions_with_distance": 22,
+    "click_target_examples_with_bbox": 88,
+    "click_within_100px_accuracy": 0.09090909090909091,
+    "click_within_25px_accuracy": 0.045454545454545456,
+    "click_within_50px_accuracy": 0.06818181818181818,
+    "exact_action_accuracy": 0.0859375,
+    "examples": 256,
+    "json_parse_rate": 0.7421875,
+    "target_action_counts": {
+      "click": 88,
+      "goto": 12,
+      "keyboard_press": 11,
+      "keyboard_type": 17,
+      "scroll": 82,
+      "send_msg_to_user": 46
+    }
+  },
+  "exp002": {
+    "action_argument_accuracy": 0.0,
+    "action_name_accuracy": 0.0,
+    "action_name_accuracy_by_action": {
+      "click": 0.0,
+      "goto": 0.0,
+      "keyboard_press": 0.0,
+      "keyboard_type": 0.0,
+      "scroll": 0.0,
+      "send_msg_to_user": 0.0
+    },
+    "click_inside_bbox_accuracy": 0.0,
+    "click_median_distance_px": null,
+    "click_predictions_with_distance": 0,
+    "click_target_examples_with_bbox": 88,
+    "click_within_100px_accuracy": 0.0,
+    "click_within_25px_accuracy": 0.0,
+    "click_within_50px_accuracy": 0.0,
+    "exact_action_accuracy": 0.0,
+    "examples": 256,
+    "json_parse_rate": 0.00390625,
+    "target_action_counts": {
+      "click": 88,
+      "goto": 12,
+      "keyboard_press": 11,
+      "keyboard_type": 17,
+      "scroll": 82,
+      "send_msg_to_user": 46
+    }
+  }
+}

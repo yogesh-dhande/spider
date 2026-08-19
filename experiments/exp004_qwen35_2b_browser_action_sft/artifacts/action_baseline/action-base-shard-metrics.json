@@ -1,0 +1,79 @@
+{
+  "labels": [
+    "action-base-shard-00-of-02",
+    "action-base-shard-01-of-02"
+  ],
+  "run_signatures": [
+    "240637a463a82502b0e9e0dc3c4a4659189df2a68d7052640d159a68fa9c9e93",
+    "a488200df92a5c5999a6ba84f3e7abd0db79e1eefc9b61e923a53d78593fd192"
+  ],
+  "shards": [
+    {
+      "label": "action-base-shard-00-of-02",
+      "metrics": {
+        "action_argument_accuracy": 0.09375,
+        "action_name_accuracy": 0.421875,
+        "action_name_accuracy_by_action": {
+          "click": 0.32608695652173914,
+          "goto": 0.0,
+          "keyboard_press": 0.16666666666666666,
+          "keyboard_type": 0.2,
+          "scroll": 0.7,
+          "send_msg_to_user": 0.4
+        },
+        "click_inside_bbox_accuracy": 0.021739130434782608,
+        "click_median_distance_px": 208.05896087407527,
+        "click_predictions_with_distance": 11,
+        "click_target_examples_with_bbox": 46,
+        "click_within_100px_accuracy": 0.06521739130434782,
+        "click_within_25px_accuracy": 0.021739130434782608,
+        "click_within_50px_accuracy": 0.043478260869565216,
+        "exact_action_accuracy": 0.0859375,
+        "examples": 128,
+        "json_parse_rate": 0.734375,
+        "target_action_counts": {
+          "click": 46,
+          "goto": 6,
+          "keyboard_press": 6,
+          "keyboard_type": 10,
+          "scroll": 40,
+          "send_msg_to_user": 20
+        }
+      }
+    },
+    {
+      "label": "action-base-shard-01-of-02",
+      "metrics": {
+        "action_argument_accuracy": 0.09375,
+        "action_name_accuracy": 0.3984375,
+        "action_name_accuracy_by_action": {
+          "click": 0.40476190476190477,
+          "goto": 0.0,
+          "keyboard_press": 0.2,
+          "keyboard_type": 0.14285714285714285,
+          "scroll": 0.5952380952380952,
+          "send_msg_to_user": 0.2692307692307692
+        },
+        "click_inside_bbox_accuracy": 0.07142857142857142,
+        "click_median_distance_px": 162.27250167542252,
+        "click_predictions_with_distance": 11,
+        "click_target_examples_with_bbox": 42,
+        "click_within_100px_accuracy": 0.11904761904761904,
+        "click_within_25px_accuracy": 0.07142857142857142,
+        "click_within_50px_accuracy": 0.09523809523809523,
+        "exact_action_accuracy": 0.0859375,
+        "examples": 128,
+        "json_parse_rate": 0.75,
+        "target_action_counts": {
+          "click": 42,
+          "goto": 6,
+          "keyboard_press": 5,
+          "keyboard_type": 7,
+          "scroll": 42,
+          "send_msg_to_user": 26
+        }
+      }
+    }
+  ],
+  "split": "development"
+}
