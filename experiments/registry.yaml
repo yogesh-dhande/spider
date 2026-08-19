@@ -41,10 +41,10 @@ experiments:
   - id: exp004
     name: qwen35_2b_browser_action_sft
     title: Qwen3.5-2B synthetic browser-action SFT with perception replay
-    status: preregistered
+    status: running
     config: configs/experiment4.yaml
     record: experiments/exp004_qwen35_2b_browser_action_sft/README.md
-    implementation_commit: null
+    implementation_commit: f492df1
     parent: exp002
     interpretation: preregistered_confirmatory
     hypothesis: >-
