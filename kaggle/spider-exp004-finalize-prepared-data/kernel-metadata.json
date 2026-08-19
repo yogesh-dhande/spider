@@ -1,0 +1,21 @@
+{
+  "id": "yogeshkd/spider-exp004-finalize-prepared-data",
+  "title": "Spider EXP004 Finalize Prepared Data",
+  "code_file": "spider-exp004-finalize-prepared-data.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "yogeshkd/spider-exp004-from-template-prepare",
+    "yogeshkd/spider-exp004-multi-agent-prepare",
+    "yogeshkd/spider-exp004-node-traversal-prepare",
+    "yogeshkd/spider-exp004-synthetic-skills-prepare",
+    "yogeshkd/spider-exp002-finalize-prepared-data"
+  ],
+  "model_sources": []
+}

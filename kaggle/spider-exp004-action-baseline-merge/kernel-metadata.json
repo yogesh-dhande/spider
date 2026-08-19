@@ -1,0 +1,19 @@
+{
+  "id": "yogeshkd/spider-exp004-action-baseline-merge",
+  "title": "Spider EXP004 Action Baseline Merge",
+  "code_file": "spider-exp004-action-baseline-merge.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "yogeshkd/spider-exp004-finalize-prepared-data",
+    "yogeshkd/spider-exp004-action-baseline-shard-00",
+    "yogeshkd/spider-exp004-action-baseline-shard-01"
+  ],
+  "model_sources": []
+}

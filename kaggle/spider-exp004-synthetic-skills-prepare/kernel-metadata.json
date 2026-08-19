@@ -1,0 +1,15 @@
+{
+  "id": "yogeshkd/spider-exp004-synthetic-skills-prepare",
+  "title": "Spider EXP004 synthetic_skills prepare",
+  "code_file": "spider-exp004-synthetic-skills-prepare.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
