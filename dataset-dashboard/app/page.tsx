@@ -81,17 +81,17 @@ type ActionMetric = {
 type DashboardPayload = {
   meta: { license: string; checkpoint_labels: Record<string, string>; latest_label: string; latest_step: number };
   qa: {
-    meta: { examples: number; unique_screenshots: number; question_types: Record<string, number>; turn_leak_examples: number };
+    meta: { split: string; examples: number; display_examples?: number; unique_screenshots: number; question_types: Record<string, number>; turn_leak_examples: number };
     metrics: Record<string, Metric>;
     records: QaRecord[];
   };
   grounding: {
-    meta: { examples: number; unique_screenshots: number };
+    meta: { split: string; examples: number; display_examples?: number; unique_screenshots: number };
     metrics: Record<string, GroundingMetric>;
     records: GroundingRecord[];
   };
   action?: {
-    meta: { scored_examples: number; display_examples: number; unique_screenshots: number; target_action_counts: Record<string, number> };
+    meta: { split: string; scored_examples: number; display_examples: number; unique_screenshots: number; target_action_counts: Record<string, number> };
     metrics: Record<string, ActionMetric>;
     records: ActionRecord[];
   };
@@ -101,6 +101,8 @@ const data = probeData as DashboardPayload;
 const PAGE_SIZE = 12;
 const CHECKPOINTS = ["baseline", data.meta.latest_label];
 const CHECKPOINT_LABELS = data.meta.checkpoint_labels;
+const IS_SEALED = data.qa.meta.split === "test";
+const SPLIT_LABEL = IS_SEALED ? "sealed test" : "fixed development probes";
 
 function percent(value: number) {
   return `${(value * 100).toFixed(1)}%`;
@@ -198,7 +200,7 @@ function ActionCard({ record, eager }: { record: ActionRecord; eager: boolean })
         <div className="imageMeta"><span>{record.domain}</span><span>{record.image_width} × {record.image_height}</span></div>
       </div>
       <div className="recordBody">
-        <div className="markerLegend"><span className="legendTarget">GT target + bounds</span><span className="legendBaseline">EXP002 parent</span><span className="legendLatest">{CHECKPOINT_LABELS[data.meta.latest_label]}</span></div>
+        <div className="markerLegend"><span className="legendTarget">GT target + bounds</span><span className="legendBaseline">{CHECKPOINT_LABELS.baseline}</span><span className="legendLatest">{CHECKPOINT_LABELS[data.meta.latest_label]}</span></div>
         <div className="recordTags"><span>{record.target_action.name}</span><span>{record.source}</span><span>step {record.step_index}</span></div>
         <h3>{record.instruction}</h3>
         <div className="answerBlock reference"><p>Target action</p><div>{JSON.stringify(record.target_action)}</div></div>
@@ -260,20 +262,20 @@ export default function Home() {
   return (
     <main>
       <header className="hero">
-        <nav><div className="brandMark">SP</div><div className="brandText"><strong>Spider Lab</strong><span>EXP002 · data explorer</span></div><a href="#examples">Browse examples ↓</a></nav>
+        <nav><div className="brandMark">SP</div><div className="brandText"><strong>Spider Lab</strong><span>EXP004 · model diagnostics</span></div><a href="#examples">Browse examples ↓</a></nav>
         <div className="heroGrid">
           <div className="heroCopy">
-            <p className="eyebrow">MolmoWeb · fixed validation probe</p>
+            <p className="eyebrow">MolmoWeb · {SPLIT_LABEL}</p>
             <h1>See the data.<br />See every click.</h1>
             <p className="dek">A visual audit of held-out browser questions and grounding targets, with reference answers, target bounds, and checkpoint predictions side by side.</p>
-            <div className="diagnosis"><span className="pulse" /><p><strong>Latest validated checkpoint:</strong> step {data.meta.latest_step}. This snapshot refreshes after each completed training-stage probe.</p></div>
+            <div className="diagnosis"><span className="pulse" /><p><strong>{IS_SEALED ? "Selected checkpoint" : "Latest validated checkpoint"}:</strong> step {data.meta.latest_step}. {IS_SEALED ? "Metrics cover the full sealed sets; cards show deterministic diagnostic samples." : "This snapshot refreshes after each completed training-stage probe."}</p></div>
           </div>
           <div className="metricGrid">
             <MetricCard label={`QA · latest (step ${data.meta.latest_step})`} value={percent(data.qa.metrics[data.meta.latest_label].exact_accuracy)} note={`token F1 ${data.qa.metrics[data.meta.latest_label].mean_token_f1.toFixed(3)}`} tone="teal" />
-            <MetricCard label="QA · baseline" value={percent(data.qa.metrics.baseline.exact_accuracy)} note={`token F1 ${data.qa.metrics.baseline.mean_token_f1.toFixed(3)}`} />
+            <MetricCard label={`QA · ${CHECKPOINT_LABELS.baseline}`} value={percent(data.qa.metrics.baseline.exact_accuracy)} note={`token F1 ${data.qa.metrics.baseline.mean_token_f1.toFixed(3)}`} />
             <MetricCard label={`Grounding · latest (step ${data.meta.latest_step})`} value={percent(data.grounding.metrics[data.meta.latest_label].click_accuracy)} note={`median ${data.grounding.metrics[data.meta.latest_label].median_pixel_distance?.toFixed(1)} px`} tone="teal" />
-            <MetricCard label="Grounding · baseline" value={percent(data.grounding.metrics.baseline.click_accuracy)} note={`median ${data.grounding.metrics.baseline.median_pixel_distance?.toFixed(1)} px`} tone="orange" />
-            {data.action && <><MetricCard label={`Actions · latest (step ${data.meta.latest_step})`} value={percent(data.action.metrics[data.meta.latest_label].action_name_accuracy)} note={`click-in-bounds ${percent(data.action.metrics[data.meta.latest_label].click_inside_bbox_accuracy ?? 0)}`} tone="teal" /><MetricCard label="Actions · EXP002 parent" value={percent(data.action.metrics.baseline.action_name_accuracy)} note={`click-in-bounds ${percent(data.action.metrics.baseline.click_inside_bbox_accuracy ?? 0)}`} tone="orange" /></>}
+            <MetricCard label={`Grounding · ${CHECKPOINT_LABELS.baseline}`} value={percent(data.grounding.metrics.baseline.click_accuracy)} note={`median ${data.grounding.metrics.baseline.median_pixel_distance?.toFixed(1)} px`} tone="orange" />
+            {data.action && <><MetricCard label={`Actions · latest (step ${data.meta.latest_step})`} value={percent(data.action.metrics[data.meta.latest_label].action_name_accuracy)} note={`click-in-bounds ${percent(data.action.metrics[data.meta.latest_label].click_inside_bbox_accuracy ?? 0)}`} tone="teal" /><MetricCard label={`Actions · ${CHECKPOINT_LABELS.baseline}`} value={percent(data.action.metrics.baseline.action_name_accuracy)} note={`click-in-bounds ${percent(data.action.metrics.baseline.click_inside_bbox_accuracy ?? 0)}`} tone="orange" /></>}
           </div>
         </div>
       </header>
@@ -290,7 +292,7 @@ export default function Home() {
           {task === "qa" && <div><p className="filterLabel">Question type</p><div className="filterStack"><button className={type === "all" ? "active" : ""} onClick={() => setType("all")}><span>All examples</span><b>{data.qa.meta.examples}</b></button>{Object.entries(data.qa.meta.question_types).map(([name, count]) => <button className={type === name ? "active" : ""} key={name} onClick={() => { setType(name); setVisible(PAGE_SIZE); }}><span>{name}</span><b>{count}</b></button>)}</div></div>}
           {task === "action" && data.action && <div><p className="filterLabel">Target action</p><div className="filterStack"><button className={type === "all" ? "active" : ""} onClick={() => setType("all")}><span>All actions</span><b>{data.action.meta.scored_examples}</b></button>{Object.entries(data.action.meta.target_action_counts).map(([name, count]) => <button className={type === name ? "active" : ""} key={name} onClick={() => { setType(name); setVisible(PAGE_SIZE); }}><span>{name}</span><b>{count}</b></button>)}</div></div>}
           <div><p className="filterLabel">{task === "qa" ? "Latest result" : "Latest click"}</p><div className="filterStack"><button className={status === "all" ? "active" : ""} onClick={() => setStatus("all")}><span>Any result</span></button>{task === "qa" ? <><button className={status === "recovered" ? "active" : ""} onClick={() => setStatus("recovered")}><span>Exact answer</span></button><button className={status === "still-wrong" ? "active" : ""} onClick={() => setStatus("still-wrong")}><span>Needs review</span></button></> : <><button className={status === "hit" ? "active" : ""} onClick={() => setStatus("hit")}><span>Inside target</span></button><button className={status === "miss" ? "active" : ""} onClick={() => setStatus("miss")}><span>Missed target</span></button></>}</div></div>
-          <div className="datasetNote"><strong>{task === "qa" ? "What one QA record contains" : "How to read the overlay"}</strong><p>{task === "qa" ? "Screenshot, natural-language question, concise reference answer, QA type, form, domain, and URL." : `Green marks the annotated target. Gray is the EXP002 parent; teal is the latest model point at step ${data.meta.latest_step}.`}</p><small>{data.meta.license}</small></div>
+          <div className="datasetNote"><strong>{task === "qa" ? "What one QA record contains" : "How to read the overlay"}</strong><p>{task === "qa" ? "Screenshot, natural-language question, concise reference answer, QA type, form, domain, and URL." : `Green marks the annotated target. Gray is ${CHECKPOINT_LABELS.baseline}; teal is the latest model point at step ${data.meta.latest_step}.`}</p><small>{data.meta.license}</small></div>
         </aside>
 
         <div className="results">
@@ -299,7 +301,7 @@ export default function Home() {
           {visible < filtered.length && <button className="loadMore" onClick={() => setVisible((value) => value + PAGE_SIZE)}>Load {Math.min(PAGE_SIZE, filtered.length - visible)} more</button>}
         </div>
       </section>
-      <footer><span>Spider EXP002/EXP004 · generated from immutable Kaggle probe artifacts</span><span>MolmoWeb · ODC-BY 1.0</span></footer>
+      <footer><span>Spider EXP004 · generated from immutable Kaggle prediction artifacts</span><span>MolmoWeb · ODC-BY 1.0</span></footer>
     </main>
   );
 }

@@ -51,13 +51,14 @@ test("production dashboard renders and every diagnostic image exists", async (co
   });
 
   const html = await waitForPage(`http://127.0.0.1:${port}/`, child);
+  const payload = JSON.parse(await readFile(path.join(root, "app/qa-probe.json"), "utf8"));
   assert.match(html, /Spider Lab/);
+  assert.match(html, /EXP004 · model diagnostics/);
   assert.match(html, /Screenshot QA/);
   assert.match(html, /GUI grounding/);
   assert.match(html, /QA · latest/);
-  assert.match(html, /QA · baseline/);
+  assert.ok(html.includes(`QA · ${payload.meta.checkpoint_labels.baseline}`));
 
-  const payload = JSON.parse(await readFile(path.join(root, "app/qa-probe.json"), "utf8"));
   for (const task of ["qa", "grounding", "action"]) {
     if (!payload[task]) continue;
     assert.ok(payload[task].records.length > 0, `${task} must retain diagnostic records`);
