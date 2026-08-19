@@ -28,8 +28,36 @@ def _action_row(label: str, metrics: dict[str, Any]) -> str:
     )
 
 
+def _action_shard_table(summary: dict[str, Any]) -> list[str]:
+    rows = [
+        "| Shard | N | JSON parse | Action name | Arguments | Click in bounds | Median click error |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for item in summary.get("shards", []):
+        rows.append(_action_row(str(item["label"]), item["metrics"]))
+    return rows
+
+
+def _perception_shard_table(summary: dict[str, Any]) -> list[str]:
+    rows = [
+        "| Shard | QA N | QA exact | Grounding N | Grounding click | Median error |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for label, metrics in summary.get("per_shard", {}).items():
+        molmoweb = metrics["molmoweb"]
+        qa = molmoweb["qa"]
+        grounding = molmoweb["grounding"]
+        rows.append(
+            f"| {label} | {int(qa['examples'])} | {_pct(qa['answer_accuracy'])} | "
+            f"{int(grounding['examples'])} | {_pct(grounding['click_accuracy'])} | "
+            f"{_px(grounding['median_pixel_distance'])} |"
+        )
+    return rows
+
+
 def build_exp4_report(artifact_root: Path) -> str:
     baselines = _load(artifact_root / "action_baseline/metrics.json")
+    dataset_path = artifact_root / "data/dataset_summary.json"
     gate_paths = sorted((artifact_root / "validation_steps").glob("step_*/gate.json"))
     gates = [_load(path) for path in gate_paths]
     selection_path = artifact_root / "checkpoint_selection.json"
@@ -39,18 +67,59 @@ def build_exp4_report(artifact_root: Path) -> str:
     lines = [
         "# EXP004 results",
         "",
-        "## Development action baselines",
-        "",
-        "| Model | N | JSON parse | Action name | Arguments | Click in bounds | Median click error |",
-        "|---|---:|---:|---:|---:|---:|---:|",
-        _action_row("Untouched Qwen3.5-2B", baselines["base"]),
-        _action_row("EXP002 perception adapter", baselines["exp002"]),
-        "",
-        "## Stage validation trajectory",
-        "",
-        "| Step | Action name | Arguments | Click in bounds | QA exact | Grounding click | Gate |",
-        "|---:|---:|---:|---:|---:|---:|---|",
     ]
+    if dataset_path.is_file():
+        dataset = _load(dataset_path)
+        action = dataset["action_counts"]
+        perception = dataset["perception_counts"]
+        lines.extend(
+            [
+                "## Dataset realized counts",
+                "",
+                "| Partition | Action | ScreenshotQA | Grounding |",
+                "|---|---:|---:|---:|",
+                (
+                    f"| Train | {action['train']} | {perception['qa']['train']} | "
+                    f"{perception['grounding']['train']} |"
+                ),
+                (
+                    f"| Validation | {action['validation']} | "
+                    f"{perception['qa']['validation']} | "
+                    f"{perception['grounding']['validation']} |"
+                ),
+                (
+                    f"| Sealed test | {action['test']} | {perception['qa']['test']} | "
+                    f"{perception['grounding']['test']} |"
+                ),
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Development action baselines",
+            "",
+            "| Model | N | JSON parse | Action name | Arguments | Click in bounds | Median click error |",
+            "|---|---:|---:|---:|---:|---:|---:|",
+            _action_row("Untouched Qwen3.5-2B", baselines["base"]),
+            _action_row("EXP002 perception adapter", baselines["exp002"]),
+        ]
+    )
+    for label, title in (
+        ("action-base-shard-metrics.json", "Untouched-base shard diagnostics"),
+        ("action-exp002-shard-metrics.json", "EXP002-parent shard diagnostics"),
+    ):
+        path = artifact_root / "action_baseline" / label
+        if path.is_file():
+            lines.extend(["", f"### {title}", "", *_action_shard_table(_load(path))])
+    lines.extend(
+        [
+            "",
+            "## Stage validation trajectory",
+            "",
+            "| Step | Action name | Arguments | Click in bounds | QA exact | Grounding click | Gate |",
+            "|---:|---:|---:|---:|---:|---:|---|",
+        ]
+    )
     for gate in gates:
         action = gate["action_candidate"]
         perception = gate["perception_candidate"]
@@ -114,6 +183,26 @@ def build_exp4_report(artifact_root: Path) -> str:
                 f"Preregistered positive-result gate: **{'PASS' if final['positive_result'] else 'FAIL'}**.",
             ]
         )
+        action_shards = artifact_root / "final_test/final-action-shard-metrics.json"
+        perception_shards = artifact_root / "final_test/final-perception-shard-metrics.json"
+        if action_shards.is_file():
+            lines.extend(
+                [
+                    "",
+                    "### Selected-checkpoint action shard diagnostics",
+                    "",
+                    *_action_shard_table(_load(action_shards)),
+                ]
+            )
+        if perception_shards.is_file():
+            lines.extend(
+                [
+                    "",
+                    "### Selected-checkpoint perception shard diagnostics",
+                    "",
+                    *_perception_shard_table(_load(perception_shards)),
+                ]
+            )
 
     if closed_loop_path.is_file():
         summary = _load(closed_loop_path)
@@ -131,6 +220,25 @@ def build_exp4_report(artifact_root: Path) -> str:
                 f"| {variant} | {metrics['episodes']} | {_pct(metrics['success_rate'])} | "
                 f"{metrics['mean_reward']:.4f} | {_pct(metrics['parse_error_rate'])} |"
             )
+    if final_path.is_file():
+        lines.extend(
+            [
+                "",
+                "## Reproducibility artifacts",
+                "",
+                "Full matched sealed predictions are stored under `artifacts/final_test/predictions/`.",
+                (
+                    "Deterministic visual and machine-readable diagnostic samples are stored under "
+                    "`artifacts/final_test/failures/`; action errors are separated into output-format, "
+                    "semantic-action, action-argument, and spatial-grounding buckets, while perception "
+                    "errors distinguish OCR, semantic-understanding, output-format, and spatial-grounding."
+                ),
+                (
+                    "The dashboard payload used for the baseline-versus-selected visual comparison is "
+                    "archived at `artifacts/final_test/dashboard.json`."
+                ),
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 

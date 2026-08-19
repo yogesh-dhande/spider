@@ -1,6 +1,6 @@
 # EXP004 — Qwen3.5-2B browser action SFT
 
-Status: preregistered; implementation complete; Kaggle data preparation in progress.
+Status: running; preparation, baselines, and two-GPU compatibility complete; staged SFT in progress.
 
 Parent: EXP002 checkpoint 1875, selected on its validation split before EXP002 final-test
 evaluation.
