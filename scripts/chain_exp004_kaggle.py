@@ -64,6 +64,14 @@ def status(job: str) -> str:
     return match.group(1)
 
 
+def status_or_missing(job: str) -> str:
+    """Return the latest job state, treating an unpublished kernel as missing."""
+    try:
+        return status(job)
+    except subprocess.CalledProcessError:
+        return "MISSING"
+
+
 def wait_jobs(
     jobs: list[str] | tuple[str, ...], poll_seconds: int, heartbeat_seconds: int
 ) -> dict[str, str]:
@@ -92,14 +100,24 @@ def launch(job: str, repository_root: Path) -> None:
     emit("kaggle_job_launched", job=job, output=output)
 
 
-def download_json(job: str, version: int, pattern: str, filename: str) -> dict[str, Any]:
+def launch_if_needed(job: str, repository_root: Path) -> str:
+    """Reuse queued, running, or complete work; relaunch missing/failed work."""
+    current = status_or_missing(job)
+    if current in {"QUEUED", "RUNNING", "COMPLETE"}:
+        emit("kaggle_job_reused", job=job, state=current)
+        return current
+    launch(job, repository_root)
+    return "LAUNCHED"
+
+
+def download_json(job: str, version: int | None, pattern: str, filename: str) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix=f"{job}-") as directory:
         run(
             [
                 "kaggle",
                 "kernels",
                 "output",
-                f"{slug(job)}/{version}",
+                f"{slug(job)}/{version}" if version is not None else slug(job),
                 "--path",
                 directory,
                 "--file-pattern",
@@ -122,14 +140,14 @@ def write_artifact(repository_root: Path, relative: Path, payload: dict[str, Any
     return target
 
 
-def sync_dashboard(job: str, version: int, repository_root: Path, step: int) -> Path:
+def sync_dashboard(job: str, version: int | None, repository_root: Path, step: int) -> Path:
     with tempfile.TemporaryDirectory(prefix=f"{job}-dashboard-") as directory:
         run(
             [
                 "kaggle",
                 "kernels",
                 "output",
-                f"{slug(job)}/{version}",
+                f"{slug(job)}/{version}" if version is not None else slug(job),
                 "--path",
                 directory,
                 "--file-pattern",
@@ -140,9 +158,7 @@ def sync_dashboard(job: str, version: int, repository_root: Path, step: int) -> 
             ]
         )
         root = Path(directory)
-        payloads = [
-            path for path in root.rglob("qa-probe.json") if "dashboard" in path.parts
-        ]
+        payloads = [path for path in root.rglob("qa-probe.json") if "dashboard" in path.parts]
         if len(payloads) != 1:
             raise RuntimeError(f"Expected one EXP004 dashboard payload, found {payloads}")
         dashboard_root = repository_root / "dataset-dashboard"
@@ -157,7 +173,9 @@ def sync_dashboard(job: str, version: int, repository_root: Path, step: int) -> 
         target_images.mkdir(parents=True, exist_ok=True)
         for image in images:
             shutil.copy2(image, target_images / image.name)
-        archive = repository_root / EXPERIMENT_DIR / "artifacts/validation_steps" / f"step_{step:04d}"
+        archive = (
+            repository_root / EXPERIMENT_DIR / "artifacts/validation_steps" / f"step_{step:04d}"
+        )
         archive.mkdir(parents=True, exist_ok=True)
         shutil.copy2(payloads[0], archive / "dashboard.json")
         emit(
@@ -169,13 +187,9 @@ def sync_dashboard(job: str, version: int, repository_root: Path, step: int) -> 
         return target_payload
 
 
-def validate_baselines(job: str = BASELINE_MERGE, version: int = 1) -> dict[str, Any]:
-    base = download_json(
-        job, version, r"action-base/metrics\.json", "metrics.json"
-    )
-    exp2 = download_json(
-        job, version, r"action-exp002/metrics\.json", "metrics.json"
-    )
+def validate_baselines(job: str = BASELINE_MERGE, version: int | None = None) -> dict[str, Any]:
+    base = download_json(job, version, r"action-base/metrics\.json", "metrics.json")
+    exp2 = download_json(job, version, r"action-exp002/metrics\.json", "metrics.json")
     for label, metrics in (("base", base), ("exp002", exp2)):
         if metrics.get("examples") != 256:
             raise RuntimeError(f"Invalid {label} baseline coverage: {metrics}")
@@ -185,7 +199,7 @@ def validate_baselines(job: str = BASELINE_MERGE, version: int = 1) -> dict[str,
     return {"base": base, "exp002": exp2}
 
 
-def validate_compatibility(version: int = 1) -> dict[str, Any]:
+def validate_compatibility(version: int | None = None) -> dict[str, Any]:
     state = download_json(
         COMPATIBILITY,
         version,
@@ -200,13 +214,15 @@ def validate_compatibility(version: int = 1) -> dict[str, Any]:
         "gradient_accumulation_steps": 8,
         "effective_batch_size": 16,
     }
-    mismatch = {key: (value, state.get(key)) for key, value in expected.items() if state.get(key) != value}
+    mismatch = {
+        key: (value, state.get(key)) for key, value in expected.items() if state.get(key) != value
+    }
     if mismatch:
         raise RuntimeError(f"EXP004 compatibility mismatch: {mismatch}")
     return state
 
 
-def validate_stage(stage: int, version: int = 1) -> dict[str, Any]:
+def validate_stage(stage: int, version: int | None = None) -> dict[str, Any]:
     step = STEPS[stage]
     state = download_json(
         f"spider-exp004-sft-stage-{stage:02d}",
@@ -225,13 +241,15 @@ def validate_stage(stage: int, version: int = 1) -> dict[str, Any]:
         "gradient_accumulation_steps": 8,
         "effective_batch_size": 16,
     }
-    mismatch = {key: (value, state.get(key)) for key, value in expected.items() if state.get(key) != value}
+    mismatch = {
+        key: (value, state.get(key)) for key, value in expected.items() if state.get(key) != value
+    }
     if mismatch:
         raise RuntimeError(f"EXP004 stage {stage} mismatch: {mismatch}")
     return state
 
 
-def validate_gate(step: int, version: int = 1) -> dict[str, Any]:
+def validate_gate(step: int, version: int | None = None) -> dict[str, Any]:
     job = f"spider-exp004-validation-step-{step:04d}"
     gate = download_json(job, version, r"experiment4/validation_gate\.json", "validation_gate.json")
     if gate.get("step") != step:
@@ -241,20 +259,20 @@ def validate_gate(step: int, version: int = 1) -> dict[str, Any]:
 
 def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) -> None:
     require_complete(wait_jobs(PREP_JOBS, poll_seconds, heartbeat_seconds))
-    launch(FINALIZE, repository_root)
+    launch_if_needed(FINALIZE, repository_root)
     require_complete(wait_jobs([FINALIZE], poll_seconds, heartbeat_seconds))
 
     for job in BASELINE_SHARDS:
-        launch(job, repository_root)
+        launch_if_needed(job, repository_root)
     require_complete(wait_jobs(BASELINE_SHARDS, poll_seconds, heartbeat_seconds))
-    launch(BASELINE_MERGE, repository_root)
+    launch_if_needed(BASELINE_MERGE, repository_root)
     require_complete(wait_jobs([BASELINE_MERGE], poll_seconds, heartbeat_seconds))
     baselines = validate_baselines()
     write_artifact(repository_root, Path("action_baseline/metrics.json"), baselines)
     for label in ("action-base", "action-exp002"):
         shard_metrics = download_json(
             BASELINE_MERGE,
-            1,
+            None,
             rf"{label}/shard_metrics\.json",
             "shard_metrics.json",
         )
@@ -265,13 +283,13 @@ def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) 
         )
     emit("exp004_baseline_validated", metrics=baselines)
 
-    launch(COMPATIBILITY, repository_root)
+    launch_if_needed(COMPATIBILITY, repository_root)
     require_complete(wait_jobs([COMPATIBILITY], poll_seconds, heartbeat_seconds))
     emit("exp004_compatibility_validated", state=validate_compatibility())
 
     for stage, step in enumerate(STEPS):
         stage_job = f"spider-exp004-sft-stage-{stage:02d}"
-        launch(stage_job, repository_root)
+        launch_if_needed(stage_job, repository_root)
         require_complete(wait_jobs([stage_job], poll_seconds, heartbeat_seconds))
         state = validate_stage(stage)
         write_artifact(
@@ -281,7 +299,7 @@ def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) 
         )
         emit("exp004_stage_validated", stage=stage, step=step, state=state)
         validation_job = f"spider-exp004-validation-step-{step:04d}"
-        launch(validation_job, repository_root)
+        launch_if_needed(validation_job, repository_root)
         require_complete(wait_jobs([validation_job], poll_seconds, heartbeat_seconds))
         gate = validate_gate(step)
         write_artifact(
@@ -289,7 +307,7 @@ def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) 
             Path("validation_steps") / f"step_{step:04d}" / "gate.json",
             gate,
         )
-        sync_dashboard(validation_job, 1, repository_root, step)
+        sync_dashboard(validation_job, None, repository_root, step)
         emit("exp004_validation_gate", stage=stage, step=step, gate=gate)
         if not gate.get("advance") and stage < len(STEPS) - 1:
             raise RuntimeError(f"EXP004 regression gate stopped training at step {step}: {gate}")

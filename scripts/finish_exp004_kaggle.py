@@ -12,7 +12,7 @@ from typing import Any
 
 from chain_exp004_kaggle import (
     emit,
-    launch,
+    launch_if_needed,
     require_complete,
     wait_jobs,
     write_artifact,
@@ -30,7 +30,7 @@ EXPERIMENT_DIR = Path("experiments/exp004_qwen35_2b_browser_action_sft")
 def _download_json(job: str, pattern: str, filename: str) -> dict[str, Any]:
     from chain_exp004_kaggle import download_json
 
-    return download_json(job, 1, pattern, filename)
+    return download_json(job, None, pattern, filename)
 
 
 def prepare_final(repository_root: Path, repo_revision: str) -> dict[str, Any]:
@@ -95,21 +95,28 @@ def _archive_final_outputs(repository_root: Path) -> None:
 
     with tempfile.TemporaryDirectory(prefix="spider-exp004-final-") as directory:
         download_root = Path(directory)
-        run(
-            [
-                "kaggle",
-                "kernels",
-                "output",
-                f"{slug(FINAL_MERGE)}/1",
-                "--path",
-                str(download_root),
-                "--file-pattern",
-                r"experiment4/.*",
-                "--page-size",
-                "500",
-                "--quiet",
-            ]
+        patterns = (
+            r"experiment4/action_evaluation/final-action-exp002/(predictions\.jsonl|report/.*)",
+            r"experiment4/action_evaluation/final-action/(predictions\.jsonl|report/.*)",
+            r"experiment4/evaluation/final-perception/(predictions\.jsonl|report/.*)",
+            r"experiment4/dashboard/.*",
         )
+        for pattern in patterns:
+            run(
+                [
+                    "kaggle",
+                    "kernels",
+                    "output",
+                    slug(FINAL_MERGE),
+                    "--path",
+                    str(download_root),
+                    "--file-pattern",
+                    pattern,
+                    "--page-size",
+                    "200",
+                    "--quiet",
+                ]
+            )
         artifact_root = repository_root / EXPERIMENT_DIR / "artifacts/final_test"
         predictions_root = artifact_root / "predictions"
         predictions_root.mkdir(parents=True, exist_ok=True)
@@ -163,10 +170,10 @@ def run_final(
     for start in range(0, len(FINAL_SHARDS), 2):
         batch = FINAL_SHARDS[start : start + 2]
         for job in batch:
-            launch(job, repository_root)
+            launch_if_needed(job, repository_root)
         require_complete(wait_jobs(batch, poll_seconds, heartbeat_seconds))
 
-    launch(FINAL_MERGE, repository_root)
+    launch_if_needed(FINAL_MERGE, repository_root)
     require_complete(wait_jobs([FINAL_MERGE], poll_seconds, heartbeat_seconds))
     comparison = _download_json(
         FINAL_MERGE, r"experiment4/final_comparison\.json", "final_comparison.json"
@@ -187,7 +194,7 @@ def run_final(
     _archive_final_outputs(repository_root)
     emit("exp004_sealed_test_validated", comparison=comparison)
 
-    launch(CLOSED_LOOP, repository_root)
+    launch_if_needed(CLOSED_LOOP, repository_root)
     require_complete(wait_jobs([CLOSED_LOOP], poll_seconds, heartbeat_seconds))
     summary = _download_json(
         CLOSED_LOOP,
