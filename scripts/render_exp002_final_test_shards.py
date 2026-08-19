@@ -7,7 +7,8 @@ import json
 from pathlib import Path
 
 OWNER = "yogeshkd"
-REPO_REV = "158061b"
+SHARD_REPO_REV = "158061b"
+MERGE_REPO_REV = "ccec6e7"
 PREPARED_KERNEL = "spider-exp002-finalize-prepared-data"
 TRAINING_KERNEL = "spider-exp002-sft-stage-07"
 NUM_SHARDS = 8
@@ -27,11 +28,11 @@ def markdown_cell(source: str) -> dict[str, object]:
     return {"cell_type": "markdown", "metadata": {}, "source": [source]}
 
 
-def setup_cell() -> dict[str, object]:
+def setup_cell(repo_rev: str) -> dict[str, object]:
     return code_cell(
         "import json, os, subprocess, sys\n"
         "from pathlib import Path\n"
-        f"REPO_REV = {REPO_REV!r}\n"
+        f"REPO_REV = {repo_rev!r}\n"
         "REPO_ROOT = Path('/kaggle/working/spider')\n"
         "subprocess.run(['git', 'clone', "
         "'https://github.com/yogesh-dhande/spider.git', str(REPO_ROOT)], check=True)\n"
@@ -49,7 +50,7 @@ def render_shard_notebook(shard_index: int) -> dict[str, object]:
                 f"# EXP002 step-1875 frozen test — shard {shard_index:02d} "
                 f"of {NUM_SHARDS:02d}\n"
             ),
-            setup_cell(),
+            setup_cell(SHARD_REPO_REV),
             code_cell("%pip install -q --progress-bar off -r requirements/experiment2-kaggle.txt\n"),
             code_cell(
                 "from spider.workflow import find_completed_training_outputs, find_prepared_data\n"
@@ -114,7 +115,7 @@ def render_merge_notebook() -> dict[str, object]:
     return {
         "cells": [
             markdown_cell("# EXP002 step-1875 frozen test — merge and validate\n"),
-            setup_cell(),
+            setup_cell(MERGE_REPO_REV),
             code_cell("%pip install -q --progress-bar off -r requirements/experiment2-kaggle.txt\n"),
             code_cell(
                 "from spider.workflow import find_prepared_data, restore_evaluation_shards\n"
