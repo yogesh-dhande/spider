@@ -246,6 +246,11 @@ def build_exp4_report(artifact_root: Path) -> str:
                 "",
                 "Full matched sealed predictions are stored under `artifacts/final_test/predictions/`.",
                 (
+                    "The realized dataset configuration and SHA-256 manifest are stored under "
+                    "`artifacts/data/`; per-stage runtime versions, optimizer state history, and "
+                    "Trainer logs are stored under `artifacts/training_stages/`."
+                ),
+                (
                     "Deterministic visual and machine-readable diagnostic samples are stored under "
                     "`artifacts/final_test/failures/`; action errors are separated into output-format, "
                     "semantic-action, action-argument, and spatial-grounding buckets, while perception "

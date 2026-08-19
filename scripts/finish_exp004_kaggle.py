@@ -7,6 +7,7 @@ import json
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
@@ -38,11 +39,16 @@ def prepare_final(repository_root: Path, repo_revision: str) -> dict[str, Any]:
         repository_root
         / "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps"
     )
+    observed_steps = sorted(
+        int(path.parent.name.removeprefix("step_")) for path in gate_root.glob("step_*/gate.json")
+    )
     selection = select_from_directory(gate_root)
     step = int(selection["selected_step"])
     stage = STEPS.index(step)
     selection["selected_stage"] = stage
+    selection["observed_steps"] = observed_steps
     write_artifact(repository_root, Path("checkpoint_selection.json"), selection)
+    archive_training_provenance(repository_root, observed_steps)
     subprocess.run(
         [
             "uv",
@@ -61,6 +67,76 @@ def prepare_final(repository_root: Path, repo_revision: str) -> dict[str, Any]:
     )
     emit("exp004_final_jobs_rendered", selection=selection, repo_revision=repo_revision)
     return selection
+
+
+def _download_provenance_bundle(job: str, step: int) -> Path:
+    """Download a small stage-provenance bundle with bounded retries."""
+    from chain_exp004_kaggle import run, slug
+
+    directory = Path(tempfile.mkdtemp(prefix=f"{job}-provenance-"))
+    patterns = (
+        r"experiment4/(training_state|training_setup|training_metrics|training_stages)\.(json|jsonl)",
+        rf"experiment4/adapter/checkpoint-{step}/trainer_state\.json",
+    )
+    expected = {
+        "training_state.json",
+        "training_setup.json",
+        "training_metrics.json",
+        "training_stages.jsonl",
+        "trainer_state.json",
+    }
+    for attempt in range(5):
+        for pattern in patterns:
+            run(
+                [
+                    "kaggle",
+                    "kernels",
+                    "output",
+                    slug(job),
+                    "--path",
+                    str(directory),
+                    "--file-pattern",
+                    pattern,
+                    "--page-size",
+                    "200",
+                    "--quiet",
+                ]
+            )
+        found = {path.name for path in directory.rglob("*") if path.is_file()}
+        if expected <= found:
+            return directory
+        if attempt < 4:
+            time.sleep(2**attempt)
+    shutil.rmtree(directory)
+    raise RuntimeError(f"Incomplete training provenance for {job}: found={sorted(found)}")
+
+
+def archive_training_provenance(repository_root: Path, eligible_steps: list[int]) -> None:
+    """Archive exact runtime state and Trainer history for every eligible stage."""
+    for raw_step in eligible_steps:
+        step = int(raw_step)
+        stage = STEPS.index(step)
+        job = f"spider-exp004-sft-stage-{stage:02d}"
+        bundle = _download_provenance_bundle(job, step)
+        try:
+            destination = (
+                repository_root / EXPERIMENT_DIR / "artifacts/training_stages" / f"step_{step:04d}"
+            )
+            destination.mkdir(parents=True, exist_ok=True)
+            sources = {
+                "state.json": _find_unique_suffix(bundle, "training_state.json"),
+                "setup.json": _find_unique_suffix(bundle, "training_setup.json"),
+                "metrics.json": _find_unique_suffix(bundle, "training_metrics.json"),
+                "history.jsonl": _find_unique_suffix(bundle, "training_stages.jsonl"),
+                "trainer_state.json": _find_unique_suffix(
+                    bundle, f"checkpoint-{step}/trainer_state.json"
+                ),
+            }
+            for filename, source in sources.items():
+                shutil.copy2(source, destination / filename)
+        finally:
+            shutil.rmtree(bundle)
+    emit("exp004_training_provenance_archived", steps=eligible_steps)
 
 
 def _validate_final(comparison: dict[str, Any], selected_step: int) -> None:
