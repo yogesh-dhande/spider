@@ -1,0 +1,230 @@
+"""Monitor and advance EXP004 from prepared data through staged validation."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import re
+import subprocess
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+OWNER = "yogeshkd"
+PREP_JOBS = (
+    "spider-exp004-from-template-prepare",
+    "spider-exp004-multi-agent-prepare",
+    "spider-exp004-node-traversal-prepare",
+    "spider-exp004-synthetic-skills-prepare",
+)
+FINALIZE = "spider-exp004-finalize-prepared-data"
+BASELINE_SHARDS = (
+    "spider-exp004-action-baseline-shard-00",
+    "spider-exp004-action-baseline-shard-01",
+)
+BASELINE_MERGE = "spider-exp004-action-baseline-merge"
+COMPATIBILITY = "spider-exp004-ddp-initial-adapter-smoke"
+STEPS = (250, 500, 750, 1000, 1250, 1500, 1750, 1875)
+
+
+def emit(event: str, **fields: Any) -> None:
+    print(
+        json.dumps(
+            {
+                "timestamp_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                "event": event,
+                **fields,
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+
+
+def run(command: list[str], cwd: Path | None = None) -> str:
+    result = subprocess.run(command, cwd=cwd, check=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
+def slug(job: str) -> str:
+    return f"{OWNER}/{job}"
+
+
+def status(job: str) -> str:
+    output = run(["kaggle", "kernels", "status", slug(job)])
+    match = re.search(r"KernelWorkerStatus\.([A-Z_]+)", output)
+    if match is None:
+        raise RuntimeError(f"Could not parse Kaggle status for {job}: {output}")
+    return match.group(1)
+
+
+def wait_jobs(
+    jobs: list[str] | tuple[str, ...], poll_seconds: int, heartbeat_seconds: int
+) -> dict[str, str]:
+    last: dict[str, str] = {}
+    last_heartbeat = 0.0
+    while True:
+        states = {job: status(job) for job in jobs}
+        now = time.monotonic()
+        if states != last or now - last_heartbeat >= heartbeat_seconds:
+            emit("kaggle_jobs_status", states=states)
+            last = states
+            last_heartbeat = now
+        if all(state not in {"QUEUED", "RUNNING"} for state in states.values()):
+            return states
+        time.sleep(poll_seconds)
+
+
+def require_complete(states: dict[str, str]) -> None:
+    failed = {job: state for job, state in states.items() if state != "COMPLETE"}
+    if failed:
+        raise RuntimeError(f"Kaggle jobs did not complete: {failed}")
+
+
+def launch(job: str, repository_root: Path) -> None:
+    output = run(["kaggle", "kernels", "push", "--path", f"kaggle/{job}"], repository_root)
+    emit("kaggle_job_launched", job=job, output=output)
+
+
+def download_json(job: str, version: int, pattern: str, filename: str) -> dict[str, Any]:
+    with tempfile.TemporaryDirectory(prefix=f"{job}-") as directory:
+        run(
+            [
+                "kaggle",
+                "kernels",
+                "output",
+                f"{slug(job)}/{version}",
+                "--path",
+                directory,
+                "--file-pattern",
+                pattern,
+                "--page-size",
+                "200",
+                "--quiet",
+            ]
+        )
+        matches = list(Path(directory).rglob(filename))
+        if len(matches) != 1:
+            raise RuntimeError(f"Expected one {filename} from {job}, found {matches}")
+        return json.loads(matches[0].read_text(encoding="utf-8"))
+
+
+def validate_baselines(job: str = BASELINE_MERGE, version: int = 1) -> dict[str, Any]:
+    base = download_json(
+        job, version, r"action-base/metrics\.json", "metrics.json"
+    )
+    exp2 = download_json(
+        job, version, r"action-exp002/metrics\.json", "metrics.json"
+    )
+    for label, metrics in (("base", base), ("exp002", exp2)):
+        if metrics.get("examples") != 256:
+            raise RuntimeError(f"Invalid {label} baseline coverage: {metrics}")
+        for key in ("json_parse_rate", "action_name_accuracy", "action_argument_accuracy"):
+            if not math.isfinite(float(metrics[key])):
+                raise RuntimeError(f"Invalid {label} baseline metric {key}: {metrics[key]}")
+    return {"base": base, "exp002": exp2}
+
+
+def validate_compatibility(version: int = 1) -> dict[str, Any]:
+    state = download_json(
+        COMPATIBILITY,
+        version,
+        r"experiment4_compat/training_state\.json",
+        "training_state.json",
+    )
+    expected = {
+        "status": "complete",
+        "start_step": 0,
+        "completed_step": 2,
+        "world_size": 2,
+        "gradient_accumulation_steps": 8,
+        "effective_batch_size": 16,
+    }
+    mismatch = {key: (value, state.get(key)) for key, value in expected.items() if state.get(key) != value}
+    if mismatch:
+        raise RuntimeError(f"EXP004 compatibility mismatch: {mismatch}")
+    return state
+
+
+def validate_stage(stage: int, version: int = 1) -> dict[str, Any]:
+    step = STEPS[stage]
+    state = download_json(
+        f"spider-exp004-sft-stage-{stage:02d}",
+        version,
+        r"experiment4/training_state\.json",
+        "training_state.json",
+    )
+    start = 0 if stage == 0 else STEPS[stage - 1]
+    expected = {
+        "status": "complete",
+        "start_step": start,
+        "completed_step": step,
+        "stop_step": step,
+        "planned_epoch_steps": 1875,
+        "world_size": 2,
+        "gradient_accumulation_steps": 8,
+        "effective_batch_size": 16,
+    }
+    mismatch = {key: (value, state.get(key)) for key, value in expected.items() if state.get(key) != value}
+    if mismatch:
+        raise RuntimeError(f"EXP004 stage {stage} mismatch: {mismatch}")
+    return state
+
+
+def validate_gate(step: int, version: int = 1) -> dict[str, Any]:
+    job = f"spider-exp004-validation-step-{step:04d}"
+    gate = download_json(job, version, r"experiment4/validation_gate\.json", "validation_gate.json")
+    if gate.get("step") != step:
+        raise RuntimeError(f"Wrong validation step: {gate}")
+    return gate
+
+
+def run_chain(repository_root: Path, poll_seconds: int, heartbeat_seconds: int) -> None:
+    require_complete(wait_jobs(PREP_JOBS, poll_seconds, heartbeat_seconds))
+    launch(FINALIZE, repository_root)
+    require_complete(wait_jobs([FINALIZE], poll_seconds, heartbeat_seconds))
+
+    for job in BASELINE_SHARDS:
+        launch(job, repository_root)
+    require_complete(wait_jobs(BASELINE_SHARDS, poll_seconds, heartbeat_seconds))
+    launch(BASELINE_MERGE, repository_root)
+    require_complete(wait_jobs([BASELINE_MERGE], poll_seconds, heartbeat_seconds))
+    baselines = validate_baselines()
+    emit("exp004_baseline_validated", metrics=baselines)
+
+    launch(COMPATIBILITY, repository_root)
+    require_complete(wait_jobs([COMPATIBILITY], poll_seconds, heartbeat_seconds))
+    emit("exp004_compatibility_validated", state=validate_compatibility())
+
+    for stage, step in enumerate(STEPS):
+        stage_job = f"spider-exp004-sft-stage-{stage:02d}"
+        launch(stage_job, repository_root)
+        require_complete(wait_jobs([stage_job], poll_seconds, heartbeat_seconds))
+        state = validate_stage(stage)
+        emit("exp004_stage_validated", stage=stage, step=step, state=state)
+        validation_job = f"spider-exp004-validation-step-{step:04d}"
+        launch(validation_job, repository_root)
+        require_complete(wait_jobs([validation_job], poll_seconds, heartbeat_seconds))
+        gate = validate_gate(step)
+        emit("exp004_validation_gate", stage=stage, step=step, gate=gate)
+        if not gate.get("advance") and stage < len(STEPS) - 1:
+            raise RuntimeError(f"EXP004 regression gate stopped training at step {step}: {gate}")
+    emit("exp004_training_chain_complete", final_step=STEPS[-1])
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repository-root", type=Path, default=Path.cwd())
+    parser.add_argument("--poll-seconds", type=int, default=60)
+    parser.add_argument("--heartbeat-seconds", type=int, default=900)
+    args = parser.parse_args()
+    if args.poll_seconds <= 0 or args.heartbeat_seconds <= 0:
+        parser.error("poll and heartbeat intervals must be positive")
+    run_chain(args.repository_root.resolve(), args.poll_seconds, args.heartbeat_seconds)
+
+
+if __name__ == "__main__":
+    main()
