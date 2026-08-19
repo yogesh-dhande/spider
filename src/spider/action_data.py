@@ -279,6 +279,11 @@ def prepare_action_source(
     try:
         for row in _stream_source(config, source):
             scanned += 1
+            progress.update(
+                0,
+                scanned_trajectories=scanned,
+                split_counts={split: len(records[split]) for split in SPLITS},
+            )
             if all(len(records[split]) >= targets[split] for split in SPLITS):
                 break
             sample_id = str(row.get("sample_id") or "")
