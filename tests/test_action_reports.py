@@ -91,3 +91,8 @@ def test_create_action_failure_report_writes_machine_and_visual_artifacts(
         read_jsonl(tmp_path / "report/representative_predictions.jsonl")[0]["error_category"]
         == "spatial_grounding"
     )
+    with Image.open(tmp_path / "report/assets/spatial.jpg") as annotated:
+        # The [0.4, 0.4, 0.6, 0.6] action box belongs around pixel 40, not 0.04.
+        red, green, _ = annotated.getpixel((40, 50))
+        assert red < 100
+        assert green > 100

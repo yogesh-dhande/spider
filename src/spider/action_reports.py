@@ -8,7 +8,6 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
-from spider.coordinates import bbox_to_pixels
 from spider.prepare import stable_int, write_jsonl
 from spider.web_actions import WebActionError, parse_action_response
 
@@ -64,7 +63,16 @@ def _annotate(record: dict[str, Any], source: Path, target: Path) -> None:
     draw = ImageDraw.Draw(image)
     bbox = record.get("bbox_normalized")
     if bbox:
-        draw.rectangle(bbox_to_pixels(bbox, *image.size), outline=(0, 220, 80), width=4)
+        draw.rectangle(
+            (
+                float(bbox[0]) * image.width,
+                float(bbox[1]) * image.height,
+                float(bbox[2]) * image.width,
+                float(bbox[3]) * image.height,
+            ),
+            outline=(0, 220, 80),
+            width=4,
+        )
     target_action = record.get("target_action") or {}
     if target_action.get("name") == "click":
         tx = float(target_action["x"]) / 100.0 * image.width
