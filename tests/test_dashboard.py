@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from PIL import Image
 
 from spider.dashboard import (
@@ -12,6 +13,7 @@ from spider.dashboard import (
     build_qa_probe_dashboard,
     copy_action_dashboard_images,
     copy_perception_dashboard_images,
+    filter_predictions_to_reference_ids,
     first_answer,
 )
 from spider.prepare import write_jsonl
@@ -43,6 +45,34 @@ def _write_predictions(path: Path, prediction: str) -> None:
 def test_first_answer_removes_decoded_next_turn() -> None:
     assert first_answer("Get started\nuser\nWhat comes next?") == "Get started"
     assert first_answer("Get started\n<think>\n") == "Get started"
+
+
+def test_filter_predictions_to_reference_ids_keeps_only_aligned_subset(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.jsonl"
+    reference = tmp_path / "reference.jsonl"
+    output = tmp_path / "aligned/predictions.jsonl"
+    write_jsonl(source, [{"id": "a"}, {"id": "screen-extra"}, {"id": "b"}])
+    write_jsonl(reference, [{"id": "b"}, {"id": "a"}])
+
+    assert filter_predictions_to_reference_ids(source, reference, output) == 2
+    assert [json.loads(line)["id"] for line in output.read_text().splitlines()] == [
+        "a",
+        "b",
+    ]
+
+
+def test_filter_predictions_to_reference_ids_requires_full_coverage(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.jsonl"
+    reference = tmp_path / "reference.jsonl"
+    write_jsonl(source, [{"id": "a"}])
+    write_jsonl(reference, [{"id": "a"}, {"id": "missing"}])
+
+    with pytest.raises(ValueError, match="do not cover"):
+        filter_predictions_to_reference_ids(source, reference, tmp_path / "output.jsonl")
 
 
 def test_build_qa_probe_dashboard_scores_display_answer(tmp_path: Path) -> None:

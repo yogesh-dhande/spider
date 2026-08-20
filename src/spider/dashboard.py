@@ -11,10 +11,33 @@ from typing import Any
 
 from spider.action_metrics import score_action_records
 from spider.metrics import normalize_answer, score_grounding, token_f1
-from spider.prepare import read_jsonl
+from spider.prepare import read_jsonl, write_jsonl
 from spider.web_actions import WebActionError, parse_action_response
 
 TURN_BOUNDARY = re.compile(r"\n(?:user|assistant)\n|<think>|<\|im_(?:start|end)\|>", re.IGNORECASE)
+
+
+def filter_predictions_to_reference_ids(
+    source_path: Path, reference_path: Path, output_path: Path
+) -> int:
+    """Write the source subset aligned to every ID in a narrower reference set."""
+    source = read_jsonl(source_path)
+    reference = read_jsonl(reference_path)
+    source_ids = [str(record["id"]) for record in source]
+    reference_ids = [str(record["id"]) for record in reference]
+    if len(source_ids) != len(set(source_ids)):
+        raise ValueError(f"Duplicate prediction IDs in {source_path}")
+    if len(reference_ids) != len(set(reference_ids)):
+        raise ValueError(f"Duplicate prediction IDs in {reference_path}")
+    missing = set(reference_ids) - set(source_ids)
+    if missing:
+        raise ValueError(
+            f"Source predictions do not cover reference IDs: {sorted(missing)[:5]}"
+        )
+    selected_ids = set(reference_ids)
+    filtered = [record for record in source if str(record["id"]) in selected_ids]
+    write_jsonl(output_path, filtered)
+    return len(filtered)
 
 
 def first_answer(prediction: str) -> str:

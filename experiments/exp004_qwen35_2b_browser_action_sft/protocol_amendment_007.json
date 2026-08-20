@@ -1,0 +1,28 @@
+{
+  "id": "exp004-protocol-amendment-007",
+  "timestamp_utc": "2026-08-20T22:42:00+00:00",
+  "phase": "sealed_dashboard_assembly",
+  "reason": "The EXP002 prediction archive contains the 2,000 MolmoWeb grounding examples used by EXP004 plus 1,272 ScreenSpot examples. Strict dashboard alignment correctly rejected the extra baseline IDs.",
+  "observed_failure": {
+    "run_id": "f500-merge-b",
+    "metric_aggregation_complete": true,
+    "gpu_inference_affected": false,
+    "error": "Grounding IDs for latest do not match baseline"
+  },
+  "change": "Create and archive an EXP002 perception prediction view filtered to the exact 4,000 MolmoWeb QA and grounding IDs in the selected-checkpoint sealed result before dashboard construction.",
+  "validation": {
+    "candidate_qa_ids": 2000,
+    "baseline_qa_ids": 2000,
+    "common_qa_ids": 2000,
+    "candidate_grounding_ids": 2000,
+    "baseline_grounding_ids_before_filter": 3272,
+    "common_grounding_ids": 2000,
+    "candidate_only_ids": 0
+  },
+  "unchanged": [
+    "sealed predictions and all primary metrics",
+    "selected checkpoint and parent adapter",
+    "positive-result decision rule",
+    "diagnostic sampling and scoring"
+  ]
+}

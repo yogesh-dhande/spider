@@ -16,7 +16,6 @@ from spider.exp4_report import build_exp4_report
 
 BUCKET = "gs://keptune-spider-experiments-1088401257609"
 EXPERIMENT = Path("experiments/exp004_qwen35_2b_browser_action_sft")
-EXP2_FINAL = Path("experiments/exp002_qwen35_2b_molmoweb/artifacts/final_test/step_1875")
 
 
 def run(command: list[str]) -> None:
@@ -160,7 +159,7 @@ def archive_final(step: int, repository_root: Path) -> Path:
             final_root / "evaluation/final-perception/predictions.jsonl": (
                 final_target / "predictions/perception_sft.jsonl"
             ),
-            repository_root / EXP2_FINAL / "predictions.jsonl": (
+            final_root / "evaluation/final-perception-exp002/predictions.jsonl": (
                 final_target / "predictions/perception_exp002.jsonl"
             ),
             final_root / "dashboard/qa-probe.json": final_target / "dashboard.json",

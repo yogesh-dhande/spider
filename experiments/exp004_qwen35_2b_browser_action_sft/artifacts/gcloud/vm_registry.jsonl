@@ -25,3 +25,5 @@
 {"timestamp_utc": "2026-08-20T20:11:53+00:00", "event": "restarted", "name": "spider-exp004-final-02-0500-f500-sealed-a", "zone": "northamerica-northeast1-b", "run_id": "f500-sealed-a", "reason": "external_monitor_inventory_failure", "resume_verified": true}
 {"timestamp_utc": "2026-08-20T22:09:28+00:00", "event": "created", "name": "spider-exp004-merge-0500-f500-merge-a", "zone": "us-west1-b", "run_id": "f500-merge-a", "role": "final-merge", "step": 500, "num_shards": 4, "repo_revision": "bf755d4", "max_run": "2h"}
 {"timestamp_utc": "2026-08-20T22:13:11+00:00", "event": "run_terminal", "run_id": "f500-merge-a", "states": {"spider-exp004-merge-0500-f500-merge-a": "TERMINATED"}}
+{"timestamp_utc": "2026-08-20T22:36:02+00:00", "event": "created", "name": "spider-exp004-merge-0500-f500-merge-b", "zone": "us-west1-b", "run_id": "f500-merge-b", "role": "final-merge", "step": 500, "num_shards": 4, "repo_revision": "6292e5f", "max_run": "2h"}
+{"timestamp_utc": "2026-08-20T22:39:05+00:00", "event": "run_terminal", "run_id": "f500-merge-b", "states": {"spider-exp004-merge-0500-f500-merge-b": "STOPPING"}}

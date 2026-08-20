@@ -77,6 +77,7 @@ from spider.dashboard import (
     build_probe_dashboard,
     copy_action_dashboard_images,
     copy_perception_dashboard_images,
+    filter_predictions_to_reference_ids,
     write_dashboard_json,
 )
 from spider.merge import merge_evaluation_shards
@@ -157,11 +158,23 @@ output_root = Path(os.environ["SPIDER_OUTPUT_DIR"])
     json.dumps(comparison, indent=2) + "\n"
 )
 
-perception_parent_predictions = Path(
+perception_parent_predictions_full = Path(
     "/opt/spider/experiments/exp002_qwen35_2b_molmoweb/artifacts/"
     "final_test/step_1875/predictions.jsonl"
 )
 perception_sft_predictions = output_root / "evaluation/final-perception/predictions.jsonl"
+perception_parent_predictions = (
+    output_root / "evaluation/final-perception-exp002/predictions.jsonl"
+)
+aligned_parent_examples = filter_predictions_to_reference_ids(
+    perception_parent_predictions_full,
+    perception_sft_predictions,
+    perception_parent_predictions,
+)
+if aligned_parent_examples != 4000:
+    raise RuntimeError(
+        f"Expected 4,000 aligned EXP002 perception predictions, got {aligned_parent_examples}"
+    )
 action_parent_predictions = output_root / "action_evaluation/final-action-exp002/predictions.jsonl"
 action_sft_predictions = output_root / "action_evaluation/final-action/predictions.jsonl"
 labels = {
