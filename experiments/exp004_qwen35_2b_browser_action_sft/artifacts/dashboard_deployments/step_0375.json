@@ -1,0 +1,13 @@
+{
+  "kind": "exp004_dashboard_deployment",
+  "experiment_step": 375,
+  "deployed_at_utc": "2026-08-20T16:45:32.517599+00:00",
+  "access": "owner_only",
+  "url": "https://spider-molmoweb-qa-lens.yogeschkd1988.chatgpt.site",
+  "site_project_id": "appgprj_6a848e3522388191b6fc927f1f5fa910",
+  "site_version_id": "appgprj_6a848e3522388191b6fc927f1f5fa910~appgver_30cbe8e85e548191a4bf46aa32089564",
+  "site_version_number": 2,
+  "deployment_id": "appgdep_6a872f1e46908191b748af0cc1a7968d",
+  "monorepo_commit": "5c71120ec5c2d81f59abd29f36624297552510c7",
+  "dashboard_subtree_commit": "7a3ffc7b3c64970c12bb1349beaa7d8314cb00a7"
+}
