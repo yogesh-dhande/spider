@@ -1,0 +1,20 @@
+{
+  "id": "yogeshkd/spider-exp004-validation-step-0875",
+  "title": "Spider Exp004 Validation Step 0875",
+  "code_file": "spider-exp004-validation-step-0875.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "yogeshkd/spider-exp004-finalize-prepared-data",
+    "yogeshkd/spider-exp004-action-baseline-merge",
+    "yogeshkd/spider-exp004-sft-stage-06"
+  ],
+  "model_sources": []
+}

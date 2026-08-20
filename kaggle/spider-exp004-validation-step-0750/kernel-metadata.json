@@ -14,7 +14,7 @@
   "kernel_sources": [
     "yogeshkd/spider-exp004-finalize-prepared-data",
     "yogeshkd/spider-exp004-action-baseline-merge",
-    "yogeshkd/spider-exp004-sft-stage-02"
+    "yogeshkd/spider-exp004-sft-stage-05"
   ],
   "model_sources": []
 }
