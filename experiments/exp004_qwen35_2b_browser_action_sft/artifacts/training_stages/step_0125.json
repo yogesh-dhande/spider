@@ -1,0 +1,28 @@
+{
+  "checkpoint": "adapter/checkpoint-125",
+  "completed_at_utc": "2026-08-20T01:21:43+00:00",
+  "completed_step": 125,
+  "effective_batch_size": 16,
+  "gradient_accumulation_steps": 8,
+  "initial_adapter": "/kaggle/input/notebooks/yogeshkd/spider-exp002-sft-stage-07/spider/outputs/experiment2/adapter/checkpoint-1875",
+  "metrics": {
+    "entropy": 0.5659175015985966,
+    "epoch": 0.06666666666666667,
+    "mean_token_accuracy": 0.8374106422066688,
+    "num_tokens": 2761286.0,
+    "train_loss": 0.5981500968933106,
+    "train_runtime": 4707.5719,
+    "train_samples_per_second": 6.373,
+    "train_steps_per_second": 0.398
+  },
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "optimizer": "adamw_8bit",
+  "planned_epoch_steps": 1875,
+  "resumed_from": null,
+  "stage_runtime_seconds": 4709.519634867001,
+  "start_step": 0,
+  "status": "complete",
+  "stop_step": 125,
+  "world_size": 2
+}
