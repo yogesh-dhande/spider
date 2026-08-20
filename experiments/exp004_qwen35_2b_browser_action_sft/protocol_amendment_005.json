@@ -1,0 +1,30 @@
+{
+  "id": "exp004-protocol-amendment-005",
+  "timestamp_utc": "2026-08-20T20:17:00+00:00",
+  "phase": "sealed_evaluation_execution",
+  "reason": "A transient gcloud inventory failure triggered the external monitor's unconditional cleanup path while sealed shards were still healthy.",
+  "observed_effect": {
+    "stopped_shards": [0, 2],
+    "unaffected_shards": [1, 3],
+    "closed_loop_already_complete": true,
+    "sealed_outputs_uploaded_before_interruption": false
+  },
+  "recovery": {
+    "same_instances_and_persistent_disks_restarted": true,
+    "same_selected_checkpoint": 500,
+    "action_predictions_resumed": true,
+    "perception_predictions_resumed": true,
+    "resume_evidence": {
+      "shard_00_action_predictions": 250,
+      "shard_02_action_predictions": 256,
+      "shard_02_perception_predictions": 100
+    }
+  },
+  "monitor_change": "Retry transient inventory failures and never stop guarded VMs merely because monitoring itself loses state; retain forced stop for an explicit timeout.",
+  "unchanged": [
+    "selected checkpoint and parent adapter",
+    "sealed manifests and shard assignment",
+    "model outputs already written before interruption",
+    "evaluation prompts, decoding, metrics, and merge rules"
+  ]
+}

@@ -668,19 +668,41 @@ exec /opt/spider/scripts/gcloud_exp004_final_merge_guest.sh
 def monitor(run_id: str, poll_seconds: int, timeout_seconds: int) -> None:
     started = time.monotonic()
     last: dict[str, str] = {}
-    try:
-        while True:
+    consecutive_query_failures = 0
+    while True:
+        try:
             instances = managed_instances(run_id)
-            states = {str(item["name"]): str(item["status"]) for item in instances}
-            if states != last:
-                emit("gcloud_vm_states", run_id=run_id, states=states)
-                last = states
-            if states and all(state not in ACTIVE_STATES for state in states.values()):
-                append_registry("run_terminal", run_id=run_id, states=states)
-                return
-            if time.monotonic() - started >= timeout_seconds:
-                raise TimeoutError(f"GCloud run {run_id} exceeded {timeout_seconds} seconds")
+        except subprocess.CalledProcessError as error:
+            consecutive_query_failures += 1
+            emit(
+                "gcloud_monitor_query_failed",
+                run_id=run_id,
+                consecutive_failures=consecutive_query_failures,
+                returncode=error.returncode,
+            )
+            if consecutive_query_failures >= 5:
+                raise RuntimeError(
+                    f"GCloud monitor lost state for {run_id} after "
+                    f"{consecutive_query_failures} consecutive queries; VMs retain their "
+                    "independent guest and max-run shutdown guards"
+                ) from error
             time.sleep(poll_seconds)
+            continue
+        consecutive_query_failures = 0
+        states = {str(item["name"]): str(item["status"]) for item in instances}
+        if states != last:
+            emit("gcloud_vm_states", run_id=run_id, states=states)
+            last = states
+        if states and all(state not in ACTIVE_STATES for state in states.values()):
+            append_registry("run_terminal", run_id=run_id, states=states)
+            emit("gcloud_run_shutdown_verified", run_id=run_id, stopped=[])
+            return
+        if time.monotonic() - started >= timeout_seconds:
+            break
+        time.sleep(poll_seconds)
+
+    try:
+        raise TimeoutError(f"GCloud run {run_id} exceeded {timeout_seconds} seconds")
     finally:
         stopped = stop_instances(run_id)
         emit("gcloud_run_shutdown_verified", run_id=run_id, stopped=stopped)

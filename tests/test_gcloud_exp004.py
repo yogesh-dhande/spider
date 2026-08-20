@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).parents[1] / "scripts" / "gcloud_exp004.py"
@@ -110,3 +111,26 @@ def test_final_merge_rejects_non_positive_shards() -> None:
         assert "num_shards" in str(error)
     else:
         raise AssertionError("non-positive final merge shard count was accepted")
+
+
+def test_monitor_retries_transient_inventory_failure_without_stopping(monkeypatch) -> None:
+    calls = 0
+    stop_calls: list[str] = []
+
+    def inventory(_run_id: str):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise subprocess.CalledProcessError(1, ["gcloud"])
+        return [{"name": "worker", "status": "TERMINATED"}]
+
+    monkeypatch.setattr(MODULE, "managed_instances", inventory)
+    monkeypatch.setattr(MODULE, "stop_instances", stop_calls.append)
+    monkeypatch.setattr(MODULE, "append_registry", lambda *args, **kwargs: None)
+    monkeypatch.setattr(MODULE, "emit", lambda *args, **kwargs: None)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda _seconds: None)
+
+    MODULE.monitor("run-a", poll_seconds=1, timeout_seconds=10)
+
+    assert calls == 2
+    assert stop_calls == []
