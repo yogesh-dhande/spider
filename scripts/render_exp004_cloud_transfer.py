@@ -27,7 +27,6 @@ def render(repo_revision: str, output_root: Path, step: int) -> Path:
         code_cell(
             "import json\n"
             "import os\n"
-            "import shutil\n"
             "import subprocess\n"
             "import sys\n"
             "from pathlib import Path\n\n"
@@ -39,9 +38,10 @@ def render(repo_revision: str, output_root: Path, step: int) -> Path:
             "os.chdir(REPO_ROOT)\n"
             "sys.path.insert(0, str(REPO_ROOT / 'src'))\n"
         ),
+        code_cell("%pip install -q --progress-bar off zstandard==0.24.0\n"),
         code_cell(
+            "from spider.archive import archive_directory_zstd\n"
             "from spider.exp4_data import find_exp4_checkpoint, find_exp4_data\n\n"
-            "assert shutil.which('zstd'), 'zstd is required for a single-file transfer artifact'\n"
             "prepared = find_exp4_data('/kaggle/input')\n"
             f"checkpoint = find_exp4_checkpoint('/kaggle/input', {step})\n"
             "training_output = checkpoint.parents[1]\n"
@@ -54,10 +54,7 @@ def render(repo_revision: str, output_root: Path, step: int) -> Path:
             "for source, archive in artifacts:\n"
             "    print({'event': 'archive_start', 'source': str(source), 'archive': str(archive)}, "
             "flush=True)\n"
-            "    subprocess.run([\n"
-            "        'tar', '--use-compress-program=zstd -3 -T0', '-cf', str(archive),\n"
-            "        '-C', str(source.parent), source.name,\n"
-            "    ], check=True)\n"
+            "    archive_directory_zstd(source, archive, level=3)\n"
             "    print({'event': 'archive_complete', 'archive': str(archive), "
             "'bytes': archive.stat().st_size}, flush=True)\n"
             "summary = {path.name: path.stat().st_size for _, path in artifacts}\n"
