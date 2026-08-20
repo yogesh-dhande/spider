@@ -143,10 +143,16 @@ def create_training_stage(
     start_step: int,
     stop_step: int,
     max_run: str,
+    per_device_batch: int = 1,
+    gradient_accumulation: int = 16,
 ) -> str:
     """Create one L4 stage VM; the guest script owns training and self-shutdown."""
     if start_step <= 0 or stop_step <= start_step:
         raise ValueError("training stage bounds must be positive and increasing")
+    if min(per_device_batch, gradient_accumulation) <= 0:
+        raise ValueError("training batch parameters must be positive")
+    if per_device_batch * gradient_accumulation != 16:
+        raise ValueError("EXP004 training stages must preserve effective batch size 16")
     name = f"spider-exp004-train-{stop_step:04d}-{run_id}"
     bootstrap = f"""#!/usr/bin/env bash
 set -Eeuo pipefail
@@ -164,6 +170,8 @@ exec /opt/spider/scripts/gcloud_exp004_guest.sh
     metadata = (
         f"spider-run-id={run_id},spider-repo-revision={repo_revision},"
         f"spider-stage-start={start_step},spider-stage-stop={stop_step},"
+        f"spider-per-device-batch={per_device_batch},"
+        f"spider-gradient-accumulation={gradient_accumulation},"
         f"spider-bucket={BUCKET}"
     )
     command = [
@@ -202,6 +210,8 @@ exec /opt/spider/scripts/gcloud_exp004_guest.sh
         stop_step=stop_step,
         repo_revision=repo_revision,
         max_run=max_run,
+        per_device_batch=per_device_batch,
+        gradient_accumulation=gradient_accumulation,
     )
     emit(
         "gcloud_vm_created",
@@ -439,6 +449,8 @@ def main() -> None:
     stage.add_argument("--start-step", required=True, type=int)
     stage.add_argument("--stop-step", required=True, type=int)
     stage.add_argument("--max-run", default="6h")
+    stage.add_argument("--per-device-batch", type=int, default=1)
+    stage.add_argument("--gradient-accumulation", type=int, default=16)
 
     validation = subparsers.add_parser("validation-pair")
     validation.add_argument("--run-id", required=True)
@@ -487,6 +499,8 @@ def main() -> None:
             args.start_step,
             args.stop_step,
             args.max_run,
+            args.per_device_batch,
+            args.gradient_accumulation,
         )
     elif args.command == "validation-pair":
         create_validation_pair(

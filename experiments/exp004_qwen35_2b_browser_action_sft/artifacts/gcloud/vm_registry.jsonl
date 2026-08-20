@@ -7,3 +7,6 @@
 {"timestamp_utc": "2026-08-20T07:42:38+00:00", "event": "run_terminal", "run_id": "b2-k250-20s", "states": {"spider-exp004-bench-b2-b2-k250-20s": "TERMINATED"}}
 {"timestamp_utc": "2026-08-20T08:05:39+00:00", "event": "run_terminal", "run_id": "k250-375b", "states": {"spider-exp004-train-0375-k250-375b": "TERMINATED"}}
 {"timestamp_utc": "2026-08-20T14:25:31+00:00", "event": "created", "name": "spider-exp004-val-action-0375-v375-g250e", "zone": "us-east1-d", "run_id": "v375-g250e", "role": "validation-action", "step": 375, "repo_revision": "c190098", "max_run": "4h"}
+{"timestamp_utc": "2026-08-20T15:07:37+00:00", "event": "run_terminal", "run_id": "v375-g250e", "states": {"spider-exp004-val-action-0375-v375-g250e": "TERMINATED"}}
+{"timestamp_utc": "2026-08-20T15:08:58+00:00", "event": "created", "name": "spider-exp004-val-perception-0375-v375-perception-g250e", "zone": "us-west1-a", "run_id": "v375-perception-g250e", "role": "validation-perception", "accelerator": "l4", "step": 375, "repo_revision": "f1c4580", "max_run": "4h"}
+{"timestamp_utc": "2026-08-20T15:27:47+00:00", "event": "run_terminal", "run_id": "v375-perception-g250e", "states": {"spider-exp004-val-perception-0375-v375-perception-g250e": "TERMINATED"}}

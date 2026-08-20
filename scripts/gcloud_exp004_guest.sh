@@ -10,6 +10,8 @@ RUN_ID="$(metadata spider-run-id)"
 REPO_REVISION="$(metadata spider-repo-revision)"
 START_STEP="$(metadata spider-stage-start)"
 STOP_STEP="$(metadata spider-stage-stop)"
+PER_DEVICE_BATCH="$(metadata spider-per-device-batch)"
+GRADIENT_ACCUMULATION="$(metadata spider-gradient-accumulation)"
 BUCKET="$(metadata spider-bucket)"
 LOG_PATH="/var/log/spider-exp004-${RUN_ID}.log"
 exec > >(tee -a "${LOG_PATH}") 2>&1
@@ -32,7 +34,7 @@ shutdown_and_archive() {
 }
 trap shutdown_and_archive EXIT
 
-echo "{\"event\":\"gcloud_guest_start\",\"run_id\":\"${RUN_ID}\",\"repo_revision\":\"${REPO_REVISION}\",\"start_step\":${START_STEP},\"stop_step\":${STOP_STEP}}"
+echo "{\"event\":\"gcloud_guest_start\",\"run_id\":\"${RUN_ID}\",\"repo_revision\":\"${REPO_REVISION}\",\"start_step\":${START_STEP},\"stop_step\":${STOP_STEP},\"per_device_batch\":${PER_DEVICE_BATCH},\"gradient_accumulation\":${GRADIENT_ACCUMULATION}}"
 systemd-run --unit="spider-exp004-guard-${RUN_ID}" --on-active=5h50m /usr/sbin/shutdown -h now
 
 apt-get update -qq
@@ -75,20 +77,23 @@ cp -a "${ORIGINAL_OUTPUT}" "${COMPAT_ROOT}"
 export SPIDER_OUTPUT_DIR="${COMPAT_ROOT}"
 export SPIDER_INITIAL_ADAPTER="${COMPAT_ROOT}/adapter/checkpoint-${START_STEP}"
 python -m spider.train --config /opt/spider/configs/experiment4.yaml --resume auto \
-  --additional-steps 2 --gradient-accumulation-steps 16
-python - "${COMPAT_ROOT}/training_state.json" "${START_STEP}" <<'PY'
+  --additional-steps 2 --per-device-train-batch-size "${PER_DEVICE_BATCH}" \
+  --gradient-accumulation-steps "${GRADIENT_ACCUMULATION}"
+python - "${COMPAT_ROOT}/training_state.json" "${START_STEP}" \
+  "${PER_DEVICE_BATCH}" "${GRADIENT_ACCUMULATION}" <<'PY'
 import json
 import math
 import sys
 from pathlib import Path
 
 state = json.loads(Path(sys.argv[1]).read_text())
-start = int(sys.argv[2])
+start, batch, accumulation = map(int, sys.argv[2:])
 assert state["start_step"] == start, state
 assert state["completed_step"] == start + 2, state
 assert state["planned_epoch_steps"] == 1875, state
 assert state["world_size"] == 1, state
-assert state["gradient_accumulation_steps"] == 16, state
+assert state["per_device_train_batch_size"] == batch, state
+assert state["gradient_accumulation_steps"] == accumulation, state
 assert state["effective_batch_size"] == 16, state
 assert math.isfinite(float(state["metrics"]["train_loss"])), state
 PY
@@ -100,22 +105,26 @@ cp -a "${ORIGINAL_OUTPUT}" "${OUTPUT_ROOT}"
 export SPIDER_OUTPUT_DIR="${OUTPUT_ROOT}"
 export SPIDER_INITIAL_ADAPTER="${OUTPUT_ROOT}/adapter/checkpoint-${START_STEP}"
 python -m spider.train --config /opt/spider/configs/experiment4.yaml --resume auto \
-  --additional-steps "$((STOP_STEP - START_STEP))" --gradient-accumulation-steps 16
-python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" "${STOP_STEP}" <<'PY'
+  --additional-steps "$((STOP_STEP - START_STEP))" \
+  --per-device-train-batch-size "${PER_DEVICE_BATCH}" \
+  --gradient-accumulation-steps "${GRADIENT_ACCUMULATION}"
+python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" "${STOP_STEP}" \
+  "${PER_DEVICE_BATCH}" "${GRADIENT_ACCUMULATION}" <<'PY'
 import json
 import math
 import sys
 from pathlib import Path
 
 state = json.loads(Path(sys.argv[1]).read_text())
-start, stop = map(int, sys.argv[2:])
+start, stop, batch, accumulation = map(int, sys.argv[2:])
 assert state["status"] == "complete", state
 assert state["start_step"] == start, state
 assert state["completed_step"] == stop, state
 assert state["stop_step"] == stop, state
 assert state["planned_epoch_steps"] == 1875, state
 assert state["world_size"] == 1, state
-assert state["gradient_accumulation_steps"] == 16, state
+assert state["per_device_train_batch_size"] == batch, state
+assert state["gradient_accumulation_steps"] == accumulation, state
 assert state["effective_batch_size"] == 16, state
 assert math.isfinite(float(state["metrics"]["train_loss"])), state
 PY

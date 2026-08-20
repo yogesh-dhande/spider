@@ -29,6 +29,15 @@ def test_training_stage_rejects_invalid_bounds() -> None:
         raise AssertionError("invalid stage bounds were accepted")
 
 
+def test_training_stage_preserves_effective_batch() -> None:
+    try:
+        MODULE.create_training_stage("test", "zone", "abc", 375, 500, "4h", 2, 4)
+    except ValueError as error:
+        assert "effective batch size 16" in str(error)
+    else:
+        raise AssertionError("invalid effective batch was accepted")
+
+
 def test_validation_rejects_unknown_role() -> None:
     try:
         MODULE.create_validation_shard("test", "other", "zone", "abc", 500, "4h")
