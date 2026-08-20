@@ -302,7 +302,7 @@ def create_validation_pair(
 ) -> list[str]:
     return [
         create_validation_shard(
-            run_id, "action", "us-west1-b", repo_revision, step, max_run
+            run_id, "action", "us-west1-a", repo_revision, step, max_run
         ),
         create_validation_shard(
             run_id, "perception", "us-central1-f", repo_revision, step, max_run
