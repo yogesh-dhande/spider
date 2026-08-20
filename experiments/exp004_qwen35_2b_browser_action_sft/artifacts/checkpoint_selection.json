@@ -1,0 +1,52 @@
+{
+  "eligible_steps": [
+    125,
+    250,
+    375,
+    500
+  ],
+  "selected_action_metrics": {
+    "action_argument_accuracy": 0.48828125,
+    "action_name_accuracy": 0.71484375,
+    "action_name_accuracy_by_action": {
+      "click": 0.7954545454545454,
+      "goto": 1.0,
+      "keyboard_press": 0.18181818181818182,
+      "keyboard_type": 0.6470588235294118,
+      "scroll": 0.6829268292682927,
+      "send_msg_to_user": 0.6956521739130435
+    },
+    "click_inside_bbox_accuracy": 0.38636363636363635,
+    "click_median_distance_px": 77.56625092988205,
+    "click_predictions_with_distance": 70,
+    "click_target_examples_with_bbox": 88,
+    "click_within_100px_accuracy": 0.4431818181818182,
+    "click_within_25px_accuracy": 0.29545454545454547,
+    "click_within_50px_accuracy": 0.32954545454545453,
+    "exact_action_accuracy": 0.37109375,
+    "examples": 256,
+    "json_parse_rate": 1.0,
+    "target_action_counts": {
+      "click": 88,
+      "goto": 12,
+      "keyboard_press": 11,
+      "keyboard_type": 17,
+      "scroll": 82,
+      "send_msg_to_user": 46
+    }
+  },
+  "selected_perception_metrics": {
+    "grounding_click_accuracy": 0.625,
+    "grounding_median_pixel_distance": 33.64519539485458,
+    "grounding_parse_rate": 1.0,
+    "qa_answer_accuracy": 0.3828125,
+    "qa_mean_token_f1": 0.7112953590158975
+  },
+  "selected_step": 500,
+  "selection_rule": [
+    "click_inside_bbox_accuracy",
+    "action_name_accuracy",
+    "action_argument_accuracy",
+    "earliest_step"
+  ]
+}

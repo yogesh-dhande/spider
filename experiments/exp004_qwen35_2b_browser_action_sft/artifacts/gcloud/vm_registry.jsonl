@@ -14,3 +14,4 @@
 {"timestamp_utc": "2026-08-20T17:52:22+00:00", "event": "created", "name": "spider-exp004-val-action-0500-v500-g984a", "zone": "us-east1-d", "run_id": "v500-g984a", "role": "validation-action", "accelerator": "l4", "step": 500, "repo_revision": "984deb4", "max_run": "4h"}
 {"timestamp_utc": "2026-08-20T17:53:47+00:00", "event": "run_terminal", "run_id": "k375-500a", "states": {"spider-exp004-train-0500-k375-500a": "TERMINATED"}}
 {"timestamp_utc": "2026-08-20T17:54:25+00:00", "event": "created", "name": "spider-exp004-val-perception-0500-v500-g984a", "zone": "us-west1-a", "run_id": "v500-g984a", "role": "validation-perception", "accelerator": "l4", "step": 500, "repo_revision": "984deb4", "max_run": "4h"}
+{"timestamp_utc": "2026-08-20T18:35:21+00:00", "event": "run_terminal", "run_id": "v500-g984a", "states": {"spider-exp004-val-perception-0500-v500-g984a": "TERMINATED", "spider-exp004-val-action-0500-v500-g984a": "TERMINATED"}}
