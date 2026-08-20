@@ -61,10 +61,13 @@ test -f "${DATA_ROOT}/file_checksums.json"
 test -f "${ADAPTER}/adapter_config.json"
 
 export PYTHONPATH="/opt/spider/src"
+export HOME=/root
+export PYTORCH_KERNEL_CACHE_PATH=/root/.cache/torch/kernels
 export HF_HUB_DOWNLOAD_TIMEOUT=300
 export HF_HUB_ETAG_TIMEOUT=60
 export HF_HUB_DISABLE_PROGRESS_BARS=1
 export SPIDER_DATA_DIR="${DATA_ROOT}"
+mkdir -p "${PYTORCH_KERNEL_CACHE_PATH}"
 export SPIDER_OUTPUT_DIR="${OUTPUT_ROOT}"
 export SPIDER_VALIDATION_STEP="${STEP}"
 export SPIDER_VALIDATION_ADAPTER="${ADAPTER}"
