@@ -50,7 +50,17 @@ def summarize_shard_metrics(
     per_shard = dict(zip(shard_labels, shard_metrics, strict=True))
     variability: dict[str, dict[str, float]] = {}
     for name, path in PRIMARY_SHARD_METRICS.items():
-        values = [float(metrics[path[0]][path[1]][path[2]]) for metrics in shard_metrics]
+        raw_values: list[float | None] = []
+        for metrics in shard_metrics:
+            try:
+                raw_values.append(float(metrics[path[0]][path[1]][path[2]]))
+            except KeyError:
+                raw_values.append(None)
+        if all(value is None for value in raw_values):
+            continue
+        if any(value is None for value in raw_values):
+            raise ValueError(f"Shard metrics disagree on availability of {name}")
+        values = [value for value in raw_values if value is not None]
         variability[name] = {
             "mean": statistics.fmean(values),
             "population_std": statistics.pstdev(values),

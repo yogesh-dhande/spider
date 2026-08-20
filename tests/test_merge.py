@@ -67,6 +67,49 @@ def test_summarize_shard_metrics_reports_partition_variability() -> None:
     )
 
 
+def test_summarize_shard_metrics_skips_dataset_absent_from_every_shard() -> None:
+    metrics = [
+        {
+            "molmoweb": {
+                "qa": {"answer_accuracy": 0.2},
+                "grounding": {"click_accuracy": 0.4},
+            }
+        },
+        {
+            "molmoweb": {
+                "qa": {"answer_accuracy": 0.4},
+                "grounding": {"click_accuracy": 0.6},
+            }
+        },
+    ]
+
+    summary = summarize_shard_metrics(["shard-0", "shard-1"], metrics)
+
+    assert set(summary["variability"]) == {
+        "molmoweb_qa_answer_accuracy",
+        "molmoweb_grounding_click_accuracy",
+    }
+
+
+def test_summarize_shard_metrics_rejects_inconsistent_dataset_availability() -> None:
+    first = {
+        "molmoweb": {
+            "qa": {"answer_accuracy": 0.2},
+            "grounding": {"click_accuracy": 0.4},
+        },
+        "screenspot": {"grounding": {"click_accuracy": 0.5}},
+    }
+    second = {
+        "molmoweb": {
+            "qa": {"answer_accuracy": 0.4},
+            "grounding": {"click_accuracy": 0.6},
+        }
+    }
+
+    with pytest.raises(ValueError, match="disagree on availability"):
+        summarize_shard_metrics(["shard-0", "shard-1"], [first, second])
+
+
 def test_manifest_identity_ignores_environment_specific_mount_root() -> None:
     legacy = {
         "manifests": [

@@ -1,0 +1,19 @@
+{
+  "id": "exp004-protocol-amendment-006",
+  "timestamp_utc": "2026-08-20T22:20:00+00:00",
+  "phase": "sealed_evaluation_merge",
+  "reason": "The generic perception shard diagnostic expected ScreenSpot metrics even though EXP004's sealed perception job intentionally evaluates only MolmoWeb ScreenshotQA and grounding.",
+  "observed_failure": {
+    "run_id": "f500-merge-a",
+    "gpu_inference_affected": false,
+    "sealed_shard_outputs_affected": false,
+    "error": "KeyError: screenspot"
+  },
+  "change": "Compute variability only for primary datasets present in every input shard, while rejecting inconsistent per-shard dataset availability.",
+  "unchanged": [
+    "sealed predictions and shard assignment",
+    "selected checkpoint and parent adapter",
+    "scoring functions and merged primary metrics",
+    "positive-result thresholds and dashboard sampling"
+  ]
+}
