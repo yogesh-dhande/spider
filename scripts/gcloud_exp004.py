@@ -215,6 +215,101 @@ exec /opt/spider/scripts/gcloud_exp004_guest.sh
     return name
 
 
+def create_validation_shard(
+    run_id: str,
+    role: str,
+    zone: str,
+    repo_revision: str,
+    step: int,
+    max_run: str,
+) -> str:
+    if role not in {"action", "perception"}:
+        raise ValueError("validation role must be action or perception")
+    if step <= 0:
+        raise ValueError("validation step must be positive")
+    name = f"spider-exp004-val-{role}-{step:04d}-{run_id}"
+    bootstrap = f"""#!/usr/bin/env bash
+set -Eeuo pipefail
+trap 'shutdown -h now' EXIT
+apt-get update -qq
+apt-get install -y -qq git
+rm -rf /opt/spider
+git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+git -C /opt/spider checkout -q {repo_revision}
+chmod +x /opt/spider/scripts/gcloud_exp004_eval_guest.sh
+exec /opt/spider/scripts/gcloud_exp004_eval_guest.sh
+"""
+    startup = Path("/tmp") / f"{name}-startup.sh"
+    startup.write_text(bootstrap, encoding="utf-8")
+    metadata = (
+        f"spider-run-id={run_id},spider-repo-revision={repo_revision},"
+        f"spider-validation-role={role},spider-validation-step={step},spider-bucket={BUCKET}"
+    )
+    command = [
+        "gcloud",
+        "compute",
+        "instances",
+        "create",
+        name,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
+        "--image-project=deeplearning-platform-release",
+        "--boot-disk-size=200GB",
+        "--boot-disk-type=pd-balanced",
+        "--scopes=cloud-platform",
+        "--maintenance-policy=TERMINATE",
+        (
+            "--labels=spider-managed=true,spider-experiment=exp004,"
+            f"spider-role=validation-{role},spider-run={run_id},spider-step={step}"
+        ),
+        f"--max-run-duration={max_run}",
+        "--instance-termination-action=STOP",
+        f"--metadata={metadata}",
+        f"--metadata-from-file=startup-script={startup}",
+        "--quiet",
+    ]
+    if role == "action":
+        command.append("--machine-type=g2-standard-8")
+    else:
+        command.extend(
+            ["--machine-type=n1-standard-8", "--accelerator=count=1,type=nvidia-tesla-t4"]
+        )
+    run(command, capture=False)
+    append_registry(
+        "created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role=f"validation-{role}",
+        step=step,
+        repo_revision=repo_revision,
+        max_run=max_run,
+    )
+    emit(
+        "gcloud_vm_created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role=f"validation-{role}",
+        step=step,
+    )
+    return name
+
+
+def create_validation_pair(
+    run_id: str, repo_revision: str, step: int, max_run: str
+) -> list[str]:
+    return [
+        create_validation_shard(
+            run_id, "action", "us-west1-b", repo_revision, step, max_run
+        ),
+        create_validation_shard(
+            run_id, "perception", "us-central1-f", repo_revision, step, max_run
+        ),
+    ]
+
+
 def monitor(run_id: str, poll_seconds: int, timeout_seconds: int) -> None:
     started = time.monotonic()
     last: dict[str, str] = {}
@@ -257,6 +352,12 @@ def main() -> None:
     stage.add_argument("--stop-step", required=True, type=int)
     stage.add_argument("--max-run", default="6h")
 
+    validation = subparsers.add_parser("validation-pair")
+    validation.add_argument("--run-id", required=True)
+    validation.add_argument("--repo-revision", required=True)
+    validation.add_argument("--step", required=True, type=int)
+    validation.add_argument("--max-run", default="4h")
+
     monitor_parser = subparsers.add_parser("monitor")
     monitor_parser.add_argument("--run-id", required=True)
     monitor_parser.add_argument("--poll-seconds", type=int, default=30)
@@ -278,6 +379,8 @@ def main() -> None:
             args.stop_step,
             args.max_run,
         )
+    elif args.command == "validation-pair":
+        create_validation_pair(args.run_id, args.repo_revision, args.step, args.max_run)
     elif args.command == "monitor":
         if args.poll_seconds <= 0 or args.timeout_seconds <= 0:
             parser.error("poll and timeout values must be positive")

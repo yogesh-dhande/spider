@@ -27,3 +27,12 @@ def test_training_stage_rejects_invalid_bounds() -> None:
         assert "increasing" in str(error)
     else:
         raise AssertionError("invalid stage bounds were accepted")
+
+
+def test_validation_rejects_unknown_role() -> None:
+    try:
+        MODULE.create_validation_shard("test", "other", "zone", "abc", 500, "4h")
+    except ValueError as error:
+        assert "action or perception" in str(error)
+    else:
+        raise AssertionError("unknown validation role was accepted")

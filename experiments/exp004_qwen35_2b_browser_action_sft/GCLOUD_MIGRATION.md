@@ -37,6 +37,10 @@ schedule. Before a GCloud stage is accepted, a disposable two-step resume must v
 Training stages remain sequential. Action, QA, and grounding evaluation shards may use separate
 VMs in parallel, followed by the existing deterministic merge and regression gate.
 
+Stage validation runs as two independent VMs: action inference on one L4 and the combined QA plus
+grounding probe on one T4. Each uploads metrics and resumable raw predictions before stopping. The
+frozen gate is implemented once in `spider.exp4_gate` so Kaggle and GCloud use identical logic.
+
 The guest uses `torch==2.10.0+cu128`, matching the observed Kaggle runtime, together with the exact
 versions in `requirements/experiment2-kaggle.txt`. A stage checkpoint is uploaded only after the
 compatibility assertions and registered stage assertions pass.
