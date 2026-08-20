@@ -89,7 +89,9 @@ training:
     - in_proj_a
     - out_proj
   gradient_checkpointing: true
-  logging_steps: 10
+  # One compact JSON line per optimizer step keeps remote batch logs observable
+  # without tqdm's continuously rewritten progress stream.
+  logging_steps: 1
   eval_steps: 250
   eval_examples: 256
   save_steps: 25

@@ -1,0 +1,23 @@
+{
+  "id": "exp004-protocol-amendment-003",
+  "timestamp_utc": "2026-08-20T06:08:00+00:00",
+  "phase": "execution_observability_after_gcloud_compatibility_gate",
+  "reason": "Ten optimizer steps can leave remote batch logs silent for several minutes. Compact per-step JSON events are small enough for this 125-step stage design and make stalls distinguishable from slow progress without tqdm output.",
+  "change": {
+    "training.logging_steps": {
+      "from": 10,
+      "to": 1
+    },
+    "gcloud_guest_environment": {
+      "HOME": "/root",
+      "PYTORCH_KERNEL_CACHE_PATH": "/root/.cache/torch/kernels"
+    }
+  },
+  "effect_scope": "Logging cadence and reusable CUDA kernel cache only; first applies to jobs launched after this amendment.",
+  "unchanged": [
+    "training examples and order",
+    "model inputs, targets, and loss",
+    "optimizer, scheduler, precision, and effective batch size",
+    "stage boundaries and validation protocol"
+  ]
+}
