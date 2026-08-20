@@ -74,3 +74,39 @@ def test_validation_rejects_unknown_accelerator() -> None:
         assert "l4 or t4" in str(error)
     else:
         raise AssertionError("unknown validation accelerator was accepted")
+
+
+def test_final_shard_rejects_invalid_partition() -> None:
+    try:
+        MODULE.create_final_shard("test", "zone", "abc", 500, 4, 4, "4h")
+    except ValueError as error:
+        assert "shard_index" in str(error)
+    else:
+        raise AssertionError("invalid final shard partition was accepted")
+
+
+def test_final_shard_rejects_unknown_accelerator() -> None:
+    try:
+        MODULE.create_final_shard("test", "zone", "abc", 500, 0, 4, "4h", "other")
+    except ValueError as error:
+        assert "l4 or t4" in str(error)
+    else:
+        raise AssertionError("unknown final accelerator was accepted")
+
+
+def test_closed_loop_rejects_non_positive_step() -> None:
+    try:
+        MODULE.create_closed_loop("test", "zone", "abc", 0, "4h")
+    except ValueError as error:
+        assert "positive" in str(error)
+    else:
+        raise AssertionError("non-positive closed-loop checkpoint was accepted")
+
+
+def test_final_merge_rejects_non_positive_shards() -> None:
+    try:
+        MODULE.create_final_merge("test", "zone", "abc", 500, 0, "2h")
+    except ValueError as error:
+        assert "num_shards" in str(error)
+    else:
+        raise AssertionError("non-positive final merge shard count was accepted")

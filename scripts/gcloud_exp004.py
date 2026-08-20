@@ -408,6 +408,263 @@ def create_validation_pair(
     ]
 
 
+def create_final_shard(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    step: int,
+    shard_index: int,
+    num_shards: int,
+    max_run: str,
+    accelerator: str = "l4",
+) -> str:
+    """Create one matched sealed-test shard for parent and selected adapters."""
+    if step <= 0:
+        raise ValueError("final evaluation step must be positive")
+    if num_shards <= 0 or not 0 <= shard_index < num_shards:
+        raise ValueError("Require num_shards > 0 and 0 <= shard_index < num_shards")
+    if accelerator not in {"l4", "t4"}:
+        raise ValueError("final evaluation accelerator must be l4 or t4")
+    name = f"spider-exp004-final-{shard_index:02d}-{step:04d}-{run_id}"
+    bootstrap = f"""#!/usr/bin/env bash
+set -Eeuo pipefail
+trap 'shutdown -h now' EXIT
+apt-get update -qq
+apt-get install -y -qq git
+rm -rf /opt/spider
+git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+git -C /opt/spider checkout -q {repo_revision}
+chmod +x /opt/spider/scripts/gcloud_exp004_final_guest.sh
+exec /opt/spider/scripts/gcloud_exp004_final_guest.sh
+"""
+    startup = Path("/tmp") / f"{name}-startup.sh"
+    startup.write_text(bootstrap, encoding="utf-8")
+    metadata = (
+        f"spider-run-id={run_id},spider-repo-revision={repo_revision},"
+        f"spider-final-step={step},spider-shard-index={shard_index},"
+        f"spider-num-shards={num_shards},spider-bucket={BUCKET}"
+    )
+    command = [
+        "gcloud",
+        "compute",
+        "instances",
+        "create",
+        name,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
+        "--image-project=deeplearning-platform-release",
+        "--boot-disk-size=100GB",
+        "--boot-disk-type=pd-standard",
+        "--scopes=cloud-platform",
+        "--maintenance-policy=TERMINATE",
+        (
+            "--labels=spider-managed=true,spider-experiment=exp004,"
+            f"spider-role=final-shard,spider-run={run_id},spider-step={step},"
+            f"spider-shard={shard_index}"
+        ),
+        f"--max-run-duration={max_run}",
+        "--instance-termination-action=STOP",
+        f"--metadata={metadata}",
+        f"--metadata-from-file=startup-script={startup}",
+        "--quiet",
+    ]
+    if accelerator == "l4":
+        command.append("--machine-type=g2-standard-8")
+    else:
+        command.extend(
+            ["--machine-type=n1-standard-8", "--accelerator=count=1,type=nvidia-tesla-t4"]
+        )
+    run(command, capture=False)
+    append_registry(
+        "created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="final-shard",
+        accelerator=accelerator,
+        step=step,
+        shard_index=shard_index,
+        num_shards=num_shards,
+        repo_revision=repo_revision,
+        max_run=max_run,
+    )
+    emit(
+        "gcloud_vm_created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="final-shard",
+        step=step,
+        shard_index=shard_index,
+        num_shards=num_shards,
+    )
+    return name
+
+
+def create_closed_loop(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    step: int,
+    max_run: str,
+    accelerator: str = "l4",
+) -> str:
+    """Create the paired deterministic closed-loop comparison VM."""
+    if step <= 0:
+        raise ValueError("closed-loop checkpoint step must be positive")
+    if accelerator not in {"l4", "t4"}:
+        raise ValueError("closed-loop accelerator must be l4 or t4")
+    name = f"spider-exp004-loop-{step:04d}-{run_id}"
+    bootstrap = f"""#!/usr/bin/env bash
+set -Eeuo pipefail
+trap 'shutdown -h now' EXIT
+apt-get update -qq
+apt-get install -y -qq git
+rm -rf /opt/spider
+git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+git -C /opt/spider checkout -q {repo_revision}
+chmod +x /opt/spider/scripts/gcloud_exp004_closed_loop_guest.sh
+exec /opt/spider/scripts/gcloud_exp004_closed_loop_guest.sh
+"""
+    startup = Path("/tmp") / f"{name}-startup.sh"
+    startup.write_text(bootstrap, encoding="utf-8")
+    metadata = (
+        f"spider-run-id={run_id},spider-repo-revision={repo_revision},"
+        f"spider-final-step={step},spider-bucket={BUCKET}"
+    )
+    command = [
+        "gcloud",
+        "compute",
+        "instances",
+        "create",
+        name,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
+        "--image-project=deeplearning-platform-release",
+        "--boot-disk-size=80GB",
+        "--boot-disk-type=pd-standard",
+        "--scopes=cloud-platform",
+        "--maintenance-policy=TERMINATE",
+        (
+            "--labels=spider-managed=true,spider-experiment=exp004,"
+            f"spider-role=closed-loop,spider-run={run_id},spider-step={step}"
+        ),
+        f"--max-run-duration={max_run}",
+        "--instance-termination-action=STOP",
+        f"--metadata={metadata}",
+        f"--metadata-from-file=startup-script={startup}",
+        "--quiet",
+    ]
+    if accelerator == "l4":
+        command.append("--machine-type=g2-standard-8")
+    else:
+        command.extend(
+            ["--machine-type=n1-standard-8", "--accelerator=count=1,type=nvidia-tesla-t4"]
+        )
+    run(command, capture=False)
+    append_registry(
+        "created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="closed-loop",
+        accelerator=accelerator,
+        step=step,
+        repo_revision=repo_revision,
+        max_run=max_run,
+    )
+    emit(
+        "gcloud_vm_created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="closed-loop",
+        step=step,
+    )
+    return name
+
+
+def create_final_merge(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    step: int,
+    num_shards: int,
+    max_run: str,
+) -> str:
+    """Create a CPU merge job for complete sealed-test shard outputs."""
+    if step <= 0:
+        raise ValueError("final merge step must be positive")
+    if num_shards <= 0:
+        raise ValueError("final merge num_shards must be positive")
+    name = f"spider-exp004-merge-{step:04d}-{run_id}"
+    bootstrap = f"""#!/usr/bin/env bash
+set -Eeuo pipefail
+trap 'shutdown -h now' EXIT
+apt-get update -qq
+apt-get install -y -qq git
+rm -rf /opt/spider
+git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+git -C /opt/spider checkout -q {repo_revision}
+chmod +x /opt/spider/scripts/gcloud_exp004_final_merge_guest.sh
+exec /opt/spider/scripts/gcloud_exp004_final_merge_guest.sh
+"""
+    startup = Path("/tmp") / f"{name}-startup.sh"
+    startup.write_text(bootstrap, encoding="utf-8")
+    metadata = (
+        f"spider-run-id={run_id},spider-repo-revision={repo_revision},"
+        f"spider-final-step={step},spider-num-shards={num_shards},spider-bucket={BUCKET}"
+    )
+    command = [
+        "gcloud",
+        "compute",
+        "instances",
+        "create",
+        name,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--machine-type=e2-standard-8",
+        "--image-family=ubuntu-2404-lts-amd64",
+        "--image-project=ubuntu-os-cloud",
+        "--boot-disk-size=100GB",
+        "--boot-disk-type=pd-standard",
+        "--scopes=cloud-platform",
+        (
+            "--labels=spider-managed=true,spider-experiment=exp004,"
+            f"spider-role=final-merge,spider-run={run_id},spider-step={step}"
+        ),
+        f"--max-run-duration={max_run}",
+        "--instance-termination-action=STOP",
+        f"--metadata={metadata}",
+        f"--metadata-from-file=startup-script={startup}",
+        "--quiet",
+    ]
+    run(command, capture=False)
+    append_registry(
+        "created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="final-merge",
+        step=step,
+        num_shards=num_shards,
+        repo_revision=repo_revision,
+        max_run=max_run,
+    )
+    emit(
+        "gcloud_vm_created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="final-merge",
+        step=step,
+        num_shards=num_shards,
+    )
+    return name
+
+
 def monitor(run_id: str, poll_seconds: int, timeout_seconds: int) -> None:
     started = time.monotonic()
     last: dict[str, str] = {}
@@ -479,6 +736,32 @@ def main() -> None:
     benchmark.add_argument("--gradient-accumulation", type=int, default=8)
     benchmark.add_argument("--max-run", default="2h")
 
+    final_shard = subparsers.add_parser("final-shard")
+    final_shard.add_argument("--run-id", required=True)
+    final_shard.add_argument("--zone", required=True)
+    final_shard.add_argument("--repo-revision", required=True)
+    final_shard.add_argument("--step", required=True, type=int)
+    final_shard.add_argument("--shard-index", required=True, type=int)
+    final_shard.add_argument("--num-shards", type=int, default=4)
+    final_shard.add_argument("--accelerator", choices=("l4", "t4"), default="l4")
+    final_shard.add_argument("--max-run", default="4h")
+
+    closed_loop = subparsers.add_parser("closed-loop")
+    closed_loop.add_argument("--run-id", required=True)
+    closed_loop.add_argument("--zone", required=True)
+    closed_loop.add_argument("--repo-revision", required=True)
+    closed_loop.add_argument("--step", required=True, type=int)
+    closed_loop.add_argument("--accelerator", choices=("l4", "t4"), default="l4")
+    closed_loop.add_argument("--max-run", default="4h")
+
+    final_merge = subparsers.add_parser("final-merge")
+    final_merge.add_argument("--run-id", required=True)
+    final_merge.add_argument("--zone", required=True)
+    final_merge.add_argument("--repo-revision", required=True)
+    final_merge.add_argument("--step", required=True, type=int)
+    final_merge.add_argument("--num-shards", type=int, default=4)
+    final_merge.add_argument("--max-run", default="2h")
+
     monitor_parser = subparsers.add_parser("monitor")
     monitor_parser.add_argument("--run-id", required=True)
     monitor_parser.add_argument("--poll-seconds", type=int, default=30)
@@ -530,6 +813,35 @@ def main() -> None:
             args.benchmark_steps,
             args.per_device_batch,
             args.gradient_accumulation,
+            args.max_run,
+        )
+    elif args.command == "final-shard":
+        create_final_shard(
+            args.run_id,
+            args.zone,
+            args.repo_revision,
+            args.step,
+            args.shard_index,
+            args.num_shards,
+            args.max_run,
+            args.accelerator,
+        )
+    elif args.command == "closed-loop":
+        create_closed_loop(
+            args.run_id,
+            args.zone,
+            args.repo_revision,
+            args.step,
+            args.max_run,
+            args.accelerator,
+        )
+    elif args.command == "final-merge":
+        create_final_merge(
+            args.run_id,
+            args.zone,
+            args.repo_revision,
+            args.step,
+            args.num_shards,
             args.max_run,
         )
     elif args.command == "monitor":

@@ -41,6 +41,21 @@ Stage validation runs as two independent VMs: action inference on one L4 and the
 grounding probe on one T4. Each uploads metrics and resumable raw predictions before stopping. The
 frozen gate is implemented once in `spider.exp4_gate` so Kaggle and GCloud use identical logic.
 
+After checkpoint selection, sealed evaluation runs as four independent matched GPU shards. Every
+shard evaluates the frozen EXP002 parent and selected EXP004 adapter on the same quarter of the
+1,024-example action test, then evaluates the selected adapter on the same deterministic quarter of
+the 2,000-example QA and 2,000-example grounding tests. A guarded CPU job verifies complete,
+non-overlapping coverage, merges predictions, computes the preregistered positive-result rule, and
+builds the sealed dashboard payload. The paired deterministic closed-loop comparison runs in a
+separate guarded GPU job so neither sealed metrics nor rollout outcomes can affect checkpoint
+selection.
+
+The exact EXP002 inference adapter used by the matched final shards is stored under
+`exp004/inputs/exp002_parent/`; its Kaggle source path, byte counts, and SHA-256 hashes are recorded
+in `artifacts/gcloud/exp002_parent_adapter.json`. Final shard and merge artifacts are stored under
+`exp004/final/step_NNNN/`, while the closed-loop run is stored under
+`exp004/closed_loop/step_NNNN/`.
+
 The guest uses `torch==2.10.0+cu128`, matching the observed Kaggle runtime, together with the exact
 versions in `requirements/experiment2-kaggle.txt`. A stage checkpoint is uploaded only after the
 compatibility assertions and registered stage assertions pass.
