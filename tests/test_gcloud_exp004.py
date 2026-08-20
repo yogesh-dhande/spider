@@ -54,3 +54,14 @@ def test_speed_benchmark_rejects_non_positive_parameters() -> None:
         assert "positive" in str(error)
     else:
         raise AssertionError("non-positive benchmark length was accepted")
+
+
+def test_validation_rejects_unknown_accelerator() -> None:
+    try:
+        MODULE.create_validation_shard(
+            "test", "perception", "zone", "abc", 500, "4h", "other"
+        )
+    except ValueError as error:
+        assert "l4 or t4" in str(error)
+    else:
+        raise AssertionError("unknown validation accelerator was accepted")

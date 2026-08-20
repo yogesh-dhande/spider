@@ -6,3 +6,4 @@
 {"timestamp_utc": "2026-08-20T07:20:56+00:00", "event": "created", "name": "spider-exp004-bench-b2-b2-k250-20s", "zone": "us-east1-b", "run_id": "b2-k250-20s", "role": "speed-benchmark", "start_step": 250, "benchmark_steps": 20, "per_device_batch": 2, "gradient_accumulation": 8, "repo_revision": "b643686", "max_run": "2h"}
 {"timestamp_utc": "2026-08-20T07:42:38+00:00", "event": "run_terminal", "run_id": "b2-k250-20s", "states": {"spider-exp004-bench-b2-b2-k250-20s": "TERMINATED"}}
 {"timestamp_utc": "2026-08-20T08:05:39+00:00", "event": "run_terminal", "run_id": "k250-375b", "states": {"spider-exp004-train-0375-k250-375b": "TERMINATED"}}
+{"timestamp_utc": "2026-08-20T14:25:31+00:00", "event": "created", "name": "spider-exp004-val-action-0375-v375-g250e", "zone": "us-east1-d", "run_id": "v375-g250e", "role": "validation-action", "step": 375, "repo_revision": "c190098", "max_run": "4h"}

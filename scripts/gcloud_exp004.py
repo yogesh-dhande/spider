@@ -300,11 +300,15 @@ def create_validation_shard(
     repo_revision: str,
     step: int,
     max_run: str,
+    accelerator: str | None = None,
 ) -> str:
     if role not in {"action", "perception"}:
         raise ValueError("validation role must be action or perception")
     if step <= 0:
         raise ValueError("validation step must be positive")
+    accelerator = accelerator or ("l4" if role == "action" else "t4")
+    if accelerator not in {"l4", "t4"}:
+        raise ValueError("validation accelerator must be l4 or t4")
     name = f"spider-exp004-val-{role}-{step:04d}-{run_id}"
     bootstrap = f"""#!/usr/bin/env bash
 set -Eeuo pipefail
@@ -347,7 +351,7 @@ exec /opt/spider/scripts/gcloud_exp004_eval_guest.sh
         f"--metadata-from-file=startup-script={startup}",
         "--quiet",
     ]
-    if role == "action":
+    if accelerator == "l4":
         command.append("--machine-type=g2-standard-8")
     else:
         command.extend(
@@ -360,6 +364,7 @@ exec /opt/spider/scripts/gcloud_exp004_eval_guest.sh
         zone=zone,
         run_id=run_id,
         role=f"validation-{role}",
+        accelerator=accelerator,
         step=step,
         repo_revision=repo_revision,
         max_run=max_run,
@@ -443,6 +448,15 @@ def main() -> None:
     validation.add_argument("--action-zone", default="us-west1-a")
     validation.add_argument("--perception-zone", default="us-central1-f")
 
+    validation_shard = subparsers.add_parser("validation-shard")
+    validation_shard.add_argument("--run-id", required=True)
+    validation_shard.add_argument("--role", required=True, choices=("action", "perception"))
+    validation_shard.add_argument("--zone", required=True)
+    validation_shard.add_argument("--repo-revision", required=True)
+    validation_shard.add_argument("--step", required=True, type=int)
+    validation_shard.add_argument("--accelerator", choices=("l4", "t4"), required=True)
+    validation_shard.add_argument("--max-run", default="4h")
+
     benchmark = subparsers.add_parser("speed-benchmark")
     benchmark.add_argument("--run-id", required=True)
     benchmark.add_argument("--zone", default="us-east4-a")
@@ -482,6 +496,16 @@ def main() -> None:
             args.max_run,
             args.action_zone,
             args.perception_zone,
+        )
+    elif args.command == "validation-shard":
+        create_validation_shard(
+            args.run_id,
+            args.role,
+            args.zone,
+            args.repo_revision,
+            args.step,
+            args.max_run,
+            args.accelerator,
         )
     elif args.command == "speed-benchmark":
         create_speed_benchmark(
