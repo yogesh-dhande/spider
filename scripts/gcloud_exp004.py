@@ -175,7 +175,7 @@ exec /opt/spider/scripts/gcloud_exp004_guest.sh
         f"--project={PROJECT}",
         f"--zone={zone}",
         "--machine-type=g2-standard-8",
-        "--image-family=common-cu129-ubuntu-2404-nvidia-580",
+        "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
         "--image-project=deeplearning-platform-release",
         "--boot-disk-size=250GB",
         "--boot-disk-type=pd-balanced",

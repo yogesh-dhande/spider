@@ -40,3 +40,6 @@ VMs in parallel, followed by the existing deterministic merge and regression gat
 The guest uses `torch==2.10.0+cu128`, matching the observed Kaggle runtime, together with the exact
 versions in `requirements/experiment2-kaggle.txt`. A stage checkpoint is uploaded only after the
 compatibility assertions and registered stage assertions pass.
+
+The VM image is pinned to
+`common-cu129-ubuntu-2404-nvidia-580-v20260819` rather than a moving image family.
