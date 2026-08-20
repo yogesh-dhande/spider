@@ -28,19 +28,21 @@ OCR and grounding ability?
 - Split whole trajectories by registrable domain where available, then by trajectory ID. No
   trajectory may cross train, validation, or test.
 - Use two Kaggle T4 GPUs after a compatibility smoke. Run resumable 125-optimizer-step stages, each
-  comfortably shorter than the observed Kaggle execution cutoff, validate after every stage, save
-  an optimizer checkpoint every 25 steps, and emit sparse JSON progress.
+  comfortably shorter than the failed first run, validate after every stage, save an optimizer
+  checkpoint every 25 steps, and emit sparse JSON progress.
 
 ### Runtime-safety amendment
 
 The first stage attempt used the initially registered 250-step boundary and stayed healthy through
-step 190, but Kaggle simultaneously sent `SIGKILL` to both distributed workers after 7,392 seconds,
-before the first planned checkpoint. No CUDA error, metric divergence, or recoverable checkpoint was
-present. This was an infrastructure observation before any EXP004 checkpoint validation or model
-selection. To prevent another multi-hour loss, the unchanged 1,875-step training schedule is now
-split into fifteen 125-step stages, with external validation after each stage and rolling optimizer
-checkpoints every 25 steps. The data, optimizer, effective batch size, learning-rate schedule,
-selection rule, and sealed tests are unchanged.
+step 190, but both distributed workers received `SIGKILL` after 7,392 seconds, before the first
+planned checkpoint. Kaggle did not report the external cause. No CUDA error, Python exception,
+metric divergence, quota warning, or recoverable checkpoint was present; plausible causes include
+host-memory enforcement or worker eviction, not a demonstrated session-time limit. This occurred
+before any EXP004 checkpoint validation or model selection. To limit exposure to another external
+kill, the unchanged 1,875-step training schedule is now split into fifteen 125-step stages, with
+external validation after each stage and rolling optimizer checkpoints every 25 steps. The data,
+optimizer, effective batch size, learning-rate schedule, selection rule, and sealed tests are
+unchanged.
 
 The fixed training mixture is:
 
