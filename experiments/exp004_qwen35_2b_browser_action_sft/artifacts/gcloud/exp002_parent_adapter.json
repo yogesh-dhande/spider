@@ -1,0 +1,19 @@
+{
+  "completed_at_utc": "2026-08-20T16:54:53+00:00",
+  "purpose": "Frozen EXP002 parent adapter for matched EXP004 sealed action and closed-loop evaluation",
+  "source_kernel": "yogeshkd/spider-exp002-sft-stage-07",
+  "source_path": "spider/outputs/experiment2/adapter/checkpoint-1875",
+  "checkpoint_step": 1875,
+  "files": {
+    "adapter_config.json": {
+      "bytes": 1234,
+      "sha256": "e9635e7b80eefddf6f00b5f597bad804e593773036ef62ccec31a0f27f573a72",
+      "gcs_uri": "gs://keptune-spider-experiments-1088401257609/exp004/inputs/exp002_parent/adapter_config.json"
+    },
+    "adapter_model.safetensors": {
+      "bytes": 134609728,
+      "sha256": "d1da7d6ac25258473c9c2c7cf47312ac084b34dd72de152670120ca3d758011d",
+      "gcs_uri": "gs://keptune-spider-experiments-1088401257609/exp004/inputs/exp002_parent/adapter_model.safetensors"
+    }
+  }
+}
