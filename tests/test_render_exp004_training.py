@@ -52,5 +52,4 @@ def test_validation_runs_action_and_perception_gates(tmp_path: Path) -> None:
     source = _source(notebook["cells"])
     assert "split='development'" in source
     assert "limit_per_task=128" in source
-    assert "perception_regressions" in source
-    assert "action_regressions" in source
+    assert "build_validation_gate" in source
