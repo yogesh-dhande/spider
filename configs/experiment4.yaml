@@ -7,6 +7,7 @@ experiment:
   model_name: Qwen/Qwen3.5-2B
   model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
   model_loader: auto_multimodal
+  compute_dtype: float16
   initial_adapter_dataset: yogeshkd/spider-exp002-sft-stage-07
   initial_adapter_version: 1
   initial_adapter_subdir: adapter/checkpoint-1875

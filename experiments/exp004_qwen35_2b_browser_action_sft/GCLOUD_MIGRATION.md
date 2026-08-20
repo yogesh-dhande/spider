@@ -45,5 +45,9 @@ The guest uses `torch==2.10.0+cu128`, matching the observed Kaggle runtime, toge
 versions in `requirements/experiment2-kaggle.txt`. A stage checkpoint is uploaded only after the
 compatibility assertions and registered stage assertions pass.
 
+Compute dtype is explicitly FP16. T4 selected FP16 automatically, whereas L4 would otherwise select
+BF16 and could not restore the registered FP16 gradient-scaler state. The first disposable cloud
+attempt caught this before taking a training step and shut itself down; amendment 002 records it.
+
 The VM image is pinned to
 `common-cu129-ubuntu-2404-nvidia-580-v20260819` rather than a moving image family.

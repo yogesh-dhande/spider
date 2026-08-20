@@ -1,2 +1,4 @@
 {"timestamp_utc": "2026-08-20T05:02:15+00:00", "event": "created", "name": "spider-exp004-lifecycle-guard-20260820", "zone": "us-west1-b", "run_id": "guard-20260820", "role": "lifecycle-smoke"}
 {"timestamp_utc": "2026-08-20T05:02:54+00:00", "event": "run_terminal", "run_id": "guard-20260820", "states": {"spider-exp004-lifecycle-guard-20260820": "STOPPING"}}
+{"timestamp_utc": "2026-08-20T05:34:12+00:00", "event": "created", "name": "spider-exp004-train-0375-k250-375a", "zone": "us-west1-b", "run_id": "k250-375a", "role": "training", "start_step": 250, "stop_step": 375, "repo_revision": "5e86f26", "max_run": "6h"}
+{"timestamp_utc": "2026-08-20T05:41:45+00:00", "event": "run_terminal", "run_id": "k250-375a", "states": {"spider-exp004-train-0375-k250-375a": "STOPPING"}}

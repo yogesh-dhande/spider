@@ -24,6 +24,21 @@ def validate_model_config(
         )
     if training is not None and not training.get("lora_target_modules"):
         raise ValueError("training.lora_target_modules must contain architecture-specific targets")
+    if experiment.get("compute_dtype", "auto") not in {"auto", "float16", "bfloat16"}:
+        raise ValueError("experiment.compute_dtype must be auto, float16, or bfloat16")
+
+
+def resolve_compute_dtype(torch: Any, configured: str | None = None) -> Any:
+    configured = configured or "auto"
+    if configured == "float16":
+        return torch.float16
+    if configured == "bfloat16":
+        if not cuda_supports_native_bf16(torch):
+            raise RuntimeError("Configured bfloat16 compute is not supported by every CUDA device")
+        return torch.bfloat16
+    if configured != "auto":
+        raise ValueError(f"Unsupported compute dtype: {configured}")
+    return torch.bfloat16 if cuda_supports_native_bf16(torch) else torch.float16
 
 
 def load_quantized_model(
@@ -43,7 +58,7 @@ def load_quantized_model(
 
         model_class = Qwen3VLForConditionalGeneration
 
-    compute_dtype = torch.bfloat16 if cuda_supports_native_bf16(torch) else torch.float16
+    compute_dtype = resolve_compute_dtype(torch, experiment.get("compute_dtype"))
     quantization = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",

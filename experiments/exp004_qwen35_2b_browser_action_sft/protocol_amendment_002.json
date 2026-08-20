@@ -1,0 +1,28 @@
+{
+  "id": "exp004-protocol-amendment-002",
+  "timestamp_utc": "2026-08-20T05:42:00+00:00",
+  "phase": "execution_infrastructure_before_gcloud_training",
+  "reason": "Kaggle GPU quota cannot complete all remaining registered stages. A GCloud compatibility run from the immutable step-250 checkpoint found that automatic dtype selection changed from FP16 on T4 to BF16 on L4, preventing restoration of the saved FP16 gradient scaler.",
+  "observed_failure": {
+    "run_id": "k250-375a",
+    "completed_training_steps": 0,
+    "error": "AttributeError: 'NoneType' object has no attribute 'load_state_dict' while restoring the FP16 scaler into a BF16 accelerator",
+    "checkpoint_accepted": false,
+    "vm_shutdown_verified": true
+  },
+  "change": {
+    "experiment.compute_dtype": "float16",
+    "effective_batch_size": 16,
+    "gcloud_world_size": 1,
+    "gcloud_gradient_accumulation_steps": 16
+  },
+  "unchanged": [
+    "model and model revision",
+    "step-250 model, optimizer, scheduler, scaler, and trainer checkpoint",
+    "training data and order seed",
+    "optimizer and learning-rate schedule",
+    "registered 1875-step target",
+    "stage boundaries, validation sets, regression gate, and checkpoint selection"
+  ],
+  "acceptance_gate": "A fresh disposable two-step resume must restore the FP16 scaler, preserve effective batch size 16 and the 1875-step plan, produce finite loss, and save a reloadable checkpoint before a 125-step GCloud stage may begin."
+}
