@@ -177,8 +177,8 @@ exec /opt/spider/scripts/gcloud_exp004_guest.sh
         "--machine-type=g2-standard-8",
         "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
         "--image-project=deeplearning-platform-release",
-        "--boot-disk-size=250GB",
-        "--boot-disk-type=pd-balanced",
+        "--boot-disk-size=100GB",
+        "--boot-disk-type=pd-standard",
         "--scopes=cloud-platform",
         "--maintenance-policy=TERMINATE",
         (
@@ -255,8 +255,8 @@ exec /opt/spider/scripts/gcloud_exp004_eval_guest.sh
         f"--zone={zone}",
         "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
         "--image-project=deeplearning-platform-release",
-        "--boot-disk-size=200GB",
-        "--boot-disk-type=pd-balanced",
+        "--boot-disk-size=100GB",
+        "--boot-disk-type=pd-standard",
         "--scopes=cloud-platform",
         "--maintenance-policy=TERMINATE",
         (

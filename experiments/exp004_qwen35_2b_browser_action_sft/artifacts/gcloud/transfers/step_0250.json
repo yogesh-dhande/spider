@@ -1,0 +1,25 @@
+{
+  "completed_at_utc": "2026-08-20T05:33:09+00:00",
+  "source_kernel": "yogeshkd/spider-exp004-gcloud-transfer",
+  "checkpoint_step": 250,
+  "artifacts": {
+    "prepared_data": {
+      "filename": "prepared-data.tar.zst",
+      "bytes": 2601192589,
+      "sha256": "4a8d7dca1f81dfa98e174245fb98b2eb48d33a0edd482a022e30039cdb6dbc65",
+      "archive_roots": [
+        "exp004_browser_action_30k"
+      ],
+      "gcs_uri": "gs://keptune-spider-experiments-1088401257609/exp004/inputs/prepared-data.tar.zst"
+    },
+    "checkpoint": {
+      "filename": "step_0250.tar.zst",
+      "bytes": 317888823,
+      "sha256": "5703df8ac257e6f04e85ec1bab5d97a645416908a1c20c1a7241cc77e42c722c",
+      "archive_roots": [
+        "experiment4"
+      ],
+      "gcs_uri": "gs://keptune-spider-experiments-1088401257609/exp004/checkpoints/step_0250.tar.zst"
+    }
+  }
+}
