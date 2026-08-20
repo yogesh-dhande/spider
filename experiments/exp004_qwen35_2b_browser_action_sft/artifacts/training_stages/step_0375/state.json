@@ -1,0 +1,28 @@
+{
+  "status": "complete",
+  "completed_at_utc": "2026-08-20T08:03:54+00:00",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "start_step": 250,
+  "completed_step": 375,
+  "stop_step": 375,
+  "planned_epoch_steps": 1875,
+  "world_size": 1,
+  "gradient_accumulation_steps": 16,
+  "effective_batch_size": 16,
+  "optimizer": "adamw_8bit",
+  "initial_adapter": "/mnt/spider/experiment4/adapter/checkpoint-250",
+  "checkpoint": "adapter/checkpoint-375",
+  "resumed_from": "/mnt/spider/experiment4/adapter/checkpoint-250",
+  "stage_runtime_seconds": 7607.5407258529995,
+  "metrics": {
+    "train_runtime": 7605.0322,
+    "train_samples_per_second": 3.945,
+    "train_steps_per_second": 0.247,
+    "train_loss": 0.14890886942545573,
+    "entropy": 0.46309457001043486,
+    "num_tokens": 2799585.0,
+    "mean_token_accuracy": 0.8611124508082867,
+    "epoch": 0.2
+  }
+}
