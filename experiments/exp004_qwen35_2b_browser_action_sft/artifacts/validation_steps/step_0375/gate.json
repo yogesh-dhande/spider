@@ -1,0 +1,95 @@
+{
+  "step": 375,
+  "action_baseline": {
+    "examples": 256,
+    "json_parse_rate": 0.00390625,
+    "action_name_accuracy": 0.0,
+    "action_argument_accuracy": 0.0,
+    "exact_action_accuracy": 0.0,
+    "target_action_counts": {
+      "click": 88,
+      "goto": 12,
+      "keyboard_press": 11,
+      "keyboard_type": 17,
+      "scroll": 82,
+      "send_msg_to_user": 46
+    },
+    "action_name_accuracy_by_action": {
+      "click": 0.0,
+      "goto": 0.0,
+      "keyboard_press": 0.0,
+      "keyboard_type": 0.0,
+      "scroll": 0.0,
+      "send_msg_to_user": 0.0
+    },
+    "click_target_examples_with_bbox": 88,
+    "click_inside_bbox_accuracy": 0.0,
+    "click_predictions_with_distance": 0,
+    "click_median_distance_px": null,
+    "click_within_25px_accuracy": 0.0,
+    "click_within_50px_accuracy": 0.0,
+    "click_within_100px_accuracy": 0.0
+  },
+  "action_candidate": {
+    "examples": 256,
+    "json_parse_rate": 0.99609375,
+    "action_name_accuracy": 0.69140625,
+    "action_argument_accuracy": 0.48046875,
+    "exact_action_accuracy": 0.3671875,
+    "target_action_counts": {
+      "click": 88,
+      "goto": 12,
+      "keyboard_press": 11,
+      "keyboard_type": 17,
+      "scroll": 82,
+      "send_msg_to_user": 46
+    },
+    "action_name_accuracy_by_action": {
+      "click": 0.7727272727272727,
+      "goto": 1.0,
+      "keyboard_press": 0.09090909090909091,
+      "keyboard_type": 0.8235294117647058,
+      "scroll": 0.6219512195121951,
+      "send_msg_to_user": 0.6739130434782609
+    },
+    "click_target_examples_with_bbox": 88,
+    "click_inside_bbox_accuracy": 0.38636363636363635,
+    "click_predictions_with_distance": 68,
+    "click_median_distance_px": 51.19999999999993,
+    "click_within_25px_accuracy": 0.2840909090909091,
+    "click_within_50px_accuracy": 0.3522727272727273,
+    "click_within_100px_accuracy": 0.45454545454545453
+  },
+  "perception_baseline": {
+    "qa_answer_accuracy": 0.3828125,
+    "qa_mean_token_f1": 0.7225509150713144,
+    "grounding_click_accuracy": 0.5703125,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 24.806025761501086
+  },
+  "perception_candidate": {
+    "qa_answer_accuracy": 0.3671875,
+    "qa_mean_token_f1": 0.7279011594051987,
+    "grounding_click_accuracy": 0.5625,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 35.04867241005833
+  },
+  "perception_regressions": {},
+  "action_regressions": {},
+  "advance": false,
+  "frozen_advance": true,
+  "progression": {
+    "step": 375,
+    "reference_step": 250,
+    "frozen_gate_advance": true,
+    "action_regressions": {
+      "exact_action_accuracy": {
+        "reference": 0.421875,
+        "candidate": 0.3671875,
+        "tolerance": 0.03
+      }
+    },
+    "perception_regressions": {},
+    "advance": false
+  }
+}

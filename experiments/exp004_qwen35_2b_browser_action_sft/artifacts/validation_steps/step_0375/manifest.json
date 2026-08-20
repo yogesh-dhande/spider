@@ -1,0 +1,39 @@
+{
+  "kind": "exp004_gcloud_validation_archive",
+  "archived_at_utc": "2026-08-20T16:27:09+00:00",
+  "step": 375,
+  "reference_step": 250,
+  "source_uris": {
+    "action_outputs": "gs://keptune-spider-experiments-1088401257609/exp004/validation/step_0375/action/outputs.tar.zst",
+    "perception_outputs": "gs://keptune-spider-experiments-1088401257609/exp004/validation/step_0375/perception/outputs.tar.zst",
+    "perception_summary": "gs://keptune-spider-experiments-1088401257609/exp004/validation/step_0375/perception/summary.json"
+  },
+  "action_dashboard_records": 64,
+  "gate_advance": false,
+  "files": {
+    "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps/step_0375/dashboard.json": {
+      "bytes": 531807,
+      "sha256": "2540d4b17ca9320a648c4fb5047813595f0e65154d13ffe8c6de383f2c2c9aab"
+    },
+    "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps/step_0375/gate.json": {
+      "bytes": 2787,
+      "sha256": "e26f789ab3e4b6f7185503d68851d7982514ef7d9c21c3a9478c91aa23bcea06"
+    },
+    "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps/step_0375/action_metrics.json": {
+      "bytes": 931,
+      "sha256": "308b4cc2f5ac9404718cf82fcbb54cf90060aa44564b970e63a0f367bf0529e0"
+    },
+    "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps/step_0375/perception_summary.json": {
+      "bytes": 1638,
+      "sha256": "0df702a48c980abf857f0713030d1558ca99c2ef90918ad76f9e93043b91a991"
+    },
+    "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps/step_0375/action_predictions.jsonl": {
+      "bytes": 950107,
+      "sha256": "77ca970f722441151e1cdbb3f9d1f8b2e61495891a26a677abca7b60eef5d3d9"
+    },
+    "experiments/exp004_qwen35_2b_browser_action_sft/artifacts/validation_steps/step_0375/perception_predictions.jsonl": {
+      "bytes": 286654,
+      "sha256": "0d4f399e54ed8ac6f4006532b6b046b65ba868ae37c98c3f795d2d2be21a00a5"
+    }
+  }
+}

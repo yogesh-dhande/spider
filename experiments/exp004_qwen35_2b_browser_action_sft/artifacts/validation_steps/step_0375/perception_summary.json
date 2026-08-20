@@ -1,0 +1,55 @@
+{
+  "kind": "fixed_validation_probe",
+  "completed_at_utc": "2026-08-20T15:26:17+00:00",
+  "label": "perception-development-step-0375",
+  "step": 375,
+  "adapter": "/mnt/spider/inputs/experiment4/adapter/checkpoint-375",
+  "split": "validation",
+  "limit_per_task": 128,
+  "completed_predictions": 256,
+  "primary_metrics": {
+    "qa_answer_accuracy": 0.3671875,
+    "qa_mean_token_f1": 0.7279011594051987,
+    "grounding_click_accuracy": 0.5625,
+    "grounding_parse_rate": 1.0,
+    "grounding_median_pixel_distance": 35.04867241005833
+  },
+  "metrics": {
+    "molmoweb": {
+      "qa": {
+        "examples": 128,
+        "answer_accuracy": 0.3671875,
+        "mean_token_f1": 0.7279011594051987,
+        "by_question_type": {
+          "OCR": {
+            "examples": 73,
+            "answer_accuracy": 0.6438356164383562,
+            "mean_token_f1": 0.8162538863572668
+          },
+          "affordance": {
+            "examples": 31,
+            "answer_accuracy": 0.0,
+            "mean_token_f1": 0.6696729964289857
+          },
+          "summarization": {
+            "examples": 24,
+            "answer_accuracy": 0.0,
+            "mean_token_f1": 0.5343729921035998
+          }
+        }
+      },
+      "grounding": {
+        "examples": 128,
+        "parse_rate": 1.0,
+        "point_on_grid_rate": 1.0,
+        "click_accuracy": 0.5625,
+        "click_accuracy_given_parse": 0.5625,
+        "mean_pixel_distance": 84.1811516062027,
+        "median_pixel_distance": 35.04867241005833,
+        "accuracy_within_25px": 0.4453125,
+        "accuracy_within_50px": 0.625,
+        "accuracy_within_100px": 0.75
+      }
+    }
+  }
+}
