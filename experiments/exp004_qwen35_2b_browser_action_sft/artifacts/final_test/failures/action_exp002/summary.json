@@ -1,0 +1,9 @@
+{
+  "error_category_counts": {
+    "output_format": 997,
+    "semantic_action": 10,
+    "spatial_grounding": 17
+  },
+  "examples": 1024,
+  "selected_examples": 52
+}

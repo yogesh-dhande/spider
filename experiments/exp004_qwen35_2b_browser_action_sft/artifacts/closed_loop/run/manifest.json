@@ -1,0 +1,16 @@
+{
+  "completed_at_utc": "2026-08-20T19:12:27+00:00",
+  "config_path": "/opt/spider/configs/studies/exp004_sandbox_closed_loop.yaml",
+  "config_sha256": "2c18f8aa94ecb00de33bcf98f065f47a3c196e6ad637294b46ca83d8aff4ce54",
+  "created_at_utc": "2026-08-20T18:59:01+00:00",
+  "num_shards": 1,
+  "run_id": "selected-step-0500",
+  "schema_version": 1,
+  "shard_index": 0,
+  "source_git_commit": "699fa3a",
+  "source_git_dirty": false,
+  "status": "complete",
+  "study_id": "exp004_sandbox_closed_loop",
+  "suite_id": "browser_sandbox_v1",
+  "summary_sha256": "3c315a6db56b986ae10e92edaf61a046bef0e8f7a93199a2c0caafe600a3de41"
+}

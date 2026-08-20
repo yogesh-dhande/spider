@@ -1,0 +1,173 @@
+{
+  "kind": "deterministic_partition_diagnostics",
+  "num_shards": 4,
+  "note": "Shards are equal-sized deterministic partitions, not independent experimental replicates. The merged metrics remain authoritative.",
+  "per_shard": {
+    "final-perception-step-0500-shard-00-of-04": {
+      "molmoweb": {
+        "qa": {
+          "examples": 500,
+          "answer_accuracy": 0.276,
+          "mean_token_f1": 0.6198092488403694,
+          "by_question_type": {
+            "OCR": {
+              "examples": 274,
+              "answer_accuracy": 0.4744525547445255,
+              "mean_token_f1": 0.6860140327124725
+            },
+            "affordance": {
+              "examples": 134,
+              "answer_accuracy": 0.05970149253731343,
+              "mean_token_f1": 0.6025553994260396
+            },
+            "summarization": {
+              "examples": 92,
+              "answer_accuracy": 0.0,
+              "mean_token_f1": 0.4477647384117164
+            }
+          }
+        },
+        "grounding": {
+          "examples": 500,
+          "parse_rate": 1.0,
+          "point_on_grid_rate": 1.0,
+          "click_accuracy": 0.726,
+          "click_accuracy_given_parse": 0.726,
+          "mean_pixel_distance": 87.02770155171851,
+          "median_pixel_distance": 7.833569616554653,
+          "accuracy_within_25px": 0.65,
+          "accuracy_within_50px": 0.72,
+          "accuracy_within_100px": 0.816
+        }
+      }
+    },
+    "final-perception-step-0500-shard-01-of-04": {
+      "molmoweb": {
+        "qa": {
+          "examples": 500,
+          "answer_accuracy": 0.242,
+          "mean_token_f1": 0.6003048418226651,
+          "by_question_type": {
+            "OCR": {
+              "examples": 259,
+              "answer_accuracy": 0.44015444015444016,
+              "mean_token_f1": 0.665912692964872
+            },
+            "affordance": {
+              "examples": 152,
+              "answer_accuracy": 0.039473684210526314,
+              "mean_token_f1": 0.5686216581529874
+            },
+            "summarization": {
+              "examples": 89,
+              "answer_accuracy": 0.011235955056179775,
+              "mean_token_f1": 0.46348922914805135
+            }
+          }
+        },
+        "grounding": {
+          "examples": 500,
+          "parse_rate": 1.0,
+          "point_on_grid_rate": 1.0,
+          "click_accuracy": 0.72,
+          "click_accuracy_given_parse": 0.72,
+          "mean_pixel_distance": 102.82085048291528,
+          "median_pixel_distance": 9.711310672659543,
+          "accuracy_within_25px": 0.618,
+          "accuracy_within_50px": 0.692,
+          "accuracy_within_100px": 0.784
+        }
+      }
+    },
+    "final-perception-step-0500-shard-02-of-04": {
+      "molmoweb": {
+        "qa": {
+          "examples": 500,
+          "answer_accuracy": 0.27,
+          "mean_token_f1": 0.6145270222280483,
+          "by_question_type": {
+            "OCR": {
+              "examples": 265,
+              "answer_accuracy": 0.4867924528301887,
+              "mean_token_f1": 0.6936094646471525
+            },
+            "affordance": {
+              "examples": 147,
+              "answer_accuracy": 0.027210884353741496,
+              "mean_token_f1": 0.5730053990160805
+            },
+            "summarization": {
+              "examples": 88,
+              "answer_accuracy": 0.022727272727272728,
+              "mean_token_f1": 0.44574101508141944
+            }
+          }
+        },
+        "grounding": {
+          "examples": 500,
+          "parse_rate": 1.0,
+          "point_on_grid_rate": 1.0,
+          "click_accuracy": 0.714,
+          "click_accuracy_given_parse": 0.714,
+          "mean_pixel_distance": 98.4919202602163,
+          "median_pixel_distance": 11.188416283473929,
+          "accuracy_within_25px": 0.632,
+          "accuracy_within_50px": 0.692,
+          "accuracy_within_100px": 0.786
+        }
+      }
+    },
+    "final-perception-step-0500-shard-03-of-04": {
+      "molmoweb": {
+        "qa": {
+          "examples": 500,
+          "answer_accuracy": 0.234,
+          "mean_token_f1": 0.5792798261535916,
+          "by_question_type": {
+            "OCR": {
+              "examples": 246,
+              "answer_accuracy": 0.44308943089430897,
+              "mean_token_f1": 0.6539748159076415
+            },
+            "affordance": {
+              "examples": 140,
+              "answer_accuracy": 0.04285714285714286,
+              "mean_token_f1": 0.5490283263650106
+            },
+            "summarization": {
+              "examples": 114,
+              "answer_accuracy": 0.017543859649122806,
+              "mean_token_f1": 0.45524686554749616
+            }
+          }
+        },
+        "grounding": {
+          "examples": 500,
+          "parse_rate": 1.0,
+          "point_on_grid_rate": 1.0,
+          "click_accuracy": 0.722,
+          "click_accuracy_given_parse": 0.722,
+          "mean_pixel_distance": 108.14674767759969,
+          "median_pixel_distance": 9.735617256633136,
+          "accuracy_within_25px": 0.63,
+          "accuracy_within_50px": 0.718,
+          "accuracy_within_100px": 0.782
+        }
+      }
+    }
+  },
+  "variability": {
+    "molmoweb_qa_answer_accuracy": {
+      "mean": 0.2555,
+      "population_std": 0.017853571071357134,
+      "minimum": 0.234,
+      "maximum": 0.276
+    },
+    "molmoweb_grounding_click_accuracy": {
+      "mean": 0.7204999999999999,
+      "population_std": 0.004330127018922197,
+      "minimum": 0.714,
+      "maximum": 0.726
+    }
+  }
+}

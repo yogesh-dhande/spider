@@ -1,0 +1,55 @@
+{
+  "study": {
+    "base": {
+      "environment": {
+        "type": "deterministic_browser"
+      },
+      "policy": {
+        "adapter_env": "SPIDER_BASE_ADAPTER",
+        "config_path": "configs/experiment4.yaml",
+        "id": "qwen35_2b",
+        "type": "qwen"
+      },
+      "reward": {
+        "id": "default_browser_reward",
+        "type": "weighted_signals",
+        "weights": {
+          "action_error": -0.1,
+          "action_validity": 0.05,
+          "parse_error": -0.1,
+          "progress": 0.2,
+          "task_success": 1.0
+        }
+      }
+    },
+    "bootstrap_samples": 2000,
+    "control_variant": "exp002_parent",
+    "id": "exp004_sandbox_closed_loop",
+    "max_steps": 6,
+    "output_dir": "/mnt/spider/closed-loop",
+    "repeats": 3,
+    "run_id": "selected-step-0500",
+    "seed": 41,
+    "suite_path": "../sandbox_tasks.yaml",
+    "variants": [
+      {
+        "id": "exp002_parent",
+        "overlay": {
+          "policy": {
+            "adapter_env": "SPIDER_BASE_ADAPTER",
+            "id": "exp002_parent"
+          }
+        }
+      },
+      {
+        "id": "exp004_selected",
+        "overlay": {
+          "policy": {
+            "adapter_env": "SPIDER_SFT_ADAPTER",
+            "id": "exp004_selected"
+          }
+        }
+      }
+    ]
+  }
+}

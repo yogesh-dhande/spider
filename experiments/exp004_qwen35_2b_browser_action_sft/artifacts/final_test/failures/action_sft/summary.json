@@ -1,0 +1,10 @@
+{
+  "error_category_counts": {
+    "action_arguments": 80,
+    "correct": 440,
+    "semantic_action": 366,
+    "spatial_grounding": 138
+  },
+  "examples": 1024,
+  "selected_examples": 85
+}

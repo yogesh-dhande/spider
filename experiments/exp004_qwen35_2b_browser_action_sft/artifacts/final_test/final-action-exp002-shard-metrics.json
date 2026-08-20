@@ -1,0 +1,165 @@
+{
+  "split": "test",
+  "labels": [
+    "final-action-exp002-shard-00-of-04",
+    "final-action-exp002-shard-01-of-04",
+    "final-action-exp002-shard-02-of-04",
+    "final-action-exp002-shard-03-of-04"
+  ],
+  "run_signatures": [
+    "40e0d9d41887c9aa3562837ec3abd37cbf6e75ae8ae0e0e66e9584df433009bb",
+    "6e9052e5dae471d2404a37941f0d79a32f7aedf687fc2833fc0c2ca81d0d3d58",
+    "8d1442a371727e13374255f7916ecf35313117fda54f05c344091b86c5e68de0",
+    "b535a14566d18c3a264562088286bd6b068f3c07007385f049cb03c5bb997e50"
+  ],
+  "shards": [
+    {
+      "label": "final-action-exp002-shard-00-of-04",
+      "metrics": {
+        "examples": 256,
+        "json_parse_rate": 0.01953125,
+        "action_name_accuracy": 0.0078125,
+        "action_argument_accuracy": 0.0,
+        "exact_action_accuracy": 0.0,
+        "target_action_counts": {
+          "browser_nav": 3,
+          "click": 102,
+          "dblclick": 1,
+          "goto": 11,
+          "keyboard_press": 11,
+          "keyboard_type": 11,
+          "noop": 1,
+          "scroll": 64,
+          "send_msg_to_user": 52
+        },
+        "action_name_accuracy_by_action": {
+          "browser_nav": 0.0,
+          "click": 0.0196078431372549,
+          "dblclick": 0.0,
+          "goto": 0.0,
+          "keyboard_press": 0.0,
+          "keyboard_type": 0.0,
+          "noop": 0.0,
+          "scroll": 0.0,
+          "send_msg_to_user": 0.0
+        },
+        "click_target_examples_with_bbox": 102,
+        "click_inside_bbox_accuracy": 0.0,
+        "click_predictions_with_distance": 0,
+        "click_median_distance_px": null,
+        "click_within_25px_accuracy": 0.0,
+        "click_within_50px_accuracy": 0.0,
+        "click_within_100px_accuracy": 0.0
+      }
+    },
+    {
+      "label": "final-action-exp002-shard-01-of-04",
+      "metrics": {
+        "examples": 256,
+        "json_parse_rate": 0.03515625,
+        "action_name_accuracy": 0.0234375,
+        "action_argument_accuracy": 0.0,
+        "exact_action_accuracy": 0.0,
+        "target_action_counts": {
+          "browser_nav": 2,
+          "click": 105,
+          "goto": 15,
+          "keyboard_press": 7,
+          "keyboard_type": 22,
+          "noop": 4,
+          "scroll": 48,
+          "send_msg_to_user": 53
+        },
+        "action_name_accuracy_by_action": {
+          "browser_nav": 0.0,
+          "click": 0.05714285714285714,
+          "goto": 0.0,
+          "keyboard_press": 0.0,
+          "keyboard_type": 0.0,
+          "noop": 0.0,
+          "scroll": 0.0,
+          "send_msg_to_user": 0.0
+        },
+        "click_target_examples_with_bbox": 105,
+        "click_inside_bbox_accuracy": 0.0,
+        "click_predictions_with_distance": 0,
+        "click_median_distance_px": null,
+        "click_within_25px_accuracy": 0.0,
+        "click_within_50px_accuracy": 0.0,
+        "click_within_100px_accuracy": 0.0
+      }
+    },
+    {
+      "label": "final-action-exp002-shard-02-of-04",
+      "metrics": {
+        "examples": 256,
+        "json_parse_rate": 0.01171875,
+        "action_name_accuracy": 0.0078125,
+        "action_argument_accuracy": 0.0,
+        "exact_action_accuracy": 0.0,
+        "target_action_counts": {
+          "browser_nav": 1,
+          "click": 97,
+          "goto": 11,
+          "keyboard_press": 12,
+          "keyboard_type": 17,
+          "noop": 3,
+          "scroll": 63,
+          "send_msg_to_user": 52
+        },
+        "action_name_accuracy_by_action": {
+          "browser_nav": 0.0,
+          "click": 0.020618556701030927,
+          "goto": 0.0,
+          "keyboard_press": 0.0,
+          "keyboard_type": 0.0,
+          "noop": 0.0,
+          "scroll": 0.0,
+          "send_msg_to_user": 0.0
+        },
+        "click_target_examples_with_bbox": 97,
+        "click_inside_bbox_accuracy": 0.0,
+        "click_predictions_with_distance": 0,
+        "click_median_distance_px": null,
+        "click_within_25px_accuracy": 0.0,
+        "click_within_50px_accuracy": 0.0,
+        "click_within_100px_accuracy": 0.0
+      }
+    },
+    {
+      "label": "final-action-exp002-shard-03-of-04",
+      "metrics": {
+        "examples": 256,
+        "json_parse_rate": 0.0390625,
+        "action_name_accuracy": 0.02734375,
+        "action_argument_accuracy": 0.0,
+        "exact_action_accuracy": 0.0,
+        "target_action_counts": {
+          "browser_nav": 2,
+          "click": 116,
+          "goto": 16,
+          "keyboard_press": 14,
+          "keyboard_type": 15,
+          "scroll": 46,
+          "send_msg_to_user": 47
+        },
+        "action_name_accuracy_by_action": {
+          "browser_nav": 0.0,
+          "click": 0.0603448275862069,
+          "goto": 0.0,
+          "keyboard_press": 0.0,
+          "keyboard_type": 0.0,
+          "scroll": 0.0,
+          "send_msg_to_user": 0.0
+        },
+        "click_target_examples_with_bbox": 116,
+        "click_inside_bbox_accuracy": 0.0,
+        "click_predictions_with_distance": 1,
+        "click_median_distance_px": 908.9333000831249,
+        "click_within_25px_accuracy": 0.0,
+        "click_within_50px_accuracy": 0.0,
+        "click_within_100px_accuracy": 0.0
+      }
+    }
+  ]
+}

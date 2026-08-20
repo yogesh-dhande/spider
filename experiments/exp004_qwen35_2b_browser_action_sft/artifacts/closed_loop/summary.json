@@ -1,0 +1,37 @@
+{
+  "comparisons": {
+    "exp004_selected": {
+      "mean_reward_delta": 0.375,
+      "paired_episodes": 12,
+      "success_rate_delta": 0.0,
+      "success_rate_delta_ci95": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "control_variant": "exp002_parent",
+  "paired_design": true,
+  "run_id": "selected-step-0500",
+  "schema_version": 1,
+  "study_id": "exp004_sandbox_closed_loop",
+  "suite_id": "browser_sandbox_v1",
+  "variants": {
+    "exp002_parent": {
+      "episodes": 12,
+      "mean_reward": -0.6,
+      "mean_steps": 6,
+      "parse_error_rate": 1.0,
+      "success_rate": 0.0,
+      "successes": 0
+    },
+    "exp004_selected": {
+      "episodes": 12,
+      "mean_reward": -0.22499999999999998,
+      "mean_steps": 6,
+      "parse_error_rate": 0.0,
+      "success_rate": 0.0,
+      "successes": 0
+    }
+  }
+}

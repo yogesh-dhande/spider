@@ -1,0 +1,11 @@
+{
+  "error_category_counts": {
+    "molmoweb_grounding_correct": 1441,
+    "molmoweb_ocr": 562,
+    "molmoweb_qa_correct": 511,
+    "molmoweb_semantic_understanding": 927,
+    "molmoweb_spatial_grounding": 559
+  },
+  "examples": 4000,
+  "selected_examples": 95
+}

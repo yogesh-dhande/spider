@@ -1,6 +1,7 @@
 # EXP004 — Qwen3.5-2B browser action SFT
 
-Status: running; preparation, baselines, and two-GPU compatibility complete; staged SFT in progress.
+Status: complete. Step 500 was selected from the fixed development probes; sealed action,
+perception-retention, and deterministic closed-loop evaluations are archived.
 
 Parent: EXP002 checkpoint 1875, selected on its validation split before EXP002 final-test
 evaluation.
@@ -122,4 +123,25 @@ shards whose audited domains map to validation/test. The global totals remain ex
 
 ## Results
 
-Pending.
+EXP004 passed the preregistered positive-result gate. On the 1,024-example sealed action test,
+action-name accuracy improved from 1.66% for the EXP002 parent to 64.26%, exact-action accuracy
+improved from 0.00% to 31.64%, and click-in-bounds accuracy improved from 0.00% to 30.95%.
+JSON parse rate rose from 2.64% to 100.00%.
+
+Perception was largely retained on 2,000 sealed examples per task: ScreenshotQA exact accuracy
+changed from 26.20% to 25.55% (-0.65 points), while grounding click accuracy changed from 73.40%
+to 72.05% (-1.35 points). Both changes stayed within the registered three-point regression bound.
+
+The paired 12-episode deterministic closed-loop probe improved mean reward from -0.600 to -0.225
+and eliminated action parse errors, but neither model completed an episode. This is evidence of a
+large action-interface acquisition gain, not yet evidence of reliable end-to-end browser task
+completion.
+
+Training stopped after step 500 rather than continuing to the maximum 1,875-step schedule. The
+registered progression gate had already stopped at step 375 because exact-action accuracy regressed
+by more than three points relative to step 250; step 500 was evaluated because it had already been
+launched, and it became the selected checkpoint by the preregistered lexicographic rule. Continuing
+training after the plateau would have spent compute without an eligible development signal.
+
+See [RESULTS.md](RESULTS.md) for the full stage trajectory, matched shard diagnostics, sealed
+perception results, closed-loop comparison, and artifact inventory.
