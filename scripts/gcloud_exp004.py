@@ -376,14 +376,19 @@ exec /opt/spider/scripts/gcloud_exp004_eval_guest.sh
 
 
 def create_validation_pair(
-    run_id: str, repo_revision: str, step: int, max_run: str
+    run_id: str,
+    repo_revision: str,
+    step: int,
+    max_run: str,
+    action_zone: str = "us-west1-a",
+    perception_zone: str = "us-central1-f",
 ) -> list[str]:
     return [
         create_validation_shard(
-            run_id, "action", "us-west1-a", repo_revision, step, max_run
+            run_id, "action", action_zone, repo_revision, step, max_run
         ),
         create_validation_shard(
-            run_id, "perception", "us-central1-f", repo_revision, step, max_run
+            run_id, "perception", perception_zone, repo_revision, step, max_run
         ),
     ]
 
@@ -435,6 +440,8 @@ def main() -> None:
     validation.add_argument("--repo-revision", required=True)
     validation.add_argument("--step", required=True, type=int)
     validation.add_argument("--max-run", default="4h")
+    validation.add_argument("--action-zone", default="us-west1-a")
+    validation.add_argument("--perception-zone", default="us-central1-f")
 
     benchmark = subparsers.add_parser("speed-benchmark")
     benchmark.add_argument("--run-id", required=True)
@@ -468,7 +475,14 @@ def main() -> None:
             args.max_run,
         )
     elif args.command == "validation-pair":
-        create_validation_pair(args.run_id, args.repo_revision, args.step, args.max_run)
+        create_validation_pair(
+            args.run_id,
+            args.repo_revision,
+            args.step,
+            args.max_run,
+            args.action_zone,
+            args.perception_zone,
+        )
     elif args.command == "speed-benchmark":
         create_speed_benchmark(
             args.run_id,
