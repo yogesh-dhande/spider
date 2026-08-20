@@ -1,0 +1,39 @@
+{
+  "kind": "exp004_gcloud_training_stage",
+  "archived_at_utc": "2026-08-20T17:54:48+00:00",
+  "run_id": "k375-500a",
+  "step": 500,
+  "checkpoint": {
+    "gcs_uri": "gs://keptune-spider-experiments-1088401257609/exp004/checkpoints/step_0500.tar.zst",
+    "bytes": 319936462,
+    "generation": "1787248313289993",
+    "metageneration": "1",
+    "crc32c": "rNw/tg==",
+    "etag": "CIma2+bir5YDEAE=",
+    "updated": "2026-08-20T17:51:53+0000"
+  },
+  "source_uris": {
+    "state.json": "gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/training_state.json",
+    "compatibility_state.json": "gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/compatibility_state.json",
+    "complete.json": "gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/complete.json",
+    "guest.log": "gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/guest.log"
+  },
+  "files": {
+    "state.json": {
+      "bytes": 841,
+      "sha256": "068eb4627c179f89cdaee58180bbff01796278eac1b596fd0b8196b801c7f129"
+    },
+    "compatibility_state.json": {
+      "bytes": 947,
+      "sha256": "4724a6bd5c2530c7c2b2a0c8df665131acb71a2e0aae158ac7d34df0edab0b82"
+    },
+    "complete.json": {
+      "bytes": 122,
+      "sha256": "c8209ab20f0561822a5baabf9ca5bffba09f716bf169671bb42b67e2ef89cc87"
+    },
+    "guest.log": {
+      "bytes": 15477,
+      "sha256": "c7f4bb47cc85347681921c646b81069255e27cddc5116f23c5918ef56a9007f5"
+    }
+  }
+}

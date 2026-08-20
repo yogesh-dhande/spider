@@ -1,0 +1,132 @@
+{"event":"gcloud_guest_start","run_id":"k375-500a","repo_revision":"1e09edf","start_step":375,"stop_step":500,"per_device_batch":2,"gradient_accumulation":8}
+Running timer as unit: spider-exp004-guard-k375-500a.timer
+Will run service as unit: spider-exp004-guard-k375-500a.service
+W: http://packages.cloud.google.com/apt/dists/apt-transport-artifact-registry-stable/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://us-apt.pkg.dev/projects/gce-ai-infra/dists/gpudirect-gib-apt/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+Selecting previously unselected package python3-pip-whl.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 77855 files and directories currently installed.)
+Preparing to unpack .../python3-pip-whl_24.0+dfsg-1ubuntu1.3_all.deb ...
+Unpacking python3-pip-whl (24.0+dfsg-1ubuntu1.3) ...
+Selecting previously unselected package python3-setuptools-whl.
+Preparing to unpack .../python3-setuptools-whl_68.1.2-2ubuntu1.2_all.deb ...
+Unpacking python3-setuptools-whl (68.1.2-2ubuntu1.2) ...
+Selecting previously unselected package python3.12-venv.
+Preparing to unpack .../python3.12-venv_3.12.3-1ubuntu0.15_amd64.deb ...
+Unpacking python3.12-venv (3.12.3-1ubuntu0.15) ...
+Selecting previously unselected package python3-venv.
+Preparing to unpack .../python3-venv_3.12.3-0ubuntu2.1_amd64.deb ...
+Unpacking python3-venv (3.12.3-0ubuntu2.1) ...
+Setting up python3-setuptools-whl (68.1.2-2ubuntu1.2) ...
+Setting up python3-pip-whl (24.0+dfsg-1ubuntu1.3) ...
+Setting up python3.12-venv (3.12.3-1ubuntu0.15) ...
+Setting up python3-venv (3.12.3-0ubuntu2.1) ...
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+Copying gs://keptune-spider-experiments-1088401257609/exp004/inputs/prepared-data.tar.zst to file:///tmp/prepared-data.tar.zst
+  
+................
+
+Average throughput: 925.0MiB/s
+Copying gs://keptune-spider-experiments-1088401257609/exp004/checkpoints/step_0375.tar.zst to file:///tmp/checkpoint.tar.zst
+  
+....................
+
+Average throughput: 115.4MiB/s
+{"effective_batch_size": 16, "evaluation_examples": 256, "event": "training_stage_plan", "examples": 30000, "gradient_accumulation_steps": 8, "optimizer": "adamw_8bit", "per_device_train_batch_size": 2, "planned_epoch_steps": 1875, "resume_checkpoint": "/mnt/spider/compat/adapter/checkpoint-375", "start_step": 375, "stop_step": 377, "world_size": 1}
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[ERROR] `min_frames` is part of Qwen3VLVideoProcessorInitKwargs, but not documented. Make sure to add it to the docstring of the function in /opt/spider-venv/lib/python3.12/site-packages/transformers/models/qwen3_vl/video_processing_qwen3_vl.py.
+[ERROR] `max_frames` is part of Qwen3VLVideoProcessorInitKwargs, but not documented. Make sure to add it to the docstring of the function in /opt/spider-venv/lib/python3.12/site-packages/transformers/models/qwen3_vl/video_processing_qwen3_vl.py.
+{"compute_dtype": "torch.float16", "event": "training_model_loaded", "initial_adapter": "/mnt/spider/compat/adapter/checkpoint-375", "local_rank": 0}
+{"event": "training_trainer_ready", "local_rank": 0}
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'eos_token_id': 248046, 'pad_token_id': 248044}.
+[transformers] Warning: The following arguments do not match the ones in the `trainer_state.json` within the checkpoint directory: 
+	logging_steps: 1 (from args) != 10 (from trainer_state.json)
+	per_device_train_batch_size: 2 (from args) != 1 (from trainer_state.json)
+{"event": "training_checkpoint_saved", "global_step": 377}
+{"elapsed_seconds": 82.8, "eta_seconds": 0.0, "eval_loss": null, "event": "training_progress", "global_step": 377, "loss": null, "planned_epoch_steps": 1875, "stage_completed_steps": 2, "stage_target_step": 377, "steps_per_second": 0.0242}
+{'train_runtime': '81.84', 'train_samples_per_second': '366.6', 'train_steps_per_second': '22.91', 'train_loss': '0.002546', 'entropy': '0.4572', 'num_tokens': '4.303e+04', 'mean_token_accuracy': '0.8458', 'epoch': '0.2011'}
+{"checkpoint": "adapter/checkpoint-377", "completed_step": 377, "event": "training_stage_complete", "planned_epoch_steps": 1875, "runtime_seconds": 84.8}
+Saved adapter to /mnt/spider/compat/adapter/final
+Copying file:///mnt/spider/compat/training_state.json to gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/compatibility_state.json
+  
+.......
+{"effective_batch_size": 16, "evaluation_examples": 256, "event": "training_stage_plan", "examples": 30000, "gradient_accumulation_steps": 8, "optimizer": "adamw_8bit", "per_device_train_batch_size": 2, "planned_epoch_steps": 1875, "resume_checkpoint": "/mnt/spider/experiment4/adapter/checkpoint-375", "start_step": 375, "stop_step": 500, "world_size": 1}
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[ERROR] `min_frames` is part of Qwen3VLVideoProcessorInitKwargs, but not documented. Make sure to add it to the docstring of the function in /opt/spider-venv/lib/python3.12/site-packages/transformers/models/qwen3_vl/video_processing_qwen3_vl.py.
+[ERROR] `max_frames` is part of Qwen3VLVideoProcessorInitKwargs, but not documented. Make sure to add it to the docstring of the function in /opt/spider-venv/lib/python3.12/site-packages/transformers/models/qwen3_vl/video_processing_qwen3_vl.py.
+{"compute_dtype": "torch.float16", "event": "training_model_loaded", "initial_adapter": "/mnt/spider/experiment4/adapter/checkpoint-375", "local_rank": 0}
+{"event": "training_trainer_ready", "local_rank": 0}
+[transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'eos_token_id': 248046, 'pad_token_id': 248044}.
+[transformers] Warning: The following arguments do not match the ones in the `trainer_state.json` within the checkpoint directory: 
+	logging_steps: 1 (from args) != 10 (from trainer_state.json)
+	per_device_train_batch_size: 2 (from args) != 1 (from trainer_state.json)
+{"elapsed_seconds": 203.9, "eta_seconds": 4894.2, "eval_loss": null, "event": "training_progress", "global_step": 380, "loss": 0.47288990020751953, "planned_epoch_steps": 1875, "stage_completed_steps": 5, "stage_target_step": 500, "steps_per_second": 0.0245}
+{'loss': '0.4729', 'grad_norm': '0.6836', 'learning_rate': '9.286e-05', 'entropy': '0.4613', 'num_tokens': '1.071e+05', 'mean_token_accuracy': '0.8534', 'epoch': '0.2027'}
+{"elapsed_seconds": 627.3, "eta_seconds": 4600.4, "eval_loss": null, "event": "training_progress", "global_step": 390, "loss": 0.5237571239471436, "planned_epoch_steps": 1875, "stage_completed_steps": 15, "stage_target_step": 500, "steps_per_second": 0.0239}
+{'loss': '0.5238', 'grad_norm': '0.5737', 'learning_rate': '9.241e-05', 'entropy': '0.5295', 'num_tokens': '3.327e+05', 'mean_token_accuracy': '0.846', 'epoch': '0.208'}
+{"elapsed_seconds": 1048.7, "eta_seconds": 4194.7, "eval_loss": null, "event": "training_progress", "global_step": 400, "loss": 0.5055489540100098, "planned_epoch_steps": 1875, "stage_completed_steps": 25, "stage_target_step": 500, "steps_per_second": 0.0238}
+{'loss': '0.5055', 'grad_norm': '0.9164', 'learning_rate': '9.195e-05', 'entropy': '0.5012', 'num_tokens': '5.596e+05', 'mean_token_accuracy': '0.8434', 'epoch': '0.2133'}
+{"event": "training_checkpoint_saved", "global_step": 400}
+{"elapsed_seconds": 1472.9, "eta_seconds": 3787.5, "eval_loss": null, "event": "training_progress", "global_step": 410, "loss": 0.5166768074035645, "planned_epoch_steps": 1875, "stage_completed_steps": 35, "stage_target_step": 500, "steps_per_second": 0.0238}
+{'loss': '0.5167', 'grad_norm': '0.6466', 'learning_rate': '9.147e-05', 'entropy': '0.516', 'num_tokens': '7.897e+05', 'mean_token_accuracy': '0.846', 'epoch': '0.2187'}
+{"elapsed_seconds": 1894.1, "eta_seconds": 3367.3, "eval_loss": null, "event": "training_progress", "global_step": 420, "loss": 0.5208962917327881, "planned_epoch_steps": 1875, "stage_completed_steps": 45, "stage_target_step": 500, "steps_per_second": 0.0238}
+{'loss': '0.5209', 'grad_norm': '0.6443', 'learning_rate': '9.098e-05', 'entropy': '0.5306', 'num_tokens': '1.022e+06', 'mean_token_accuracy': '0.8361', 'epoch': '0.224'}
+{"event": "training_checkpoint_saved", "global_step": 425}
+{"elapsed_seconds": 2289.2, "eta_seconds": 2913.6, "eval_loss": null, "event": "training_progress", "global_step": 430, "loss": 0.5160003662109375, "planned_epoch_steps": 1875, "stage_completed_steps": 55, "stage_target_step": 500, "steps_per_second": 0.024}
+{'loss': '0.516', 'grad_norm': '0.9354', 'learning_rate': '9.048e-05', 'entropy': '0.5031', 'num_tokens': '1.244e+06', 'mean_token_accuracy': '0.8409', 'epoch': '0.2293'}
+{"elapsed_seconds": 2673.6, "eta_seconds": 2468.0, "eval_loss": null, "event": "training_progress", "global_step": 440, "loss": 0.4631526470184326, "planned_epoch_steps": 1875, "stage_completed_steps": 65, "stage_target_step": 500, "steps_per_second": 0.0243}
+{'loss': '0.4632', 'grad_norm': '0.5807', 'learning_rate': '8.997e-05', 'entropy': '0.4588', 'num_tokens': '1.46e+06', 'mean_token_accuracy': '0.854', 'epoch': '0.2347'}
+{"elapsed_seconds": 3099.9, "eta_seconds": 2066.6, "eval_loss": null, "event": "training_progress", "global_step": 450, "loss": 0.4910468101501465, "planned_epoch_steps": 1875, "stage_completed_steps": 75, "stage_target_step": 500, "steps_per_second": 0.0242}
+{'loss': '0.491', 'grad_norm': '0.76', 'learning_rate': '8.944e-05', 'entropy': '0.4918', 'num_tokens': '1.692e+06', 'mean_token_accuracy': '0.8523', 'epoch': '0.24'}
+{"event": "training_checkpoint_saved", "global_step": 450}
+{"elapsed_seconds": 3508.2, "eta_seconds": 1650.9, "eval_loss": null, "event": "training_progress", "global_step": 460, "loss": 0.5292751312255859, "planned_epoch_steps": 1875, "stage_completed_steps": 85, "stage_target_step": 500, "steps_per_second": 0.0242}
+{'loss': '0.5293', 'grad_norm': '0.5689', 'learning_rate': '8.891e-05', 'entropy': '0.5296', 'num_tokens': '1.918e+06', 'mean_token_accuracy': '0.8401', 'epoch': '0.2453'}
+{"elapsed_seconds": 3907.0, "eta_seconds": 1233.8, "eval_loss": null, "event": "training_progress", "global_step": 470, "loss": 0.45008044242858886, "planned_epoch_steps": 1875, "stage_completed_steps": 95, "stage_target_step": 500, "steps_per_second": 0.0243}
+{'loss': '0.4501', 'grad_norm': '0.8148', 'learning_rate': '8.836e-05', 'entropy': '0.4434', 'num_tokens': '2.137e+06', 'mean_token_accuracy': '0.8601', 'epoch': '0.2507'}
+{"event": "training_checkpoint_saved", "global_step": 475}
+{"elapsed_seconds": 4288.1, "eta_seconds": 816.8, "eval_loss": null, "event": "training_progress", "global_step": 480, "loss": 0.447953462600708, "planned_epoch_steps": 1875, "stage_completed_steps": 105, "stage_target_step": 500, "steps_per_second": 0.0245}
+{'loss': '0.448', 'grad_norm': '0.796', 'learning_rate': '8.78e-05', 'entropy': '0.4398', 'num_tokens': '2.351e+06', 'mean_token_accuracy': '0.8586', 'epoch': '0.256'}
+{"elapsed_seconds": 4700.8, "eta_seconds": 408.8, "eval_loss": null, "event": "training_progress", "global_step": 490, "loss": 0.5118586540222168, "planned_epoch_steps": 1875, "stage_completed_steps": 115, "stage_target_step": 500, "steps_per_second": 0.0245}
+{'loss': '0.5119', 'grad_norm': '0.9499', 'learning_rate': '8.723e-05', 'entropy': '0.5143', 'num_tokens': '2.58e+06', 'mean_token_accuracy': '0.8451', 'epoch': '0.2613'}
+{"elapsed_seconds": 5107.9, "eta_seconds": 0.0, "eval_loss": null, "event": "training_progress", "global_step": 500, "loss": 0.48665599822998046, "planned_epoch_steps": 1875, "stage_completed_steps": 125, "stage_target_step": 500, "steps_per_second": 0.0245}
+{'loss': '0.4867', 'grad_norm': '0.762', 'learning_rate': '8.664e-05', 'entropy': '0.5125', 'num_tokens': '2.807e+06', 'mean_token_accuracy': '0.8449', 'epoch': '0.2667'}
+{"elapsed_seconds": 5325.5, "eta_seconds": 0.0, "eval_loss": 0.4893624782562256, "event": "training_progress", "global_step": 500, "loss": null, "planned_epoch_steps": 1875, "stage_completed_steps": 125, "stage_target_step": 500, "steps_per_second": 0.0235}
+{'eval_loss': '0.4894', 'eval_runtime': '217.6', 'eval_samples_per_second': '1.176', 'eval_steps_per_second': '1.176', 'eval_entropy': '0.4363', 'eval_num_tokens': '2.807e+06', 'eval_mean_token_accuracy': '0.8542', 'epoch': '0.2667'}
+{"event": "training_checkpoint_saved", "global_step": 500}
+{"elapsed_seconds": 5326.4, "eta_seconds": 0.0, "eval_loss": null, "event": "training_progress", "global_step": 500, "loss": null, "planned_epoch_steps": 1875, "stage_completed_steps": 125, "stage_target_step": 500, "steps_per_second": 0.0235}
+{'train_runtime': '5325', 'train_samples_per_second': '5.633', 'train_steps_per_second': '0.352', 'train_loss': '0.124', 'epoch': '0.2667'}
+{"checkpoint": "adapter/checkpoint-500", "completed_step": 500, "event": "training_stage_complete", "planned_epoch_steps": 1875, "runtime_seconds": 5328.0}
+Saved adapter to /mnt/spider/experiment4/adapter/final
+WARNING: Parallel composite upload was turned ON to get the best performance on
+uploading large objects. If you would like to opt-out and instead
+perform a normal upload, run:
+`gcloud config set storage/parallel_composite_upload_enabled False`
+If you would like to disable this warning, run:
+`gcloud config set storage/parallel_composite_upload_enabled True`
+Note that with parallel composite uploads, your object might be
+uploaded as a composite object
+(https://cloud.google.com/storage/docs/composite-objects), which means
+that any user who downloads your object will need to use crc32c
+checksums to verify data integrity. gcloud storage is capable of
+computing crc32c checksums, but this might pose a problem for other
+clients.
+
+Copying file:///tmp/output.tar.zst to gs://keptune-spider-experiments-1088401257609/exp004/checkpoints/step_0500.tar.zst
+  
+........
+
+Average throughput: 544.3MiB/s
+Copying file:///mnt/spider/experiment4/training_state.json to gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/training_state.json
+  
+.
+{"event":"gcloud_training_stage_uploaded","step":500}
+Copying file:///var/log/spider-exp004-k375-500a.log to gs://keptune-spider-experiments-1088401257609/exp004/runs/k375-500a/guest.log
+  
