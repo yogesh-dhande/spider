@@ -121,6 +121,7 @@ def train(
     resume: str | None = "auto",
     max_steps: int | None = None,
     additional_steps: int | None = None,
+    per_device_train_batch_size: int | None = None,
     gradient_accumulation_steps: int | None = None,
     optimizer_name: str | None = None,
 ) -> Path:
@@ -135,6 +136,13 @@ def train(
     config = load_config(config_path)
     experiment = config["experiment"]
     training = config["training"]
+    per_device_batch = (
+        int(per_device_train_batch_size)
+        if per_device_train_batch_size is not None
+        else int(training["per_device_train_batch_size"])
+    )
+    if per_device_batch <= 0:
+        raise ValueError("per_device_train_batch_size must be positive")
     gradient_accumulation = (
         int(gradient_accumulation_steps)
         if gradient_accumulation_steps is not None
@@ -170,7 +178,7 @@ def train(
     world_size = int(os.environ.get("WORLD_SIZE", "1"))
     planned_steps, epoch_stop_step = training_step_plan(
         examples=len(train_dataset),
-        per_device_batch=int(training["per_device_train_batch_size"]),
+        per_device_batch=per_device_batch,
         gradient_accumulation=gradient_accumulation,
         world_size=world_size,
         epochs=float(training["num_train_epochs"]),
@@ -184,7 +192,7 @@ def train(
             raise ValueError("additional_steps must be positive")
         _, stop_step = training_step_plan(
             examples=len(train_dataset),
-            per_device_batch=int(training["per_device_train_batch_size"]),
+            per_device_batch=per_device_batch,
             gradient_accumulation=gradient_accumulation,
             world_size=world_size,
             epochs=float(training["num_train_epochs"]),
@@ -209,9 +217,10 @@ def train(
         stop_step=stop_step,
         planned_epoch_steps=planned_steps,
         world_size=world_size,
+        per_device_train_batch_size=per_device_batch,
         gradient_accumulation_steps=gradient_accumulation,
         effective_batch_size=(
-            int(training["per_device_train_batch_size"]) * gradient_accumulation * world_size
+            per_device_batch * gradient_accumulation * world_size
         ),
         optimizer=optimizer,
     )
@@ -249,7 +258,7 @@ def train(
     sft_kwargs: dict[str, Any] = {
         "output_dir": str(output_dir),
         "num_train_epochs": float(training["num_train_epochs"]),
-        "per_device_train_batch_size": int(training["per_device_train_batch_size"]),
+        "per_device_train_batch_size": per_device_batch,
         "per_device_eval_batch_size": int(training["per_device_eval_batch_size"]),
         "gradient_accumulation_steps": gradient_accumulation,
         "learning_rate": float(training["learning_rate"]),
@@ -345,11 +354,10 @@ def train(
                     "model_revision": experiment.get("model_revision"),
                     "base_compute_dtype": str(compute_dtype),
                     "world_size": world_size,
+                    "per_device_train_batch_size": per_device_batch,
                     "gradient_accumulation_steps": gradient_accumulation,
                     "effective_batch_size": (
-                        int(training["per_device_train_batch_size"])
-                        * gradient_accumulation
-                        * world_size
+                        per_device_batch * gradient_accumulation * world_size
                     ),
                     "optimizer": optimizer,
                     "initial_adapter": initial_adapter,
@@ -389,9 +397,10 @@ def train(
             "stop_step": stop_step,
             "planned_epoch_steps": planned_steps,
             "world_size": world_size,
+            "per_device_train_batch_size": per_device_batch,
             "gradient_accumulation_steps": gradient_accumulation,
             "effective_batch_size": (
-                int(training["per_device_train_batch_size"]) * gradient_accumulation * world_size
+                per_device_batch * gradient_accumulation * world_size
             ),
             "optimizer": optimizer,
             "initial_adapter": initial_adapter,
@@ -442,6 +451,12 @@ def main() -> None:
         help="Run this many more optimizer steps, capped at the configured epoch target",
     )
     parser.add_argument(
+        "--per-device-train-batch-size",
+        type=int,
+        default=None,
+        help="Execution override for GPU-memory and throughput benchmarking",
+    )
+    parser.add_argument(
         "--gradient-accumulation-steps",
         type=int,
         default=None,
@@ -460,6 +475,7 @@ def main() -> None:
         resume=resume,
         max_steps=args.max_steps,
         additional_steps=args.additional_steps,
+        per_device_train_batch_size=args.per_device_train_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         optimizer_name=args.optimizer,
     )

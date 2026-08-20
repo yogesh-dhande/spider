@@ -36,3 +36,21 @@ def test_validation_rejects_unknown_role() -> None:
         assert "action or perception" in str(error)
     else:
         raise AssertionError("unknown validation role was accepted")
+
+
+def test_speed_benchmark_preserves_effective_batch() -> None:
+    try:
+        MODULE.create_speed_benchmark("test", "zone", "abc", 250, 20, 2, 4, "2h")
+    except ValueError as error:
+        assert "effective batch size 16" in str(error)
+    else:
+        raise AssertionError("invalid effective batch was accepted")
+
+
+def test_speed_benchmark_rejects_non_positive_parameters() -> None:
+    try:
+        MODULE.create_speed_benchmark("test", "zone", "abc", 250, 0, 2, 8, "2h")
+    except ValueError as error:
+        assert "positive" in str(error)
+    else:
+        raise AssertionError("non-positive benchmark length was accepted")

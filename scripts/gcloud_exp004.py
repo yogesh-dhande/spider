@@ -215,6 +215,84 @@ exec /opt/spider/scripts/gcloud_exp004_guest.sh
     return name
 
 
+def create_speed_benchmark(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    start_step: int,
+    benchmark_steps: int,
+    per_device_batch: int,
+    gradient_accumulation: int,
+    max_run: str,
+) -> str:
+    """Benchmark a disposable microbatch configuration on an isolated L4 VM."""
+    if min(start_step, benchmark_steps, per_device_batch, gradient_accumulation) <= 0:
+        raise ValueError("benchmark parameters must be positive")
+    if per_device_batch * gradient_accumulation != 16:
+        raise ValueError("EXP004 speed benchmarks must preserve effective batch size 16")
+    name = f"spider-exp004-bench-b{per_device_batch}-{run_id}"
+    bootstrap = f"""#!/usr/bin/env bash
+set -Eeuo pipefail
+trap 'shutdown -h now' EXIT
+apt-get update -qq
+apt-get install -y -qq git
+rm -rf /opt/spider
+git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+git -C /opt/spider checkout -q {repo_revision}
+chmod +x /opt/spider/scripts/gcloud_exp004_benchmark_guest.sh
+exec /opt/spider/scripts/gcloud_exp004_benchmark_guest.sh
+"""
+    startup = Path("/tmp") / f"{name}-startup.sh"
+    startup.write_text(bootstrap, encoding="utf-8")
+    metadata = (
+        f"spider-run-id={run_id},spider-repo-revision={repo_revision},"
+        f"spider-stage-start={start_step},spider-benchmark-steps={benchmark_steps},"
+        f"spider-per-device-batch={per_device_batch},"
+        f"spider-gradient-accumulation={gradient_accumulation},spider-bucket={BUCKET}"
+    )
+    command = [
+        "gcloud",
+        "compute",
+        "instances",
+        "create",
+        name,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--machine-type=g2-standard-8",
+        "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
+        "--image-project=deeplearning-platform-release",
+        "--boot-disk-size=100GB",
+        "--boot-disk-type=pd-standard",
+        "--scopes=cloud-platform",
+        "--maintenance-policy=TERMINATE",
+        (
+            "--labels=spider-managed=true,spider-experiment=exp004,"
+            f"spider-role=speed-benchmark,spider-run={run_id}"
+        ),
+        f"--max-run-duration={max_run}",
+        "--instance-termination-action=STOP",
+        f"--metadata={metadata}",
+        f"--metadata-from-file=startup-script={startup}",
+        "--quiet",
+    ]
+    run(command, capture=False)
+    append_registry(
+        "created",
+        name=name,
+        zone=zone,
+        run_id=run_id,
+        role="speed-benchmark",
+        start_step=start_step,
+        benchmark_steps=benchmark_steps,
+        per_device_batch=per_device_batch,
+        gradient_accumulation=gradient_accumulation,
+        repo_revision=repo_revision,
+        max_run=max_run,
+    )
+    emit("gcloud_vm_created", name=name, zone=zone, run_id=run_id, role="speed-benchmark")
+    return name
+
+
 def create_validation_shard(
     run_id: str,
     role: str,
@@ -358,6 +436,16 @@ def main() -> None:
     validation.add_argument("--step", required=True, type=int)
     validation.add_argument("--max-run", default="4h")
 
+    benchmark = subparsers.add_parser("speed-benchmark")
+    benchmark.add_argument("--run-id", required=True)
+    benchmark.add_argument("--zone", default="us-east4-a")
+    benchmark.add_argument("--repo-revision", required=True)
+    benchmark.add_argument("--start-step", required=True, type=int)
+    benchmark.add_argument("--benchmark-steps", type=int, default=20)
+    benchmark.add_argument("--per-device-batch", type=int, default=2)
+    benchmark.add_argument("--gradient-accumulation", type=int, default=8)
+    benchmark.add_argument("--max-run", default="2h")
+
     monitor_parser = subparsers.add_parser("monitor")
     monitor_parser.add_argument("--run-id", required=True)
     monitor_parser.add_argument("--poll-seconds", type=int, default=30)
@@ -381,6 +469,17 @@ def main() -> None:
         )
     elif args.command == "validation-pair":
         create_validation_pair(args.run_id, args.repo_revision, args.step, args.max_run)
+    elif args.command == "speed-benchmark":
+        create_speed_benchmark(
+            args.run_id,
+            args.zone,
+            args.repo_revision,
+            args.start_step,
+            args.benchmark_steps,
+            args.per_device_batch,
+            args.gradient_accumulation,
+            args.max_run,
+        )
     elif args.command == "monitor":
         if args.poll_seconds <= 0 or args.timeout_seconds <= 0:
             parser.error("poll and timeout values must be positive")
