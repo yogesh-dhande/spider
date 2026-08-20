@@ -1,0 +1,2 @@
+{"timestamp_utc": "2026-08-20T05:02:15+00:00", "event": "created", "name": "spider-exp004-lifecycle-guard-20260820", "zone": "us-west1-b", "run_id": "guard-20260820", "role": "lifecycle-smoke"}
+{"timestamp_utc": "2026-08-20T05:02:54+00:00", "event": "run_terminal", "run_id": "guard-20260820", "states": {"spider-exp004-lifecycle-guard-20260820": "STOPPING"}}
