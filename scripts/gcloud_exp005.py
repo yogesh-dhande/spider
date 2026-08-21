@@ -18,7 +18,14 @@ BUCKET = "gs://keptune-spider-experiments-1088401257609"
 EXPERIMENT_DIR = Path("experiments/exp005_browser_ablation_bed")
 REGISTRY = EXPERIMENT_DIR / "artifacts/gcloud/vm_registry.jsonl"
 MANAGED_FILTER = "labels.spider-managed=true AND labels.spider-experiment=exp005"
-ACTIVE_STATES = {"PROVISIONING", "STAGING", "RUNNING", "REPAIRING", "SUSPENDING"}
+ACTIVE_STATES = {
+    "PROVISIONING",
+    "STAGING",
+    "RUNNING",
+    "REPAIRING",
+    "STOPPING",
+    "SUSPENDING",
+}
 SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 SAFE_SOURCE_ID = re.compile(r"^[a-z0-9][a-z0-9_]{0,62}$")
 

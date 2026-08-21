@@ -241,6 +241,25 @@ def test_monitor_retries_transient_inventory_failure_without_stopping(monkeypatc
     assert stop_calls == []
 
 
+def test_monitor_waits_until_stopping_instance_is_terminated(monkeypatch) -> None:
+    calls = 0
+
+    def inventory(_run_id: str):
+        nonlocal calls
+        calls += 1
+        status = "STOPPING" if calls == 1 else "TERMINATED"
+        return [{"name": "worker", "status": status}]
+
+    monkeypatch.setattr(MODULE, "managed_instances", inventory)
+    monkeypatch.setattr(MODULE, "append_registry", lambda *args, **kwargs: None)
+    monkeypatch.setattr(MODULE, "emit", lambda *args, **kwargs: None)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda _seconds: None)
+
+    MODULE.monitor("run-a", poll_seconds=1, timeout_seconds=10)
+
+    assert calls == 2
+
+
 def test_create_evaluation_uses_gpu_and_scoped_metadata(monkeypatch) -> None:
     received = {}
 
