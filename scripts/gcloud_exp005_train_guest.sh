@@ -10,6 +10,8 @@ RUN_ID="$(metadata spider-run-id)"
 JOB_ID="$(metadata spider-job-id)"
 START_STEP="$(metadata spider-stage-start)"
 STOP_STEP="$(metadata spider-stage-stop)"
+GPU_COUNT="$(metadata spider-gpu-count)"
+GRADIENT_ACCUMULATION="$(metadata spider-gradient-accumulation)"
 BUCKET="$(metadata spider-bucket)"
 DESTINATION="${BUCKET}/exp005/training/jobs/${JOB_ID}/stages/step_$(printf '%05d' "${STOP_STEP}")"
 LOG_PATH="/var/log/spider-exp005-train-${RUN_ID}.log"
@@ -77,29 +79,34 @@ export SPIDER_INITIAL_ADAPTER="${INITIAL_ADAPTER}"
 mkdir -p /mnt/spider-cache/torch-kernels
 export PYTORCH_KERNEL_CACHE_PATH=/mnt/spider-cache/torch-kernels
 
-if [[ "${START_STEP}" -eq 0 ]]; then
-  python -m spider.train \
-    --config "${CONFIG_PATH}" --resume auto --max-steps "${STOP_STEP}" \
-    --gradient-accumulation-steps 16
-else
+ADDITIONAL_STEPS="$((STOP_STEP - START_STEP))"
+if [[ "${GPU_COUNT}" -eq 1 ]]; then
   python -m spider.train \
     --config "${CONFIG_PATH}" --resume auto \
-    --additional-steps "$((STOP_STEP - START_STEP))" \
-    --gradient-accumulation-steps 16
+    --additional-steps "${ADDITIONAL_STEPS}" \
+    --gradient-accumulation-steps "${GRADIENT_ACCUMULATION}"
+else
+  python -m torch.distributed.run --standalone \
+    --nproc_per_node="${GPU_COUNT}" --module spider.train \
+    --config "${CONFIG_PATH}" --resume auto \
+    --additional-steps "${ADDITIONAL_STEPS}" \
+    --gradient-accumulation-steps "${GRADIENT_ACCUMULATION}"
 fi
 
-python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" "${STOP_STEP}" <<'PY'
+python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" "${STOP_STEP}" \
+  "${GPU_COUNT}" "${GRADIENT_ACCUMULATION}" <<'PY'
 import json
 import math
 import sys
 from pathlib import Path
 
 state = json.loads(Path(sys.argv[1]).read_text())
-start, stop = map(int, sys.argv[2:])
+start, stop, gpu_count, accumulation = map(int, sys.argv[2:])
 assert state["status"] == "complete", state
 assert state["start_step"] == start, state
 assert state["completed_step"] == stop, state
-assert state["world_size"] == 1, state
+assert state["world_size"] == gpu_count, state
+assert state["gradient_accumulation_steps"] == accumulation, state
 assert state["effective_batch_size"] == 16, state
 assert math.isfinite(float(state["metrics"]["train_loss"])), state
 PY

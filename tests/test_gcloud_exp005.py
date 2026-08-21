@@ -136,7 +136,49 @@ def test_training_stage_uses_available_single_l4_shape(monkeypatch) -> None:
         "spider-job-id": "small-seed53",
         "spider-stage-start": 0,
         "spider-stage-stop": 125,
+        "spider-gpu-count": 1,
+        "spider-gradient-accumulation": 16,
     }
+
+
+def test_training_stage_uses_two_l4_shape_and_preserves_effective_batch(monkeypatch) -> None:
+    received = {}
+
+    def create(**kwargs):
+        received.update(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    MODULE.create_training_stage(
+        "run-a", "us-west1-b", "abc123", "small-seed53", 125, 250, "4h", 2
+    )
+
+    assert received["machine_type"] == "g2-standard-24"
+    assert received["metadata"]["spider-gpu-count"] == 2
+    assert received["metadata"]["spider-gradient-accumulation"] == 8
+
+
+def test_training_stage_uses_four_l4_shape(monkeypatch) -> None:
+    received = {}
+    monkeypatch.setattr(MODULE, "_create", lambda **kwargs: received.update(kwargs) or kwargs["name"])
+
+    MODULE.create_training_stage(
+        "run-a", "us-west1-b", "abc123", "large-seed53", 0, 125, "4h", 4
+    )
+
+    assert received["machine_type"] == "g2-standard-48"
+    assert received["metadata"]["spider-gradient-accumulation"] == 4
+
+
+def test_training_stage_rejects_unsupported_gpu_count() -> None:
+    try:
+        MODULE.create_training_stage(
+            "run-a", "zone", "revision", "small-seed53", 0, 125, "4h", 3
+        )
+    except ValueError as error:
+        assert "gpu_count" in str(error)
+    else:
+        raise AssertionError("unsupported training GPU count was accepted")
 
 
 def test_evaluation_rejects_unknown_control() -> None:

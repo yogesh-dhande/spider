@@ -28,6 +28,11 @@ ACTIVE_STATES = {
 }
 SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 SAFE_SOURCE_ID = re.compile(r"^[a-z0-9][a-z0-9_]{0,62}$")
+TRAINING_MACHINE_TYPES = {
+    1: "g2-standard-8",
+    2: "g2-standard-24",
+    4: "g2-standard-48",
+}
 
 
 def utc_now() -> str:
@@ -383,11 +388,16 @@ def create_training_stage(
     start_step: int,
     stop_step: int,
     max_run: str,
+    gpu_count: int = 1,
 ) -> str:
     if not SAFE_ID.fullmatch(job_id):
         raise ValueError("job_id must be a GCloud-safe lowercase identifier")
     if start_step < 0 or stop_step <= start_step:
         raise ValueError("training stage bounds must be non-negative and increasing")
+    if gpu_count not in TRAINING_MACHINE_TYPES:
+        raise ValueError("gpu_count must be one of 1, 2, or 4")
+    if 16 % gpu_count:
+        raise ValueError("gpu_count must divide the reference effective batch size of 16")
     return _create(
         name=f"spider-exp005-train-{stop_step:05d}-{run_id}",
         run_id=run_id,
@@ -399,9 +409,11 @@ def create_training_stage(
             "spider-job-id": job_id,
             "spider-stage-start": start_step,
             "spider-stage-stop": stop_step,
+            "spider-gpu-count": gpu_count,
+            "spider-gradient-accumulation": 16 // gpu_count,
         },
         max_run=max_run,
-        machine_type="g2-standard-8",
+        machine_type=TRAINING_MACHINE_TYPES[gpu_count],
         boot_disk_size="200GB",
         gpu=True,
     )
@@ -577,6 +589,7 @@ def main() -> None:
     training.add_argument("--job-id", required=True)
     training.add_argument("--start-step", type=int, required=True)
     training.add_argument("--stop-step", type=int, required=True)
+    training.add_argument("--gpu-count", type=int, choices=sorted(TRAINING_MACHINE_TYPES), default=1)
     training.add_argument("--max-run", default="4h")
     evaluation = subparsers.add_parser("evaluation-shard")
     evaluation.add_argument("--run-id", required=True)
@@ -675,6 +688,7 @@ def main() -> None:
                 args.start_step,
                 args.stop_step,
                 args.max_run,
+                args.gpu_count,
             )
         }
     elif args.command == "evaluation-shard":
