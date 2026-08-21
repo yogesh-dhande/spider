@@ -9,7 +9,7 @@ import math
 import os
 import shutil
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
@@ -285,12 +285,26 @@ def domain_partition(domain: str, seed: int, percentages: dict[str, int]) -> str
 
 
 def record_destination(
-    record: dict[str, Any], *, seed: int, percentages: dict[str, int], iid_percent: int
+    record: dict[str, Any],
+    *,
+    seed: int,
+    percentages: dict[str, int],
+    iid_percent: int,
+    unit_domains: set[str] | None = None,
 ) -> str | None:
     domain = str(record.get("domain") or "unknown")
     if domain == "unknown":
         return None
-    partition = domain_partition(domain, seed, percentages)
+    domains = unit_domains if unit_domains is not None else {domain}
+    if not domains or "unknown" in domains:
+        return None
+    partitions = {domain_partition(value, seed, percentages) for value in domains}
+    # A trajectory may visit more than one registrable domain. Keeping only individual
+    # records would leak that trajectory across train/evaluation. Exclude the complete
+    # unit whenever its domains hash to different partitions.
+    if len(partitions) != 1:
+        return None
+    partition = next(iter(partitions))
     role = str(record.get("source_role") or "training")
     if role == "distribution_shift":
         return "distribution_shift" if partition == "distribution_shift" else None
@@ -669,19 +683,46 @@ def _sample_suite_task(
     suite: str,
     sampling: dict[str, Any],
 ) -> list[dict[str, Any]]:
+    task = str(records[0]["task"])
+    max_per_unit = 3 if task == "qa" else 1
+    if suite in set(sampling.get("natural_suites") or []):
+        units: dict[str, list[dict[str, Any]]] = {}
+        for record in records:
+            units.setdefault(sampling_unit(record), []).append(record)
+        candidates: list[dict[str, Any]] = []
+        for unit, group in sorted(units.items()):
+            group.sort(
+                key=lambda record: stable_int(
+                    "evaluation-natural-record", seed, unit, record["id"]
+                )
+            )
+            candidates.extend(group[:max_per_unit])
+        if len(candidates) < count:
+            raise ValueError(
+                f"Natural evaluation sampling has {len(candidates)}/{count} unique-unit "
+                f"candidates for {suite}/{task}"
+            )
+        candidates.sort(
+            key=lambda record: stable_int(
+                "evaluation-natural-sample", seed, record["id"]
+            )
+        )
+        return candidates[:count]
+    overrides = dict((sampling.get("task_overrides") or {}).get(task) or {})
     required = list(sampling.get("required_categories") or [])
-    minimum_share = float(sampling.get("minimum_category_share", 0.0))
+    minimum_share = float(
+        overrides.get(
+            "minimum_category_share", sampling.get("minimum_category_share", 0.0)
+        )
+    )
     weights = dict(sampling.get("category_weights") or {})
-    if suite == "distribution_shift":
-        # A generator-shift suite measures what the held-out generator contains naturally.
-        required, minimum_share, weights = [], 0.0, {}
     return diversity_order(
         records,
         count=count,
         seed=seed,
         temperature=float(sampling.get("temperature", 0.25)),
         max_domain_share=float(sampling.get("max_domain_share", 0.02)),
-        max_per_unit=1 if records[0]["task"] != "qa" else 3,
+        max_per_unit=max_per_unit,
         category_weights=weights,
         required_categories=required,
         minimum_category_share=minimum_share,
@@ -702,6 +743,25 @@ def freeze_manifests(
     counts: Counter[tuple[str, str]] = Counter()
     excluded_counts: Counter[str] = Counter()
     excluded_domains = {str(value).lower() for value in spec.get("excluded_domains") or []}
+    unit_domains: dict[str, set[str]] = defaultdict(set)
+    for cached_record in _iter_cached_records(output / "cache", source_files):
+        domain = str(cached_record.get("domain") or "unknown").lower()
+        if domain in excluded_domains:
+            continue
+        unit_domains[sampling_unit(cached_record)].add(domain)
+    cross_domain_units = sum(len(domains) > 1 for domains in unit_domains.values())
+    cross_partition_units = set()
+    for unit, domains in unit_domains.items():
+        partitions = {
+            domain_partition(domain, int(spec["seed"]), dict(spec["domain_partitions"]))
+            for domain in domains
+            if domain != "unknown"
+        }
+        if len(partitions) > 1 or "unknown" in domains:
+            cross_partition_units.add(unit)
+    excluded_cross_partition_records: Counter[str] = Counter()
+    assigned_units: dict[str, str] = {}
+    assigned_domains: dict[str, set[str]] = defaultdict(set)
     try:
         for destination in ("train", *SUITES):
             for task in TASKS:
@@ -722,15 +782,39 @@ def freeze_manifests(
                 seed=int(spec["seed"]),
                 percentages=dict(spec["domain_partitions"]),
                 iid_percent=int(spec["iid_unit_percent"]),
+                unit_domains=unit_domains[sampling_unit(record)],
             )
             if destination is None:
+                if sampling_unit(record) in cross_partition_units:
+                    excluded_cross_partition_records[str(record["task"])] += 1
                 continue
+            unit = sampling_unit(record)
+            previous = assigned_units.setdefault(unit, destination)
+            if previous != destination:
+                raise ValueError(
+                    f"Sampling unit assigned to multiple destinations: {unit}: "
+                    f"{previous}, {destination}"
+                )
+            domain = str(record.get("domain") or "unknown")
+            assigned_domains[domain].add(destination)
             key = (destination, str(record["task"]))
             handles[key].write(json.dumps(record, ensure_ascii=False) + "\n")
             counts[key] += 1
     finally:
         for handle in handles.values():
             handle.close()
+    invalid_domain_destinations = {
+        domain: sorted(destinations)
+        for domain, destinations in assigned_domains.items()
+        if not (
+            destinations <= {"train", "iid"}
+            or destinations == {"domain_balanced"}
+            or destinations == {"distribution_shift"}
+        )
+    }
+    if invalid_domain_destinations:
+        preview = dict(sorted(invalid_domain_destinations.items())[:20])
+        raise ValueError(f"Domains assigned across incompatible partitions: {preview}")
     for key, temporary in temporary_paths.items():
         temporary.replace(pools / f"{key[0]}_{key[1]}.jsonl")
 
@@ -801,6 +885,16 @@ def freeze_manifests(
         },
         "catalog": catalog_summary,
         "excluded_domain_counts": dict(sorted(excluded_counts.items())),
+        "sampling_unit_split_audit": {
+            "units": len(unit_domains),
+            "cross_domain_units": cross_domain_units,
+            "excluded_cross_partition_units": len(cross_partition_units),
+            "excluded_cross_partition_records_by_task": dict(
+                sorted(excluded_cross_partition_records.items())
+            ),
+            "assigned_units": len(assigned_units),
+            "status": "passed",
+        },
         "training": training_outputs,
         "evaluation": evaluation_outputs,
         "created_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),

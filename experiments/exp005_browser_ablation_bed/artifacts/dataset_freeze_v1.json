@@ -1,0 +1,76 @@
+{
+  "freeze_id": "exp005-browser-ablation-v1",
+  "timestamp_utc": "2026-08-21T16:55:00+00:00",
+  "status": "frozen",
+  "inventory": {
+    "identity_sha256": "12f23de9de2b13dd84e1c08b6d8f1f1046865d95d0ed0cde948217c5389cb677",
+    "file_sha256": "f3473ad639773330a88fe405052fccf44467099b0fded18a3e5a7811527ad467",
+    "sampling_unit_split_audit": {
+      "units": 822727,
+      "cross_domain_units": 26571,
+      "excluded_cross_partition_units": 23865,
+      "excluded_cross_partition_records_by_task": {"action": 94384},
+      "assigned_units": 523799,
+      "status": "passed"
+    }
+  },
+  "dataset_ladder": {
+    "file_sha256": "ccb0216e2c9770023bb795501c02f3fcec39253283bf94e447cb17b3d4854746",
+    "nested_checks": {"small_in_medium": true, "medium_in_large": true},
+    "tiers": {
+      "small": {
+        "examples": 10000,
+        "task_counts": {"action": 5400, "qa": 3300, "grounding": 1300},
+        "unique_domains": 909,
+        "max_domain_share": 0.0402,
+        "application_focused_share": 0.5645,
+        "sha256": "b95b5ef648ba8e2760a126ec5a11d1739736893b7d929f03e9a4b5ad584e64c9"
+      },
+      "medium": {
+        "examples": 30000,
+        "task_counts": {"action": 16200, "qa": 9900, "grounding": 3900},
+        "unique_domains": 1096,
+        "max_domain_share": 0.0513,
+        "application_focused_share": 0.44826666666666665,
+        "sha256": "062cb6c2aa4fb6812ab3cd41cc375e9b7d7389a57deed05e51e9dbd11b14a016"
+      },
+      "large": {
+        "examples": 100000,
+        "task_counts": {"action": 54000, "qa": 33000, "grounding": 13000},
+        "unique_domains": 1096,
+        "max_domain_share": 0.05728,
+        "application_focused_share": 0.32196,
+        "sha256": "89362cffbcd3145f526282cfce3f10241c7d415c6df8d5eb67881826d356c93b"
+      }
+    },
+    "evaluation_suites": {
+      "iid": {
+        "examples": 1536,
+        "sha256": "b3fb0cf69197ab5360730c174d2f3f1a732efc9dbbaba7aee1b47df990e25af5",
+        "id_overlap_count": 0,
+        "sampling_unit_overlap_count": 0,
+        "known_domain_overlap_count": 211,
+        "known_domain_overlap_expected": true
+      },
+      "domain_balanced": {
+        "examples": 1536,
+        "sha256": "71f071f7ab3358139b3ee8e440e4b8d9090c8a23b3c373e62612e69dfe37afb3",
+        "id_overlap_count": 0,
+        "sampling_unit_overlap_count": 0,
+        "known_domain_overlap_count": 0
+      },
+      "distribution_shift": {
+        "examples": 1024,
+        "sha256": "8ac3c3af463ac0cfa4a2fbdebfac894633a6e302878535c50073868b1d4a853f",
+        "id_overlap_count": 0,
+        "sampling_unit_overlap_count": 0,
+        "known_domain_overlap_count": 0
+      }
+    }
+  },
+  "protocol_amendments": [
+    "protocol_amendment_001.json",
+    "protocol_amendment_002.json",
+    "protocol_amendment_003.json"
+  ]
+}

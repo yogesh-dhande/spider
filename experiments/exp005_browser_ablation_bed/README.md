@@ -1,7 +1,7 @@
 # EXP005 — trustworthy browser-training ablation bed
 
-Status: full-source inventory and corpus setup. No EXP005 training or model-quality claim has
-started.
+Status: leakage-safe 10K/30K/100K manifests frozen; shared screenshot corpus materialization is
+the next gate. No EXP005 model inference, training, or model-quality claim has started.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
@@ -24,15 +24,16 @@ the manifest, run-identity, or evaluation contracts. External browser benchmarks
 
 | Tier | Action | ScreenshotQA | Grounding | Total |
 |---|---:|---:|---:|---:|
-| Small | 6,000 | 2,000 | 2,000 | 10,000 |
-| Medium | 18,000 | 6,000 | 6,000 | 30,000 |
-| Large | 60,000 | 20,000 | 20,000 | 100,000 |
+| Small | 5,400 | 3,300 | 1,300 | 10,000 |
+| Medium | 16,200 | 9,900 | 3,900 | 30,000 |
+| Large | 54,000 | 33,000 | 13,000 | 100,000 |
 
 The manifests must satisfy `small ⊂ medium ⊂ large`. They reference one shared image store; the
 dataset is not copied three times. A deterministic diversity order is sampled from metadata
 inventoried across every eligible pinned shard. Every tier is audited for source, task, action,
-website, trajectory, screenshot, effective-domain count, and website concentration. The maximum
-combined contribution from one registrable domain is 2%.
+website, trajectory, screenshot, effective-domain count, and website concentration. The realized
+maximum combined contribution from one registrable domain is 4.02%, 5.13%, and 5.73% for the
+small, medium, and large tiers, respectively, below the registered 6.5% ceiling.
 
 Unknown domains are rejected. Complete trajectories/screenshots remain within one split. Training
 allows at most four action steps per trajectory, three QA examples per screenshot, and one grounding
@@ -52,11 +53,13 @@ leakage isolation deliberately groups them under `google.com`.
 
 Every nested training tier must cover all available website families: work applications,
 transactional applications, service applications, content/reference sites, and the general web.
-Each family receives at least a 5% floor. Remaining capacity is weighted toward work applications
-(4×), then transactional and service applications (2×), general web (1×), and passive
-content/reference sites (0.5×). The 2% registrable-domain cap still applies, preventing the app bias
-from becoming dependence on one vendor. URL-based categories record their rule and confidence, and
-the highest-volume surfaces are manually reviewable before the ladder is frozen.
+Task-specific feasible floors are 1% for action, 5% for QA, and 0.1% for grounding. Remaining
+capacity is weighted toward work applications (4×), then transactional and service applications
+(2×), general web (1×), and passive content/reference sites (0.5×). Per-task registrable-domain
+caps are 3% for action, 2% for QA, and 29% for grounding. The larger grounding allowance is an
+explicit source limitation: its examples are highly concentrated in Semantic Scholar, Amazon, and
+Cambridge. URL-based categories record their rule and confidence, and the highest-volume surfaces
+remain manually reviewable.
 
 Unseen-domain evaluation retains all website families and the same application-oriented weighting,
 with category-level metrics reported separately. Distribution-shift evaluation follows the natural
@@ -104,13 +107,17 @@ resumable stages: the restored training state must match the requested GPU count
 before another optimizer step can run. This lets runtime scale without silently changing the SFT
 recipe.
 
+## Frozen data receipt
+
+The authoritative receipt is `artifacts/dataset_freeze_v1.json`. It registers the full inventory,
+all six manifests, nesting checks, leakage results, realized website composition, and hashes.
+Amendment 003 records the pre-freeze whole-trajectory correction and the fixed 54/33/13 task mix.
+
 ## Next data-build phase
 
-Inventory metadata across every eligible pinned MolmoWeb shard/config without downloading images.
-The inventory is resumable at Parquet row-group boundaries and uses sparse JSON progress events. It
-records generator/task-template fields needed for the distribution-shift split, audits capacity
-under the website/category constraints, freezes the candidate/evaluation manifests, and only then
-downloads selected shared screenshots.
+Materialize only screenshots referenced by the frozen large tier and evaluation manifests into one
+shared image store. The operation is resumable at source row-group boundaries and uses sparse JSON
+progress events. The smaller tiers reference the same files rather than copying images.
 
 The evaluation controls are (1) untouched `Qwen/Qwen3.5-2B`, (2) the frozen EXP002 perception
 adapter, and (3) each EXP005 reference SFT run. All controls use identical manifests, image

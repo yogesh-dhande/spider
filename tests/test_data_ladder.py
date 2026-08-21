@@ -98,6 +98,40 @@ def test_nested_sampler_covers_all_categories_and_biases_toward_apps() -> None:
         assert counts["work_application"] > counts["content_reference"]
 
 
+def test_sampler_preserves_minor_category_records_within_mixed_domain() -> None:
+    records = [
+        {
+            "id": f"general-{index}",
+            "task": "qa",
+            "domain": "mixed.test",
+            "image": f"general-{index}.jpg",
+            "website_category": "general_web",
+        }
+        for index in range(20)
+    ] + [
+        {
+            "id": f"work-{index}",
+            "task": "qa",
+            "domain": "mixed.test",
+            "image": f"work-{index}.jpg",
+            "website_category": "work_application",
+        }
+        for index in range(4)
+    ]
+    sample = build_nested_task_samples(
+        records,
+        {"small": 10},
+        seed=3,
+        temperature=0.5,
+        max_domain_share=1.0,
+        max_per_unit=1,
+        required_categories=["general_web", "work_application"],
+        minimum_category_share=0.2,
+    )["small"]
+
+    assert sum(row["website_category"] == "work_application" for row in sample) >= 2
+
+
 def test_leakage_audit_finds_domain_and_sampling_unit_overlap() -> None:
     training = [{"id": "a", "task": "qa", "domain": "example.com", "image": "same.jpg"}]
     evaluation = [{"id": "b", "task": "qa", "domain": "example.com", "image": "same.jpg"}]
@@ -162,6 +196,69 @@ def test_build_data_ladder_writes_nested_manifests_and_provenance(tmp_path: Path
         handle.write(json.dumps({"id": "changed"}) + "\n")
     with pytest.raises(ValueError, match="Immutable dataset ladder"):
         build_data_ladder(config_path)
+
+
+def test_task_website_sampling_overrides_global_floor(tmp_path: Path) -> None:
+    categories = ["work_application", "general_web"]
+    training = []
+    for category in categories:
+        for index in range(10):
+            training.append(
+                {
+                    "id": f"{category}-{index}",
+                    "task": "grounding",
+                    "domain": f"{category}-{index}.test",
+                    "url": f"https://{category}-{index}.test/",
+                    "image": f"image-{category}-{index}",
+                    "website_category": category,
+                }
+            )
+    train_path = tmp_path / "train.jsonl"
+    eval_path = tmp_path / "eval.jsonl"
+    write_jsonl(train_path, training)
+    write_jsonl(
+        eval_path,
+        [
+            {
+                "id": "eval",
+                "task": "grounding",
+                "domain": "eval.test",
+                "url": "https://eval.test/",
+                "image": "eval-image",
+            }
+        ],
+    )
+    config = {
+        "dataset_ladder": {
+            "id": "task-override",
+            "seed": 1,
+            "output_dir": "output",
+            "train_manifests": ["train.jsonl"],
+            "evaluation_manifests": ["eval.jsonl"],
+            "max_combined_domain_share": 1.0,
+            "website_sampling": {
+                "required_categories": categories,
+                "minimum_category_share": 0.4,
+            },
+            "tasks": {
+                "grounding": {
+                    "sizes": {"small": 10},
+                    "max_domain_share": 1.0,
+                    "max_per_unit": 1,
+                    "website_sampling": {"minimum_category_share": 0.1},
+                }
+            },
+        }
+    }
+    config_path = tmp_path / "ladder.yaml"
+    config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+
+    output = build_data_ladder(config_path)
+    audit = json.loads((output / "dataset_ladder.json").read_text())["tiers"]["small"][
+        "audit"
+    ]
+
+    assert audit["website_category_counts"]["work_application"] >= 1
 
 
 def test_build_data_ladder_rejects_domain_leakage(tmp_path: Path) -> None:

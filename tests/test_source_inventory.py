@@ -7,6 +7,7 @@ from datasets import Dataset
 from spider import source_inventory
 from spider.prepare import read_jsonl
 from spider.source_inventory import (
+    _sample_suite_task,
     action_metadata_examples,
     domain_partition,
     inventory_arrow_source_file,
@@ -208,6 +209,122 @@ def test_split_assignment_is_domain_and_unit_aware() -> None:
     )
 
 
+def test_cross_partition_trajectory_is_excluded_as_a_complete_unit() -> None:
+    percentages = {"train": 80, "domain_balanced": 10, "distribution_shift": 10}
+    grouped = {name: [] for name in percentages}
+    for index in range(1000):
+        domain = f"site-{index}.test"
+        grouped[domain_partition(domain, 53, percentages)].append(domain)
+    domains = {grouped["train"][0], grouped["domain_balanced"][0]}
+    records = [
+        {
+            "id": f"step-{index}",
+            "task": "action",
+            "trajectory_id": "cross-domain-trajectory",
+            "domain": domain,
+            "source_role": "training",
+        }
+        for index, domain in enumerate(sorted(domains))
+    ]
+
+    destinations = {
+        record_destination(
+            record,
+            seed=53,
+            percentages=percentages,
+            iid_percent=5,
+            unit_domains=domains,
+        )
+        for record in records
+    }
+
+    assert destinations == {None}
+
+
+def test_freeze_excludes_cross_partition_units_and_records_audit(tmp_path: Path) -> None:
+    percentages = {"train": 80, "domain_balanced": 10, "distribution_shift": 10}
+    grouped = {name: [] for name in percentages}
+    for index in range(1000):
+        domain = f"site-{index}.test"
+        grouped[domain_partition(domain, 53, percentages)].append(domain)
+    source_file = {
+        "id": "actions",
+        "task": "action",
+        "dataset": "test/actions",
+        "source_revision": "abc",
+        "data_revision": "abc",
+        "file": "data/actions.parquet",
+        "size": 123,
+        "blob_id": "blob",
+    }
+    cache_dir = source_inventory._source_cache_dir(tmp_path / "cache", source_file)
+    cache_dir.mkdir(parents=True)
+    (cache_dir / "identity.json").write_text(json.dumps({"source": source_file}))
+    (cache_dir / "summary.json").write_text(json.dumps({"complete": True}))
+    records = [
+        {
+            "id": "cross-train",
+            "task": "action",
+            "source": "actions",
+            "source_role": "training",
+            "trajectory_id": "cross",
+            "domain": grouped["train"][0],
+            "url": f"https://{grouped['train'][0]}/",
+            "image": "locator://cross-train",
+            "target_action": {"name": "click"},
+        },
+        {
+            "id": "cross-eval",
+            "task": "action",
+            "source": "actions",
+            "source_role": "training",
+            "trajectory_id": "cross",
+            "domain": grouped["domain_balanced"][0],
+            "url": f"https://{grouped['domain_balanced'][0]}/",
+            "image": "locator://cross-eval",
+            "target_action": {"name": "click"},
+        },
+        {
+            "id": "safe",
+            "task": "action",
+            "source": "actions",
+            "source_role": "training",
+            "trajectory_id": "safe",
+            "domain": grouped["train"][1],
+            "url": f"https://{grouped['train'][1]}/",
+            "image": "locator://safe",
+            "target_action": {"name": "click"},
+        },
+    ]
+    (cache_dir / "row-group-00000.jsonl").write_text(
+        "".join(json.dumps(record) + "\n" for record in records)
+    )
+    spec = {
+        "id": "unit-safe",
+        "seed": 53,
+        "domain_partitions": percentages,
+        "iid_unit_percent": 0,
+        "excluded_domains": [],
+        "website_rules": [],
+        "evaluation_targets": {suite: {} for suite in source_inventory.SUITES},
+        "evaluation_sampling": {},
+    }
+
+    result = source_inventory.freeze_manifests(spec, tmp_path, [source_file], [])
+    inventory = json.loads(result.read_text())
+    training = read_jsonl(tmp_path / "manifests" / "action_train_candidates.jsonl")
+
+    assert [record["id"] for record in training] == ["safe"]
+    assert inventory["sampling_unit_split_audit"] == {
+        "assigned_units": 1,
+        "cross_domain_units": 1,
+        "excluded_cross_partition_records_by_task": {"action": 2},
+        "excluded_cross_partition_units": 1,
+        "status": "passed",
+        "units": 2,
+    }
+
+
 def test_single_source_worker_never_attempts_global_finalization(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -242,3 +359,26 @@ def test_single_source_worker_never_attempts_global_finalization(
 
     assert output.name == "scan_shard_00_of_01.json"
     assert json.loads(output.read_text())[0]["accepted_examples"] == 130370
+
+
+def test_natural_evaluation_sampling_is_deterministic_and_caps_units() -> None:
+    records = [
+        {
+            "id": f"row-{index}",
+            "task": "action",
+            "trajectory_id": "repeated" if index < 4 else f"unit-{index}",
+            "domain": "dominant.test" if index < 4 else "other.test",
+        }
+        for index in range(8)
+    ]
+    sampling = {"natural_suites": ["iid", "distribution_shift"]}
+
+    first = _sample_suite_task(
+        records, count=4, seed=1219, suite="iid", sampling=sampling
+    )
+    second = _sample_suite_task(
+        records, count=4, seed=1219, suite="iid", sampling=sampling
+    )
+
+    assert [row["id"] for row in first] == [row["id"] for row in second]
+    assert sum(row["trajectory_id"] == "repeated" for row in first) <= 1

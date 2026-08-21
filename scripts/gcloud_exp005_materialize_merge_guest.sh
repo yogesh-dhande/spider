@@ -45,10 +45,27 @@ tar --use-compress-program=unzstd -xf /tmp/selection.tar.zst -C "${SELECTION_ROO
 for ((shard=0; shard<NUM_SHARDS; shard++)); do
   label="shard_$(printf '%02d' "${shard}")_of_$(printf '%02d' "${NUM_SHARDS}")"
   gcloud storage cp \
+    "${BUCKET}/exp005/materialization/${RUN_ID}/${label}/summary.json" \
+    "/tmp/${label}.summary.json"
+  gcloud storage cp \
     "${BUCKET}/exp005/materialization/${RUN_ID}/${label}/materialized.tar.zst" \
     "/tmp/${label}.tar.zst"
   tar --use-compress-program=unzstd -xf "/tmp/${label}.tar.zst" -C "${OUTPUT_ROOT}"
 done
+
+python - /tmp/shard_*.summary.json <<'PY'
+import json
+import sys
+from pathlib import Path
+
+summaries = [json.loads(Path(value).read_text()) for value in sys.argv[1:]]
+missing = {
+    locator: error
+    for summary in summaries
+    for locator, error in (summary.get("missing_locators") or {}).items()
+}
+assert not missing, f"Materialization has {len(missing)} unavailable source images"
+PY
 
 export PYTHONPATH=/opt/spider/src
 export SPIDER_SELECTION_DIR="${SELECTION_ROOT}"

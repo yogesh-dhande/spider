@@ -24,7 +24,9 @@ dataset_ladder:
         - ../../data/exp005_browser_inventory/manifests/eval_distribution_shift.jsonl
       required_disjoint: [id, sampling_unit, known_domain]
   unknown_domain_policy: reject
-  max_combined_domain_share: 0.02
+  # The grounding source is concentrated in six major domains. With a fixed 13% grounding mix,
+  # the strictest feasible combined cap across every nested tier is 6.5%.
+  max_combined_domain_share: 0.065
   website_sampling:
     # Cover every interaction family in every tier, then bias remaining capacity toward apps.
     required_categories:
@@ -42,20 +44,23 @@ dataset_ladder:
       content_reference: 0.5
   tasks:
     action:
-      sizes: {small: 6000, medium: 18000, large: 60000}
+      # Fixed 54/33/13 task proportions make size the only ladder variable.
+      sizes: {small: 5400, medium: 16200, large: 54000}
       temperature: 0.5
-      max_domain_share: 0.02
+      max_domain_share: 0.03
       max_per_unit: 4
+      website_sampling: {minimum_category_share: 0.01}
     qa:
-      sizes: {small: 2000, medium: 6000, large: 20000}
+      sizes: {small: 3300, medium: 9900, large: 33000}
       temperature: 0.5
       max_domain_share: 0.02
       max_per_unit: 3
     grounding:
-      sizes: {small: 2000, medium: 6000, large: 20000}
+      sizes: {small: 1300, medium: 3900, large: 13000}
       temperature: 0.5
-      max_domain_share: 0.02
+      max_domain_share: 0.29
       max_per_unit: 1
+      website_sampling: {minimum_category_share: 0.001}
 materialization:
   selection_dir: ../../data/exp005_browser_selection_v1
   output_dir: ../../data/exp005_browser_ablation_v1

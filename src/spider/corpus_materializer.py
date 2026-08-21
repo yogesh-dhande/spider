@@ -115,6 +115,7 @@ def materialize_group(
     max_width: int,
     max_height: int,
     quality: int,
+    missing: dict[str, str] | None = None,
 ) -> dict[str, dict[str, Any]]:
     import pyarrow.parquet as pq
     from huggingface_hub import HfFileSystem
@@ -151,15 +152,23 @@ def materialize_group(
     image_dir = output / "images" / "shared"
     image_dir.mkdir(parents=True, exist_ok=True)
     for locator_id, locator in locators.items():
-        if locator["kind"] == "arrow_single_image":
-            image = _decode_image(arrow_dataset[int(locator["row_index"])]["image"])
-        else:
-            assert rows is not None
-            row = rows[int(locator["row_in_group"])]
-            if locator["kind"] == "trajectory_screenshot":
-                image = _trajectory_image(list(row["images"] or []), str(locator["screenshot"]))
+        try:
+            if locator["kind"] == "arrow_single_image":
+                image = _decode_image(arrow_dataset[int(locator["row_index"])]["image"])
             else:
-                image = _decode_image(row["image"])
+                assert rows is not None
+                row = rows[int(locator["row_in_group"])]
+                if locator["kind"] == "trajectory_screenshot":
+                    image = _trajectory_image(
+                        list(row["images"] or []), str(locator["screenshot"])
+                    )
+                else:
+                    image = _decode_image(row["image"])
+        except (IndexError, ValueError) as error:
+            if missing is None:
+                raise
+            missing[locator_id] = str(error)[:500]
+            continue
         payload, dimensions = _encode_selected_image(
             image, max_width=max_width, max_height=max_height, quality=quality
         )
@@ -221,6 +230,7 @@ def materialize_images(
     ordered = sorted(groups)
     assigned = [key for index, key in enumerate(ordered) if index % num_shards == shard_index]
     completed = 0
+    missing_locators: dict[str, str] = {}
     started = time.monotonic()
     for key in assigned:
         checkpoint = _group_checkpoint(output, key)
@@ -229,16 +239,27 @@ def materialize_images(
             payload = json.loads(checkpoint.read_text())
             if payload.get("locator_ids") != expected_ids:
                 raise ValueError(f"Materialization checkpoint identity mismatch: {checkpoint}")
+            missing_locators.update(payload.get("missing") or {})
             completed += 1
             continue
+        group_missing: dict[str, str] = {}
+        if groups[key] and next(iter(groups[key].values())).get("kind") == "arrow_single_image":
+            _emit(
+                "materialization_large_group_started",
+                shard_index=shard_index,
+                num_shards=num_shards,
+                file=key[2],
+                locators=len(groups[key]),
+            )
         realized = _retry_group(
-            lambda key=key: materialize_group(
+            lambda key=key, group_missing=group_missing: materialize_group(
                 key,
                 groups[key],
                 output=output,
                 max_width=int(spec["max_width"]),
                 max_height=int(spec["max_height"]),
                 quality=int(spec["jpeg_quality"]),
+                missing=group_missing,
             ),
             label=f"{key[0]}:{key[2]}:{key[3]}",
         )
@@ -246,7 +267,12 @@ def materialize_images(
         temporary = checkpoint.with_suffix(".json.tmp")
         temporary.write_text(
             json.dumps(
-                {"group": key, "locator_ids": expected_ids, "images": realized},
+                {
+                    "group": key,
+                    "locator_ids": expected_ids,
+                    "images": realized,
+                    "missing": group_missing,
+                },
                 indent=2,
                 sort_keys=True,
             )
@@ -254,6 +280,7 @@ def materialize_images(
             encoding="utf-8",
         )
         temporary.replace(checkpoint)
+        missing_locators.update(group_missing)
         completed += 1
         if completed % 10 == 0 or completed == len(assigned):
             elapsed = max(time.monotonic() - started, 1e-9)
@@ -276,6 +303,8 @@ def materialize_images(
                 "shard_index": shard_index,
                 "num_shards": num_shards,
                 "groups": len(assigned),
+                "missing_count": len(missing_locators),
+                "missing_locators": dict(sorted(missing_locators.items())),
             },
             indent=2,
             sort_keys=True,

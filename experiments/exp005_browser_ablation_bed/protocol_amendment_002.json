@@ -1,0 +1,41 @@
+{
+  "amendment_id": "exp005-protocol-amendment-002",
+  "timestamp_utc": "2026-08-21T16:20:00+00:00",
+  "status": "pre_freeze_capacity_correction",
+  "trigger": {
+    "inventory_examples": 1810109,
+    "failed_constraint": "The original seed-53 80/10/10 domain split allowed only 257 IID and 144 domain-balanced grounding examples under the 2% per-domain cap, below the 512-example targets.",
+    "seed_search": "Exhaustive deterministic capacity audit over seeds 0-9999 showed no 80/10/10 or 60/20/20 split could meet every registered target."
+  },
+  "changes": {
+    "domain_split": {
+      "before": {"train": 80, "domain_balanced": 10, "distribution_shift": 10},
+      "after": {"train": 50, "domain_balanced": 25, "distribution_shift": 25}
+    },
+    "seed": {"before": 53, "after": 1219},
+    "evaluation_sampling": {
+      "iid": "deterministic natural-composition sampling after sampling-unit caps",
+      "domain_balanced": "2% domain cap, application-weighted categories, 5% category floors for action and QA, and 2% floors for grounding",
+      "distribution_shift": "deterministic natural-composition sampling from held-out generators after sampling-unit caps"
+    }
+  },
+  "capacity_evidence_for_seed_1219": {
+    "domain_balanced_capacity_at_512_target": {
+      "action": 2199,
+      "qa": 3276,
+      "grounding": 522
+    },
+    "distribution_shift_unique_unit_capacity": {
+      "action": 3402,
+      "grounding": 70066
+    },
+    "domain_balanced_grounding_category_capacity": {
+      "content_reference": 71,
+      "general_web": 378,
+      "service_application": 36,
+      "transactional_application": 12,
+      "work_application": 25
+    }
+  },
+  "rationale": "The ladder needs only 100000 examples, so retaining half of eligible domains still leaves ample training capacity while materially strengthening unseen-domain evaluation. The amendment occurs before any EXP005 manifest, model inference, or training freeze."
+}

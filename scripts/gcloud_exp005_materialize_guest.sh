@@ -54,6 +54,9 @@ export SPIDER_DATA_DIR="${OUTPUT_ROOT}"
 python -m spider.corpus_materializer \
   --config /opt/spider/configs/datasets/exp005_browser_ablation_v1.yaml \
   --shard-index "${SHARD_INDEX}" --num-shards "${NUM_SHARDS}"
+gcloud storage cp \
+  "${OUTPUT_ROOT}/materialization/shard-$(printf '%02d' "${SHARD_INDEX}")-of-$(printf '%02d' "${NUM_SHARDS}").json" \
+  "${DESTINATION}/summary.json"
 
 tar --use-compress-program='zstd -3 -T0' -cf /tmp/materialized.tar.zst \
   -C "${OUTPUT_ROOT}" images materialization

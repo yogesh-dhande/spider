@@ -89,20 +89,18 @@ def _candidate_pools(
     units: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
         units[sampling_unit(record)].append(record)
-    by_domain: dict[str, list[list[dict[str, Any]]]] = defaultdict(list)
-    for group in units.values():
-        domains = Counter(str(record["domain"]) for record in group)
-        domain = min(domains, key=lambda value: (-domains[value], value))
+    by_domain: dict[str, list[tuple[int, int, dict[str, Any]]]] = defaultdict(list)
+    for unit, group in units.items():
         ordered = sorted(group, key=lambda record: stable_int(seed, "record", record["id"]))
-        by_domain[domain].append(ordered[:max_per_unit])
+        for position, record in enumerate(ordered[:max_per_unit]):
+            by_domain[str(record["domain"])].append(
+                (position, stable_int(seed, "unit", unit), record)
+            )
 
     pools: dict[str, list[dict[str, Any]]] = {}
-    for domain, groups in by_domain.items():
-        groups.sort(key=lambda group: stable_int(seed, "unit", sampling_unit(group[0])))
-        interleaved: list[dict[str, Any]] = []
-        for position in range(max_per_unit):
-            interleaved.extend(group[position] for group in groups if position < len(group))
-        pools[domain] = interleaved
+    for domain, rows in by_domain.items():
+        rows.sort(key=lambda row: (row[0], row[1], str(row[2]["id"])))
+        pools[domain] = [record for _, _, record in rows]
     return pools
 
 
@@ -131,15 +129,15 @@ def diversity_order(
         raise ValueError("category_weights must all be positive")
     if not 0 <= minimum_category_share < 1:
         raise ValueError("minimum_category_share must be in [0, 1)")
-    domain_categories: dict[str, str] = {}
+    category_pools: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for domain, pool in pools.items():
-        categories = Counter(
-            str(record.get("website_category") or "unclassified") for record in pool
-        )
-        domain_categories[domain] = min(
-            categories, key=lambda value: (-categories[value], value)
-        )
-    available_categories = set(domain_categories.values())
+        grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for record in pool:
+            grouped[str(record.get("website_category") or "unclassified")].append(record)
+        category_pools[domain] = dict(grouped)
+    available_categories = {
+        category for grouped in category_pools.values() for category in grouped
+    }
     missing_categories = sorted(set(required_categories or []) - available_categories)
     if missing_categories:
         raise ValueError(f"Required website categories have no candidates: {missing_categories}")
@@ -153,19 +151,24 @@ def diversity_order(
             f"Diversity constraints allow {sum(capacities.values())}/{count} records; "
             "increase max_domain_share, max_per_unit, or source diversity"
         )
-    weights = {
-        domain: (capacities[domain] ** temperature if temperature else 1.0)
-        * category_weights.get(domain_categories[domain], 1.0)
+    domain_weights = {
+        domain: capacities[domain] ** temperature if temperature else 1.0
         for domain in pools
     }
     selected_counts: Counter[str] = Counter()
     selected_categories: Counter[str] = Counter()
+    selected_domain_categories: dict[str, Counter[str]] = defaultdict(Counter)
     selected: list[dict[str, Any]] = []
     while len(selected) < count:
-        available = [
-            domain for domain, capacity in capacities.items() if selected_counts[domain] < capacity
-        ]
         next_size = len(selected) + 1
+        prefix_domain_cap = max(1, math.ceil(next_size * max_domain_share))
+        available = [
+            (domain, category)
+            for domain, grouped in category_pools.items()
+            if selected_counts[domain] < min(capacities[domain], prefix_domain_cap)
+            for category, pool in grouped.items()
+            if selected_domain_categories[domain][category] < len(pool)
+        ]
         deficient_categories = {
             category
             for category in categories_to_cover
@@ -173,7 +176,7 @@ def diversity_order(
         }
         if deficient_categories:
             covered = [
-                domain for domain in available if domain_categories[domain] in deficient_categories
+                pair for pair in available if pair[1] in deficient_categories
             ]
             if not covered:
                 raise ValueError(
@@ -181,16 +184,22 @@ def diversity_order(
                     f"{sorted(deficient_categories)}"
                 )
             available = covered
-        domain = min(
+        domain, category = min(
             available,
-            key=lambda value: (
-                (selected_counts[value] + 1) / weights[value],
-                stable_int(seed, "domain", value),
+            key=lambda pair: (
+                (selected_counts[pair[0]] + 1)
+                / (
+                    domain_weights[pair[0]]
+                    * category_weights.get(pair[1], 1.0)
+                ),
+                stable_int(seed, "domain-category", pair[0], pair[1]),
             ),
         )
-        selected.append(pools[domain][selected_counts[domain]])
+        position = selected_domain_categories[domain][category]
+        selected.append(category_pools[domain][category][position])
         selected_counts[domain] += 1
-        selected_categories[domain_categories[domain]] += 1
+        selected_categories[category] += 1
+        selected_domain_categories[domain][category] += 1
     return selected
 
 
@@ -411,6 +420,11 @@ def build_data_ladder(config_path: str | Path) -> Path:
     for task_index, (task, task_spec) in enumerate(spec["tasks"].items()):
         candidates = [record for record in training if str(record.get("task")) == task]
         sizes = _task_spec_sizes(task_spec)
+        task_website_sampling = dict(website_sampling)
+        override = task_spec.get("website_sampling") or {}
+        if not isinstance(override, dict):
+            raise TypeError(f"Task {task} website_sampling must be a mapping")
+        task_website_sampling.update(override)
         task_samples[task] = build_nested_task_samples(
             candidates,
             sizes,
@@ -418,10 +432,12 @@ def build_data_ladder(config_path: str | Path) -> Path:
             temperature=float(task_spec.get("temperature", 0.5)),
             max_domain_share=float(task_spec.get("max_domain_share", 0.02)),
             max_per_unit=int(task_spec.get("max_per_unit", 1)),
-            category_weights=dict(website_sampling.get("category_weights") or {}),
-            required_categories=list(website_sampling.get("required_categories") or []),
+            category_weights=dict(task_website_sampling.get("category_weights") or {}),
+            required_categories=list(
+                task_website_sampling.get("required_categories") or []
+            ),
             minimum_category_share=float(
-                website_sampling.get("minimum_category_share", 0.0)
+                task_website_sampling.get("minimum_category_share", 0.0)
             ),
         )
 

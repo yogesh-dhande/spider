@@ -1,11 +1,11 @@
 inventory:
   id: exp005_molmoweb_inventory_v1
-  seed: 53
+  seed: 1219
   output_dir: ../../data/exp005_browser_inventory
   domain_partitions:
-    train: 80
-    domain_balanced: 10
-    distribution_shift: 10
+    train: 50
+    domain_balanced: 25
+    distribution_shift: 25
   iid_unit_percent: 5
   max_past_steps: 4
   arrow_batch_rows: 500
@@ -22,9 +22,16 @@ inventory:
     domain_balanced: {action: 512, qa: 512, grounding: 512}
     distribution_shift: {action: 512, grounding: 512}
   evaluation_sampling:
+    # IID and generator-shift suites preserve their source composition after unit caps.
+    # Only the explicitly domain-balanced suite applies category weights and domain caps.
+    natural_suites: [iid, distribution_shift]
     temperature: 0.25
     max_domain_share: 0.02
     minimum_category_share: 0.05
+    task_overrides:
+      # Full-inventory capacity analysis shows grounding can cover every family at 2%,
+      # but cannot supply 5% transactional/work examples under the 2% domain cap.
+      grounding: {minimum_category_share: 0.02}
     required_categories:
       - work_application
       - transactional_application

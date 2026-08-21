@@ -10,6 +10,7 @@ from spider.corpus_materializer import (
     finalize_corpus,
     group_image_locators,
     image_locator_id,
+    materialize_images,
 )
 from spider.prepare import read_jsonl, write_jsonl
 
@@ -129,3 +130,29 @@ def test_finalize_rewrites_all_manifests_and_binds_selection(tmp_path: Path) -> 
     assert payload["unique_images"] == 1
     rewritten = read_jsonl(output / "manifests/train_large.jsonl")
     assert rewritten[0]["image"] == "images/shared/image.jpg"
+
+
+def test_materialization_summary_records_missing_locators(
+    tmp_path: Path, monkeypatch
+) -> None:
+    locator = _locator()
+    locator_id = image_locator_id(locator)
+    groups = {("test/data", "abc", "part.parquet", 2): {locator_id: locator}}
+
+    def fake_materialize_group(_key, _locators, *, missing, **_kwargs):
+        missing[locator_id] = "upstream image absent"
+        return {}
+
+    monkeypatch.setattr(
+        "spider.corpus_materializer.materialize_group", fake_materialize_group
+    )
+    summary = materialize_images(
+        groups,
+        output=tmp_path,
+        spec={"max_width": 1280, "max_height": 720, "jpeg_quality": 90},
+    )
+    payload = json.loads(summary.read_text())
+
+    assert payload["status"] == "complete"
+    assert payload["missing_count"] == 1
+    assert payload["missing_locators"] == {locator_id: "upstream image absent"}
