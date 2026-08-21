@@ -592,6 +592,10 @@ def create_evaluation_shard(
         max_run=max_run,
         machine_type="g2-standard-8",
         boot_disk_size="100GB",
+        # Evaluation is inference-heavy and does not benefit from SSD-backed
+        # boot storage.  Standard persistent disks also avoid consuming the
+        # scarce per-region SSD quota needed by unrelated training jobs.
+        boot_disk_type="pd-standard",
         gpu=True,
     )
 

@@ -464,6 +464,7 @@ def test_create_evaluation_uses_gpu_and_scoped_metadata(monkeypatch) -> None:
 
     assert name == "spider-exp005-eval-base-domain-01-run-a"
     assert received["gpu"] is True
+    assert received["boot_disk_type"] == "pd-standard"
     assert received["metadata"] == {
         "spider-control": "base",
         "spider-eval-suite": "domain_balanced",
