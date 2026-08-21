@@ -11,6 +11,8 @@ requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 dependencies = [
   "datasets>=3.2",
+  "huggingface-hub>=0.27",
+  "pyarrow>=18.0",
   "pillow>=10.4",
   "pyyaml>=6.0.2",
   "tldextract>=5.1",
@@ -50,6 +52,7 @@ spider-finalize-exp4-data = "spider.exp4_data:main"
 spider-merge-actions = "spider.action_merge:main"
 spider-audit-diversity = "spider.diversity:main"
 spider-build-data-ladder = "spider.data_ladder:main"
+spider-inventory-sources = "spider.source_inventory:main"
 spider-ablation-matrix = "spider.ablation_matrix:main"
 
 [tool.hatch.build.targets.wheel]

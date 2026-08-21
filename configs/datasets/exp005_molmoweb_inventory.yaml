@@ -1,0 +1,102 @@
+inventory:
+  id: exp005_molmoweb_inventory_v1
+  seed: 53
+  output_dir: ../../data/exp005_browser_inventory
+  domain_partitions:
+    train: 80
+    domain_balanced: 10
+    distribution_shift: 10
+  iid_unit_percent: 5
+  max_past_steps: 4
+  max_candidates_per_unit:
+    action: 4
+    qa: 3
+    grounding: 1
+  evaluation_targets:
+    iid: {action: 512, qa: 512, grounding: 512}
+    domain_balanced: {action: 512, qa: 512, grounding: 512}
+    distribution_shift: {action: 512, grounding: 512}
+  evaluation_sampling:
+    temperature: 0.25
+    max_domain_share: 0.02
+    minimum_category_share: 0.05
+    required_categories:
+      - work_application
+      - transactional_application
+      - service_application
+      - content_reference
+      - general_web
+    category_weights:
+      work_application: 4.0
+      transactional_application: 2.0
+      service_application: 2.0
+      general_web: 1.0
+      content_reference: 0.5
+  website_rules:
+    - {pattern: mail.google.com, category: work_application}
+    - {pattern: calendar.google.com, category: work_application}
+    - {pattern: docs.google.com, category: work_application}
+    - {pattern: sheets.google.com, category: work_application}
+    - {pattern: slides.google.com, category: work_application}
+  sources:
+    - id: action_multi_agent
+      task: action
+      generator: multi_agent
+      role: training
+      dataset: allenai/MolmoWeb-SyntheticTrajs
+      source_revision: 9b80ce0271c5fbdcea048f4b2bb4eb0cc457e2eb
+      file_glob: data/multi_agent-*.parquet
+      expected_files: 11
+    - id: action_node_traversal
+      task: action
+      generator: node_traversal
+      role: training
+      dataset: allenai/MolmoWeb-SyntheticTrajs
+      source_revision: 9b80ce0271c5fbdcea048f4b2bb4eb0cc457e2eb
+      file_glob: data/node_traversal-*.parquet
+      expected_files: 5
+    - id: action_synthetic_skills
+      task: action
+      generator: synthetic_skills
+      role: training
+      dataset: allenai/MolmoWeb-SyntheticSkills
+      source_revision: 34f786938a2b8e2d590c754093b2dc0a8a51c62e
+      file_glob: data/train-*.parquet
+      expected_files: 2
+    - id: action_from_template
+      task: action
+      generator: from_template
+      role: distribution_shift
+      dataset: allenai/MolmoWeb-SyntheticTrajs
+      source_revision: 9b80ce0271c5fbdcea048f4b2bb4eb0cc457e2eb
+      file_glob: data/from_template-*.parquet
+      expected_files: 3
+    - id: screenshot_qa
+      task: qa
+      generator: synthetic_qa
+      role: training
+      dataset: allenai/MolmoWeb-SyntheticQA
+      source_revision: 8b6199086b04057106c576504c84e44333b49fea
+      data_revision: 11db52ea32ee60fef4106cae6dc773630c9dda18
+      file_glob: default/partial-train/*.parquet
+      expected_files: 10
+    - id: grounding_gpt
+      task: grounding
+      generator: gpt
+      role: training
+      dataset: allenai/MolmoWeb-SyntheticGround
+      source_revision: 3cce6f5c446e43a050b16658638fcbf49c815e9a
+      file_glob: gpt/train-*.parquet
+      expected_files: 1
+    - id: grounding_template
+      task: grounding
+      generator: template
+      role: distribution_shift
+      dataset: allenai/MolmoWeb-SyntheticGround
+      source_revision: 3cce6f5c446e43a050b16658638fcbf49c815e9a
+      file_glob: template/train-*.parquet
+      expected_files: 2
+  excluded_sources:
+    - data/task_seeded_om2w-*.parquet
+    - data/task_seeded_wv-*.parquet
+    - template/val-*.parquet

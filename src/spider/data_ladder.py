@@ -114,6 +114,9 @@ def diversity_order(
     temperature: float = 0.5,
     max_domain_share: float = 0.02,
     max_per_unit: int = 1,
+    category_weights: dict[str, float] | None = None,
+    required_categories: list[str] | None = None,
+    minimum_category_share: float = 0.0,
 ) -> list[dict[str, Any]]:
     """Return one deterministic order whose prefixes form nested diversity samples."""
     if count <= 0:
@@ -121,6 +124,28 @@ def diversity_order(
     pools = _candidate_pools(records, seed=seed, max_per_unit=max_per_unit)
     if not pools:
         raise ValueError("No candidate records")
+    category_weights = {
+        str(category): float(weight) for category, weight in (category_weights or {}).items()
+    }
+    if any(weight <= 0 for weight in category_weights.values()):
+        raise ValueError("category_weights must all be positive")
+    if not 0 <= minimum_category_share < 1:
+        raise ValueError("minimum_category_share must be in [0, 1)")
+    domain_categories: dict[str, str] = {}
+    for domain, pool in pools.items():
+        categories = Counter(
+            str(record.get("website_category") or "unclassified") for record in pool
+        )
+        domain_categories[domain] = min(
+            categories, key=lambda value: (-categories[value], value)
+        )
+    available_categories = set(domain_categories.values())
+    missing_categories = sorted(set(required_categories or []) - available_categories)
+    if missing_categories:
+        raise ValueError(f"Required website categories have no candidates: {missing_categories}")
+    categories_to_cover = sorted(set(required_categories or []))
+    if minimum_category_share * len(categories_to_cover) > 1:
+        raise ValueError("minimum category shares exceed total sample capacity")
     domain_cap = max(1, math.ceil(count * max_domain_share))
     capacities = {domain: min(len(pool), domain_cap) for domain, pool in pools.items()}
     if sum(capacities.values()) < count:
@@ -129,15 +154,33 @@ def diversity_order(
             "increase max_domain_share, max_per_unit, or source diversity"
         )
     weights = {
-        domain: capacities[domain] ** temperature if temperature else 1.0
+        domain: (capacities[domain] ** temperature if temperature else 1.0)
+        * category_weights.get(domain_categories[domain], 1.0)
         for domain in pools
     }
     selected_counts: Counter[str] = Counter()
+    selected_categories: Counter[str] = Counter()
     selected: list[dict[str, Any]] = []
     while len(selected) < count:
         available = [
             domain for domain, capacity in capacities.items() if selected_counts[domain] < capacity
         ]
+        next_size = len(selected) + 1
+        deficient_categories = {
+            category
+            for category in categories_to_cover
+            if selected_categories[category] < math.floor(next_size * minimum_category_share)
+        }
+        if deficient_categories:
+            covered = [
+                domain for domain in available if domain_categories[domain] in deficient_categories
+            ]
+            if not covered:
+                raise ValueError(
+                    "Website category floor cannot be met under domain and sampling-unit caps: "
+                    f"{sorted(deficient_categories)}"
+                )
+            available = covered
         domain = min(
             available,
             key=lambda value: (
@@ -147,6 +190,7 @@ def diversity_order(
         )
         selected.append(pools[domain][selected_counts[domain]])
         selected_counts[domain] += 1
+        selected_categories[domain_categories[domain]] += 1
     return selected
 
 
@@ -158,6 +202,9 @@ def build_nested_task_samples(
     temperature: float,
     max_domain_share: float,
     max_per_unit: int,
+    category_weights: dict[str, float] | None = None,
+    required_categories: list[str] | None = None,
+    minimum_category_share: float = 0.0,
 ) -> dict[str, list[dict[str, Any]]]:
     largest = max(sizes.values())
     ordered = diversity_order(
@@ -167,6 +214,9 @@ def build_nested_task_samples(
         temperature=temperature,
         max_domain_share=max_domain_share,
         max_per_unit=max_per_unit,
+        category_weights=category_weights,
+        required_categories=required_categories,
+        minimum_category_share=minimum_category_share,
     )
     result = {tier: ordered[:count] for tier, count in sizes.items()}
     for tier, sample in result.items():
@@ -176,6 +226,14 @@ def build_nested_task_samples(
                 f"Tier {tier} exceeds domain cap: {audit['max_domain_share']:.4f} > "
                 f"{max_domain_share:.4f}"
             )
+        category_counts = audit["website_category_counts"]
+        for category in required_categories or []:
+            realized = int(category_counts.get(category, 0)) / len(sample)
+            if realized + (1 / len(sample)) < minimum_category_share:
+                raise ValueError(
+                    f"Tier {tier} category {category} is below its floor: "
+                    f"{realized:.4f} < {minimum_category_share:.4f}"
+                )
     return result
 
 
@@ -347,6 +405,9 @@ def build_data_ladder(config_path: str | Path) -> Path:
 
     task_samples: dict[str, dict[str, list[dict[str, Any]]]] = {}
     seed = int(spec.get("seed", 0))
+    website_sampling = spec.get("website_sampling") or {}
+    if not isinstance(website_sampling, dict):
+        raise TypeError("website_sampling must be a mapping")
     for task_index, (task, task_spec) in enumerate(spec["tasks"].items()):
         candidates = [record for record in training if str(record.get("task")) == task]
         sizes = _task_spec_sizes(task_spec)
@@ -357,6 +418,11 @@ def build_data_ladder(config_path: str | Path) -> Path:
             temperature=float(task_spec.get("temperature", 0.5)),
             max_domain_share=float(task_spec.get("max_domain_share", 0.02)),
             max_per_unit=int(task_spec.get("max_per_unit", 1)),
+            category_weights=dict(website_sampling.get("category_weights") or {}),
+            required_categories=list(website_sampling.get("required_categories") or []),
+            minimum_category_share=float(
+                website_sampling.get("minimum_category_share", 0.0)
+            ),
         )
 
     manifest_dir = output / "manifests"

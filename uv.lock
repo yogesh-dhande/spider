@@ -2462,7 +2462,9 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "datasets" },
+    { name = "huggingface-hub" },
     { name = "pillow" },
+    { name = "pyarrow" },
     { name = "pyyaml" },
     { name = "tldextract" },
     { name = "tqdm" },
@@ -2490,9 +2492,11 @@ requires-dist = [
     { name = "accelerate", marker = "extra == 'train'", specifier = ">=1.2" },
     { name = "bitsandbytes", marker = "extra == 'train'", specifier = ">=0.45" },
     { name = "datasets", specifier = ">=3.2" },
+    { name = "huggingface-hub", specifier = ">=0.27" },
     { name = "peft", marker = "extra == 'train'", specifier = ">=0.14" },
     { name = "pillow", specifier = ">=10.4" },
     { name = "playwright", marker = "extra == 'browser'", specifier = "==1.61.0" },
+    { name = "pyarrow", specifier = ">=18.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },

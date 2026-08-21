@@ -32,8 +32,26 @@ Unknown domains are rejected. Complete trajectories/screenshots remain within on
 allows at most four action steps per trajectory, three QA examples per screenshot, and one grounding
 example per screenshot during ladder selection. The QA cap is required because the pinned source has
 roughly 10,000 screenshots but many questions per screenshot. The exact realized manifests,
-configuration, source revisions, and
-SHA-256 checksums are immutable publication artifacts.
+configuration, source revisions, and SHA-256 checksums are immutable publication artifacts.
+
+## Website coverage and application focus
+
+The metadata inventory emits JSON and CSV catalogs of every eligible registrable website, including
+task/source counts, screenshot or trajectory counts, app surfaces, and action types. App surfaces
+such as Gmail, Google Calendar, Docs, Sheets, and Slides remain distinct in the catalog, while
+leakage isolation deliberately groups them under `google.com`.
+
+Every nested training tier must cover all available website families: work applications,
+transactional applications, service applications, content/reference sites, and the general web.
+Each family receives at least a 5% floor. Remaining capacity is weighted toward work applications
+(4×), then transactional and service applications (2×), general web (1×), and passive
+content/reference sites (0.5×). The 2% registrable-domain cap still applies, preventing the app bias
+from becoming dependence on one vendor. URL-based categories record their rule and confidence, and
+the highest-volume surfaces are manually reviewable before the ladder is frozen.
+
+Unseen-domain evaluation retains all website families and the same application-oriented weighting,
+with category-level metrics reported separately. Distribution-shift evaluation follows the natural
+composition of its held-out generator so it measures a real shift rather than a curated one.
 
 ## Fixed evaluation stack
 
@@ -73,6 +91,11 @@ to another job.
 ## Next data-build phase
 
 Inventory metadata across every eligible pinned MolmoWeb shard/config without downloading images.
-Record generator/task-template fields needed for the distribution-shift split, audit capacity under
-the 2% website cap, freeze the candidate/evaluation manifests, and only then download the selected
-shared screenshots.
+The inventory is resumable at Parquet row-group boundaries and uses sparse JSON progress events. It
+records generator/task-template fields needed for the distribution-shift split, audits capacity
+under the website/category constraints, freezes the candidate/evaluation manifests, and only then
+downloads selected shared screenshots.
+
+The evaluation controls are (1) untouched `Qwen/Qwen3.5-2B`, (2) the frozen EXP002 perception
+adapter, and (3) each EXP005 reference SFT run. All controls use identical manifests, image
+preprocessing, prompts, decoding, and scoring.

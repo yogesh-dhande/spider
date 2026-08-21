@@ -23,6 +23,21 @@ dataset_ladder:
       required_disjoint: [id, sampling_unit, known_domain]
   unknown_domain_policy: reject
   max_combined_domain_share: 0.02
+  website_sampling:
+    # Cover every interaction family in every tier, then bias remaining capacity toward apps.
+    required_categories:
+      - work_application
+      - transactional_application
+      - service_application
+      - content_reference
+      - general_web
+    minimum_category_share: 0.05
+    category_weights:
+      work_application: 4.0
+      transactional_application: 2.0
+      service_application: 2.0
+      general_web: 1.0
+      content_reference: 0.5
   tasks:
     action:
       sizes: {small: 6000, medium: 18000, large: 60000}

@@ -74,6 +74,9 @@ def _as_json_object(value: Any, field: str) -> dict[str, Any]:
 
 
 def select_goal(instruction: dict[str, Any], trajectory: dict[str, Any], key: str) -> str:
+    explicit_goal = str(instruction.get("goal") or "").strip()
+    if explicit_goal:
+        return explicit_goal
     candidates = [
         (str(instruction.get("high_level") or "").strip(), 40),
         (str(instruction.get("mid_level") or "").strip(), 40),

@@ -58,6 +58,46 @@ def test_domain_is_recovered_from_url() -> None:
     assert record["domain"] == "example.co.uk"
 
 
+def test_nested_sampler_covers_all_categories_and_biases_toward_apps() -> None:
+    records = []
+    for category in ("work_application", "content_reference", "general_web"):
+        for domain_index in range(10):
+            domain = f"{category}-{domain_index}.test"
+            for example_index in range(10):
+                records.append(
+                    {
+                        "id": f"{domain}-{example_index}",
+                        "task": "qa",
+                        "domain": domain,
+                        "image": f"{domain}-{example_index}.jpg",
+                        "website_category": category,
+                        "application_focused": category == "work_application",
+                    }
+                )
+    samples = build_nested_task_samples(
+        records,
+        {"small": 30, "large": 90},
+        seed=9,
+        temperature=0.5,
+        max_domain_share=0.2,
+        max_per_unit=1,
+        required_categories=["work_application", "content_reference", "general_web"],
+        minimum_category_share=0.1,
+        category_weights={
+            "work_application": 4.0,
+            "content_reference": 0.5,
+            "general_web": 1.0,
+        },
+    )
+    for sample in samples.values():
+        counts = {
+            category: sum(row["website_category"] == category for row in sample)
+            for category in ("work_application", "content_reference", "general_web")
+        }
+        assert all(count >= len(sample) * 0.1 - 1 for count in counts.values())
+        assert counts["work_application"] > counts["content_reference"]
+
+
 def test_leakage_audit_finds_domain_and_sampling_unit_overlap() -> None:
     training = [{"id": "a", "task": "qa", "domain": "example.com", "image": "same.jpg"}]
     evaluation = [{"id": "b", "task": "qa", "domain": "example.com", "image": "same.jpg"}]

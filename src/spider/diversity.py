@@ -34,6 +34,9 @@ def audit_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         if record.get("task") == "action"
     )
     total = len(records)
+    website_categories = Counter(
+        str(record.get("website_category") or "unclassified") for record in records
+    )
     shares = [count / total for count in domains.values()] if total else []
     effective_domains = 1 / sum(share**2 for share in shares) if shares else 0.0
     top_counts = sorted(domains.values(), reverse=True)
@@ -59,6 +62,14 @@ def audit_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         "question_type_counts": _distribution(
             [record for record in records if record.get("task") == "qa"],
             "question_type",
+        ),
+        "website_category_counts": dict(
+            sorted(website_categories.items(), key=lambda item: (-item[1], item[0]))
+        ),
+        "application_focused_share": (
+            sum(bool(record.get("application_focused")) for record in records) / total
+            if total
+            else 0.0
         ),
     }
 
