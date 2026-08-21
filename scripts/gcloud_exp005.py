@@ -196,8 +196,9 @@ def create_materialization_shard(
         metadata={"spider-shard-index": shard_index, "spider-num-shards": num_shards},
         max_run=max_run,
         machine_type="n2-standard-8",
-        boot_disk_size="80GB",
+        boot_disk_size="150GB",
         gpu=False,
+        boot_disk_type="pd-standard",
     )
 
 
@@ -279,9 +280,10 @@ def create_materialization_merge(
         guest_script="scripts/gcloud_exp005_materialize_merge_guest.sh",
         metadata={"spider-num-shards": num_shards},
         max_run=max_run,
-        machine_type="c3-standard-8",
-        boot_disk_size="150GB",
+        machine_type="n2-standard-8",
+        boot_disk_size="200GB",
         gpu=False,
+        boot_disk_type="pd-standard",
     )
 
 
