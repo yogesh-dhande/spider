@@ -26,6 +26,7 @@ ACTIVE_STATES = {
     "STOPPING",
     "SUSPENDING",
 }
+MONITOR_FAILURE_LIMIT = 20
 SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 SAFE_SOURCE_ID = re.compile(r"^[a-z0-9][a-z0-9_]{0,62}$")
 TRAINING_MACHINE_TYPES = {
@@ -637,8 +638,10 @@ def monitor(run_id: str, poll_seconds: int, timeout_seconds: int) -> None:
         except subprocess.CalledProcessError as error:
             failures += 1
             emit("gcloud_monitor_query_failed", run_id=run_id, consecutive_failures=failures)
-            if failures >= 5:
-                raise RuntimeError("GCloud monitor lost state after five queries") from error
+            if failures >= MONITOR_FAILURE_LIMIT:
+                raise RuntimeError(
+                    f"GCloud monitor lost state after {MONITOR_FAILURE_LIMIT} queries"
+                ) from error
             time.sleep(poll_seconds)
             continue
         if states != last:

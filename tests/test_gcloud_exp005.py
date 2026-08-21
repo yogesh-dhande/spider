@@ -13,6 +13,7 @@ def test_managed_filter_is_narrowly_scoped() -> None:
     assert MODULE.MANAGED_FILTER == (
         "labels.spider-managed=true AND labels.spider-experiment=exp005"
     )
+    assert MODULE.MONITOR_FAILURE_LIMIT == 20
 
 
 def test_materialization_shard_rejects_invalid_partition() -> None:
