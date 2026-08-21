@@ -197,6 +197,31 @@ def create_materialization_shard(
     )
 
 
+def create_qa_inventory_shard(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    shard_index: int,
+    num_shards: int,
+    max_run: str,
+) -> str:
+    if num_shards <= 0 or not 0 <= shard_index < num_shards:
+        raise ValueError("Require num_shards > 0 and 0 <= shard_index < num_shards")
+    return _create(
+        name=f"spider-exp005-qa-inventory-{shard_index:02d}-{run_id}",
+        run_id=run_id,
+        role="qa-inventory",
+        zone=zone,
+        repo_revision=repo_revision,
+        guest_script="scripts/gcloud_exp005_qa_inventory_guest.sh",
+        metadata={"spider-shard-index": shard_index, "spider-num-shards": num_shards},
+        max_run=max_run,
+        machine_type="c3-standard-8",
+        boot_disk_size="150GB",
+        gpu=False,
+    )
+
+
 def create_materialization_merge(
     run_id: str, zone: str, repo_revision: str, num_shards: int, max_run: str
 ) -> str:
@@ -397,6 +422,13 @@ def main() -> None:
     data.add_argument("--shard-index", type=int, required=True)
     data.add_argument("--num-shards", type=int, required=True)
     data.add_argument("--max-run", default="6h")
+    qa_inventory = subparsers.add_parser("qa-inventory-shard")
+    qa_inventory.add_argument("--run-id", required=True)
+    qa_inventory.add_argument("--zone", required=True)
+    qa_inventory.add_argument("--repo-revision", required=True)
+    qa_inventory.add_argument("--shard-index", type=int, required=True)
+    qa_inventory.add_argument("--num-shards", type=int, required=True)
+    qa_inventory.add_argument("--max-run", default="5h")
     merge = subparsers.add_parser("materialize-merge")
     merge.add_argument("--run-id", required=True)
     merge.add_argument("--zone", required=True)
@@ -450,6 +482,17 @@ def main() -> None:
     elif args.command == "materialize-shard":
         payload = {
             "name": create_materialization_shard(
+                args.run_id,
+                args.zone,
+                args.repo_revision,
+                args.shard_index,
+                args.num_shards,
+                args.max_run,
+            )
+        }
+    elif args.command == "qa-inventory-shard":
+        payload = {
+            "name": create_qa_inventory_shard(
                 args.run_id,
                 args.zone,
                 args.repo_revision,

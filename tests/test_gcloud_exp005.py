@@ -24,6 +24,27 @@ def test_materialization_shard_rejects_invalid_partition() -> None:
         raise AssertionError("invalid materialization shard was accepted")
 
 
+def test_qa_inventory_shard_uses_cpu_and_rejects_invalid_partition(monkeypatch) -> None:
+    try:
+        MODULE.create_qa_inventory_shard("run", "zone", "revision", 5, 5, "5h")
+    except ValueError as error:
+        assert "shard_index" in str(error)
+    else:
+        raise AssertionError("invalid QA inventory shard was accepted")
+
+    received = {}
+
+    def create(**kwargs):
+        received.update(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    MODULE.create_qa_inventory_shard("run-a", "zone", "revision", 2, 5, "5h")
+    assert received["gpu"] is False
+    assert received["machine_type"] == "c3-standard-8"
+    assert received["metadata"] == {"spider-shard-index": 2, "spider-num-shards": 5}
+
+
 def test_materialization_merge_rejects_non_positive_shards() -> None:
     try:
         MODULE.create_materialization_merge("run", "zone", "revision", 0, "4h")

@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import shutil
 import time
 from collections import Counter
@@ -818,7 +819,7 @@ def build_inventory(
     spec = config.get("inventory")
     if not isinstance(spec, dict):
         raise TypeError("Config requires an inventory mapping")
-    output = Path(str(spec["output_dir"]))
+    output = Path(os.environ.get("SPIDER_INVENTORY_DIR", str(spec["output_dir"])))
     if not output.is_absolute():
         output = (config_path.parent / output).resolve()
     final = output / "inventory.json"
