@@ -1,7 +1,9 @@
 dataset_ladder:
   id: exp005_browser_ablation_v1
   seed: 53
-  output_dir: ../../data/exp005_browser_ablation_v1
+  # This first immutable ladder contains metadata locators. The materializer rewrites it into the
+  # final shared image corpus at data/exp005_browser_ablation_v1.
+  output_dir: ../../data/exp005_browser_selection_v1
   # These metadata-only candidate manifests are created by the full-shard inventory phase.
   # Images are downloaded only after the manifests and leakage audit are frozen.
   train_manifests:
@@ -54,3 +56,9 @@ dataset_ladder:
       temperature: 0.5
       max_domain_share: 0.02
       max_per_unit: 1
+materialization:
+  selection_dir: ../../data/exp005_browser_selection_v1
+  output_dir: ../../data/exp005_browser_ablation_v1
+  max_width: 1280
+  max_height: 720
+  jpeg_quality: 90
