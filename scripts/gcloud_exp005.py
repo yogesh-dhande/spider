@@ -256,7 +256,7 @@ def create_source_inventory_shard(
             "spider-num-shards": num_shards,
         },
         max_run=max_run,
-        machine_type="c3-standard-8",
+        machine_type="n2-standard-8",
         boot_disk_size="50GB",
         gpu=False,
         boot_disk_type="pd-standard",
