@@ -45,6 +45,9 @@ tar --use-compress-program=unzstd -xf /tmp/selection.tar.zst -C "${SELECTION_ROO
 for ((shard=0; shard<NUM_SHARDS; shard++)); do
   label="shard_$(printf '%02d' "${shard}")_of_$(printf '%02d' "${NUM_SHARDS}")"
   gcloud storage cp \
+    "${BUCKET}/exp005/materialization/${RUN_ID}/${label}/complete.json" \
+    "/tmp/${label}.complete.json"
+  gcloud storage cp \
     "${BUCKET}/exp005/materialization/${RUN_ID}/${label}/summary.json" \
     "/tmp/${label}.summary.json"
   gcloud storage cp \
@@ -53,12 +56,48 @@ for ((shard=0; shard<NUM_SHARDS; shard++)); do
   tar --use-compress-program=unzstd -xf "/tmp/${label}.tar.zst" -C "${OUTPUT_ROOT}"
 done
 
-python - /tmp/shard_*.summary.json <<'PY'
+python - "${RUN_ID}" "${NUM_SHARDS}" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-summaries = [json.loads(Path(value).read_text()) for value in sys.argv[1:]]
+run_id = sys.argv[1]
+num_shards = int(sys.argv[2])
+summaries = []
+for shard_index in range(num_shards):
+    label = f"shard_{shard_index:02d}_of_{num_shards:02d}"
+    terminal = json.loads(Path(f"/tmp/{label}.complete.json").read_text())
+    expected_terminal = {
+        "run_id": run_id,
+        "shard_index": shard_index,
+        "num_shards": num_shards,
+        "status": "complete",
+        "exit_code": 0,
+    }
+    mismatches = {
+        key: {"expected": value, "actual": terminal.get(key)}
+        for key, value in expected_terminal.items()
+        if terminal.get(key) != value
+    }
+    assert not mismatches, f"{label} terminal mismatch: {mismatches}"
+
+    summary = json.loads(Path(f"/tmp/{label}.summary.json").read_text())
+    expected_summary = {
+        "status": "complete",
+        "shard_index": shard_index,
+        "num_shards": num_shards,
+    }
+    mismatches = {
+        key: {"expected": value, "actual": summary.get(key)}
+        for key, value in expected_summary.items()
+        if summary.get(key) != value
+    }
+    assert not mismatches, f"{label} summary mismatch: {mismatches}"
+    assert summary.get("missing_count") == len(summary.get("missing_locators") or {}), (
+        f"{label} missing_count disagrees with missing_locators"
+    )
+    summaries.append(summary)
+
 missing = {
     locator: error
     for summary in summaries
