@@ -184,6 +184,8 @@ class WebsiteCatalogAccumulator:
                 "surfaces": Counter(),
                 "actions": Counter(),
                 "categories": Counter(),
+                "category_confidences": Counter(),
+                "category_rules": Counter(),
             }
         )
 
@@ -196,6 +198,10 @@ class WebsiteCatalogAccumulator:
         state["sources"][str(record.get("source") or "unknown")] += 1
         state["surfaces"][str(record.get("website_surface") or "unknown")] += 1
         state["categories"][str(record.get("website_category") or "general_web")] += 1
+        state["category_confidences"][
+            str(record.get("website_category_confidence") or "unknown")
+        ] += 1
+        state["category_rules"][str(record.get("website_category_rule") or "unknown")] += 1
         if record.get("task") == "action":
             name = str((record.get("target_action") or {}).get("name") or "unknown")
             state["actions"][name] += 1
@@ -205,11 +211,15 @@ class WebsiteCatalogAccumulator:
         for domain, state in self._rows.items():
             categories = state["categories"]
             category = min(categories, key=lambda value: (-categories[value], value))
+            confidences = state["category_confidences"]
+            confidence = min(confidences, key=lambda value: (-confidences[value], value))
             rows.append(
                 {
                     "domain": domain,
                     "website_category": category,
                     "application_focused": category in APPLICATION_CATEGORIES,
+                    "category_confidence": confidence,
+                    "manual_review_required": confidence == "unknown" or len(categories) > 1,
                     "examples": state["examples"],
                     "sampling_units": len(state["units"]),
                     "tasks": dict(sorted(state["tasks"].items())),
@@ -224,6 +234,12 @@ class WebsiteCatalogAccumulator:
                     ),
                     "category_votes": dict(
                         sorted(categories.items(), key=lambda pair: (-pair[1], pair[0]))
+                    ),
+                    "category_rules": dict(
+                        sorted(
+                            state["category_rules"].items(),
+                            key=lambda pair: (-pair[1], pair[0]),
+                        )[:20]
                     ),
                 }
             )
@@ -257,12 +273,15 @@ def write_website_catalog(
                 "domain",
                 "website_category",
                 "application_focused",
+                "category_confidence",
+                "manual_review_required",
                 "examples",
                 "sampling_units",
                 "tasks",
                 "sources",
                 "surfaces",
                 "actions",
+                "category_rules",
             ),
         )
         writer.writeheader()

@@ -61,6 +61,9 @@ def test_catalog_summarizes_tasks_surfaces_and_actions(tmp_path: Path) -> None:
     assert rows[0]["domain"] == "google.com"
     assert rows[0]["tasks"] == {"action": 1, "qa": 1}
     assert set(rows[0]["surfaces"]) == {"calendar.google.com", "docs.google.com"}
+    assert rows[0]["category_confidence"] == "heuristic"
+    assert rows[0]["manual_review_required"] is False
+    assert rows[0]["category_rules"] == {"url-token:calendar": 1, "url-token:docs": 1}
     summary = write_website_catalog(tmp_path, records)
     assert summary["websites"] == 1
     assert (tmp_path / "website_catalog.csv").is_file()
