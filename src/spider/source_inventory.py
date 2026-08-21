@@ -705,7 +705,11 @@ def freeze_manifests(
                 path = pools / f"{destination}_{task}.jsonl.tmp"
                 temporary_paths[(destination, task)] = path
                 handles[(destination, task)] = path.open("w", encoding="utf-8")
-        for record in _iter_cached_records(output / "cache", source_files):
+        website_rules = list(spec.get("website_rules") or [])
+        for cached_record in _iter_cached_records(output / "cache", source_files):
+            # Reapply the current auditable rule set during finalization. This permits
+            # manual category review after a metadata scan without fetching source data again.
+            record = annotate_website(cached_record, website_rules)
             catalog.add(record)
             destination = record_destination(
                 record,
