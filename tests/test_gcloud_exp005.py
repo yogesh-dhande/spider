@@ -33,6 +33,46 @@ def test_materialization_merge_rejects_non_positive_shards() -> None:
         raise AssertionError("invalid materialization merge was accepted")
 
 
+def test_training_stage_rejects_invalid_bounds() -> None:
+    try:
+        MODULE.create_training_stage("run", "zone", "revision", "small-seed53", 125, 125, "4h")
+    except ValueError as error:
+        assert "increasing" in str(error)
+    else:
+        raise AssertionError("invalid training stage bounds were accepted")
+
+
+def test_training_stage_rejects_unsafe_job_id() -> None:
+    try:
+        MODULE.create_training_stage("run", "zone", "revision", "Unsafe Job", 0, 125, "4h")
+    except ValueError as error:
+        assert "job_id" in str(error)
+    else:
+        raise AssertionError("unsafe training job ID was accepted")
+
+
+def test_training_stage_uses_two_l4_shape(monkeypatch) -> None:
+    received = {}
+
+    def create(**kwargs):
+        received.update(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    name = MODULE.create_training_stage(
+        "run-a", "us-west1-b", "abc123", "small-seed53", 0, 125, "4h"
+    )
+
+    assert name == "spider-exp005-train-00125-run-a"
+    assert received["machine_type"] == "g2-standard-24"
+    assert received["gpu"] is True
+    assert received["metadata"] == {
+        "spider-job-id": "small-seed53",
+        "spider-stage-start": 0,
+        "spider-stage-stop": 125,
+    }
+
+
 def test_evaluation_rejects_unknown_control() -> None:
     try:
         MODULE.create_evaluation_shard(

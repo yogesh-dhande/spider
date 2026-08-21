@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -16,6 +17,7 @@ EXPERIMENT_DIR = Path("experiments/exp005_browser_ablation_bed")
 REGISTRY = EXPERIMENT_DIR / "artifacts/gcloud/vm_registry.jsonl"
 MANAGED_FILTER = "labels.spider-managed=true AND labels.spider-experiment=exp005"
 ACTIVE_STATES = {"PROVISIONING", "STAGING", "RUNNING", "REPAIRING", "SUSPENDING"}
+SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 
 
 def utc_now() -> str:
@@ -215,6 +217,53 @@ def create_materialization_merge(
     )
 
 
+def upload_training_config(job_id: str, config_path: str | Path) -> str:
+    if not SAFE_ID.fullmatch(job_id):
+        raise ValueError("job_id must be a GCloud-safe lowercase identifier")
+    config = Path(config_path).resolve()
+    if not config.is_file():
+        raise FileNotFoundError(config)
+    destination = f"{BUCKET}/exp005/training/jobs/{job_id}/config.yaml"
+    run(["gcloud", "storage", "cp", str(config), destination], capture=False)
+    append_registry(
+        "training_config_uploaded", job_id=job_id, config=str(config), destination=destination
+    )
+    emit("gcloud_training_config_uploaded", job_id=job_id, destination=destination)
+    return destination
+
+
+def create_training_stage(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    job_id: str,
+    start_step: int,
+    stop_step: int,
+    max_run: str,
+) -> str:
+    if not SAFE_ID.fullmatch(job_id):
+        raise ValueError("job_id must be a GCloud-safe lowercase identifier")
+    if start_step < 0 or stop_step <= start_step:
+        raise ValueError("training stage bounds must be non-negative and increasing")
+    return _create(
+        name=f"spider-exp005-train-{stop_step:05d}-{run_id}",
+        run_id=run_id,
+        role="training",
+        zone=zone,
+        repo_revision=repo_revision,
+        guest_script="scripts/gcloud_exp005_train_guest.sh",
+        metadata={
+            "spider-job-id": job_id,
+            "spider-stage-start": start_step,
+            "spider-stage-stop": stop_step,
+        },
+        max_run=max_run,
+        machine_type="g2-standard-24",
+        boot_disk_size="200GB",
+        gpu=True,
+    )
+
+
 def create_evaluation_shard(
     run_id: str,
     zone: str,
@@ -339,6 +388,17 @@ def main() -> None:
     merge.add_argument("--repo-revision", required=True)
     merge.add_argument("--num-shards", type=int, required=True)
     merge.add_argument("--max-run", default="4h")
+    upload_config = subparsers.add_parser("upload-training-config")
+    upload_config.add_argument("--job-id", required=True)
+    upload_config.add_argument("--config", type=Path, required=True)
+    training = subparsers.add_parser("training-stage")
+    training.add_argument("--run-id", required=True)
+    training.add_argument("--zone", required=True)
+    training.add_argument("--repo-revision", required=True)
+    training.add_argument("--job-id", required=True)
+    training.add_argument("--start-step", type=int, required=True)
+    training.add_argument("--stop-step", type=int, required=True)
+    training.add_argument("--max-run", default="4h")
     evaluation = subparsers.add_parser("evaluation-shard")
     evaluation.add_argument("--run-id", required=True)
     evaluation.add_argument("--zone", required=True)
@@ -383,6 +443,20 @@ def main() -> None:
         payload = {
             "name": create_materialization_merge(
                 args.run_id, args.zone, args.repo_revision, args.num_shards, args.max_run
+            )
+        }
+    elif args.command == "upload-training-config":
+        payload = {"destination": upload_training_config(args.job_id, args.config)}
+    elif args.command == "training-stage":
+        payload = {
+            "name": create_training_stage(
+                args.run_id,
+                args.zone,
+                args.repo_revision,
+                args.job_id,
+                args.start_step,
+                args.stop_step,
+                args.max_run,
             )
         }
     elif args.command == "evaluation-shard":
