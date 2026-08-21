@@ -29,7 +29,7 @@ finish() {
   exit "${status}"
 }
 trap finish EXIT
-systemd-run --unit="spider-exp005-guard-${RUN_ID}-${SHARD_INDEX}" \
+systemd-run --unit="spider-exp005-guard-${RUN_ID}-${SHARD_INDEX}-$(date -u +%s)" \
   --on-active=4h50m /usr/sbin/shutdown -h now
 
 apt-get update -qq

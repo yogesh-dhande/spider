@@ -28,7 +28,7 @@ finish() {
   exit "${status}"
 }
 trap finish EXIT
-systemd-run --unit="spider-exp005-guard-${RUN_ID}-eval-merge" \
+systemd-run --unit="spider-exp005-guard-${RUN_ID}-eval-merge-$(date -u +%s)" \
   --on-active=1h50m /usr/sbin/shutdown -h now
 
 apt-get update -qq

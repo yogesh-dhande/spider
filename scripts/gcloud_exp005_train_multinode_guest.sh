@@ -37,7 +37,7 @@ finish() {
   exit "${status}"
 }
 trap finish EXIT
-systemd-run --unit="spider-exp005-guard-${RUN_ID}-${NODE_RANK}" \
+systemd-run --unit="spider-exp005-guard-${RUN_ID}-${NODE_RANK}-$(date -u +%s)" \
   --on-active=5h50m /usr/sbin/shutdown -h now
 
 if (( NUM_NODES < 2 || 16 % NUM_NODES != 0 )); then
