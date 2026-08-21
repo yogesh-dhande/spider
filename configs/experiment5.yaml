@@ -1,0 +1,68 @@
+experiment:
+  id: exp005
+  name: qwen35_2b_browser_ablation_reference
+  interpretation: infrastructure_and_scaling_baseline
+  record_dir: experiments/exp005_browser_ablation_bed
+  seed: 53
+  model_name: Qwen/Qwen3.5-2B
+  model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  model_loader: auto_multimodal
+  compute_dtype: float16
+  initial_adapter_dataset: yogeshkd/spider-exp002-sft-stage-07
+  initial_adapter_version: 1
+  initial_adapter_subdir: adapter/checkpoint-1875
+  chat_template_kwargs:
+    enable_thinking: false
+  data_dir: data/exp005_browser_ablation_v1
+  output_dir: outputs/experiment5/reference
+
+data:
+  train_manifest: manifests/train_medium.jsonl
+  validation_manifest: manifests/eval_domain_balanced.jsonl
+
+training:
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0001
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  optimizer: adamw_8bit
+  lora_rank: 32
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_trainable_dtype: float32
+  lora_target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+    - in_proj_qkv
+    - in_proj_z
+    - in_proj_b
+    - in_proj_a
+    - out_proj
+  gradient_checkpointing: true
+  logging_steps: 1
+  eval_steps: 250
+  eval_examples: 512
+  save_steps: 25
+  save_total_limit: 2
+  dataloader_num_workers: 2
+  report_to: none
+  loss_type: chunked_nll
+  stage_steps: 125
+
+evaluation:
+  max_new_tokens_qa: 96
+  max_new_tokens_grounding: 96
+  max_new_tokens_action: 256
+  qa_case_sensitive: false
+  distance_thresholds_px: [25, 50, 100]
+  failure_examples_per_bucket: 25
+  primary_closed_loop_metric: verified_success_rate
+  report_macro_over_domain: true

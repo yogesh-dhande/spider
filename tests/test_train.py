@@ -4,7 +4,13 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from spider.train import build_training_dataset, configured_initial_adapter, training_step_plan
+from spider.train import (
+    build_training_dataset,
+    configured_initial_adapter,
+    configured_manifest_paths,
+    ensure_training_identity,
+    training_step_plan,
+)
 
 
 def test_training_dataset_preserves_qwen35_template_kwargs(tmp_path: Path) -> None:
@@ -68,3 +74,49 @@ def test_initial_adapter_mount_override(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert configured_initial_adapter({"initial_adapter_dataset": "owner/checkpoint"}) == str(
         tmp_path.resolve()
     )
+
+
+def test_configured_manifest_paths_support_size_specific_manifests(tmp_path: Path) -> None:
+    config = {
+        "data": {
+            "train_manifest": "manifests/train_small.jsonl",
+            "validation_manifest": "manifests/domain_validation.jsonl",
+        }
+    }
+    assert configured_manifest_paths(config, tmp_path) == (
+        (tmp_path / "manifests/train_small.jsonl").resolve(),
+        (tmp_path / "manifests/domain_validation.jsonl").resolve(),
+    )
+
+
+def test_training_identity_rejects_output_reuse_with_different_data(tmp_path: Path) -> None:
+    config = tmp_path / "config.yaml"
+    train = tmp_path / "train.jsonl"
+    validation = tmp_path / "validation.jsonl"
+    config.write_text("experiment: {seed: 3}\n", encoding="utf-8")
+    train.write_text('{"id":"a"}\n', encoding="utf-8")
+    validation.write_text('{"id":"v"}\n', encoding="utf-8")
+    output = tmp_path / "output"
+    first = ensure_training_identity(
+        output,
+        config_path=config,
+        train_manifest=train,
+        validation_manifest=validation,
+        seed=3,
+    )
+    assert ensure_training_identity(
+        output,
+        config_path=config,
+        train_manifest=train,
+        validation_manifest=validation,
+        seed=3,
+    )["identity_sha256"] == first["identity_sha256"]
+    train.write_text('{"id":"different"}\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="another training job"):
+        ensure_training_identity(
+            output,
+            config_path=config,
+            train_manifest=train,
+            validation_manifest=validation,
+            seed=3,
+        )

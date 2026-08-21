@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -44,6 +45,68 @@ def build_training_dataset(
         rows.append(row)
     dataset = Dataset.from_list(rows)
     return dataset.cast_column("images", Sequence(DatasetImage(decode=True)))
+
+
+def configured_manifest_paths(config: dict[str, Any], data_dir: Path) -> tuple[Path, Path]:
+    """Resolve size-specific manifests while retaining the legacy default layout."""
+    data = config.get("data") or {}
+    if not isinstance(data, dict):
+        raise TypeError("data config must be a mapping")
+
+    def resolve(value: str) -> Path:
+        path = Path(value)
+        return (path if path.is_absolute() else data_dir / path).resolve()
+
+    train_path = resolve(str(data.get("train_manifest", "manifests/combined_train.jsonl")))
+    validation_path = resolve(
+        str(data.get("validation_manifest", "manifests/combined_validation.jsonl"))
+    )
+    return train_path, validation_path
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def ensure_training_identity(
+    output_root: Path,
+    *,
+    config_path: Path,
+    train_manifest: Path,
+    validation_manifest: Path,
+    seed: int,
+) -> dict[str, Any]:
+    """Prevent an output directory from silently mixing ablation jobs."""
+    stable_inputs = {
+        "config_sha256": _sha256_file(config_path),
+        "train_manifest_sha256": _sha256_file(train_manifest),
+        "validation_manifest_sha256": _sha256_file(validation_manifest),
+        "seed": seed,
+    }
+    identity = {
+        "schema_version": 1,
+        **stable_inputs,
+        "train_manifest": str(train_manifest),
+        "validation_manifest": str(validation_manifest),
+    }
+    identity["identity_sha256"] = hashlib.sha256(
+        json.dumps(stable_inputs, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    path = output_root / "training_identity.json"
+    if path.exists():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        if existing.get("identity_sha256") != identity["identity_sha256"]:
+            raise ValueError(f"Output directory already belongs to another training job: {path}")
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(identity, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(path)
+    return identity
 
 
 def latest_checkpoint(output_dir: Path) -> str | None:
@@ -133,6 +196,7 @@ def train(
     if not torch.cuda.is_available():
         raise RuntimeError("QLoRA training requires a CUDA GPU")
 
+    config_path = Path(config_path).resolve()
     config = load_config(config_path)
     experiment = config["experiment"]
     training = config["training"]
@@ -159,14 +223,21 @@ def train(
     output_dir = output_root / "adapter"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    manifest_dir = data_dir / "manifests"
+    train_manifest, validation_manifest = configured_manifest_paths(config, data_dir)
+    identity = ensure_training_identity(
+        output_root,
+        config_path=config_path,
+        train_manifest=train_manifest,
+        validation_manifest=validation_manifest,
+        seed=int(experiment["seed"]),
+    )
     train_dataset = build_training_dataset(
-        manifest_dir / "combined_train.jsonl",
+        train_manifest,
         data_dir,
         experiment.get("chat_template_kwargs"),
     )
     eval_dataset = build_training_dataset(
-        manifest_dir / "combined_validation.jsonl",
+        validation_manifest,
         data_dir,
         experiment.get("chat_template_kwargs"),
     )
@@ -361,6 +432,7 @@ def train(
                     ),
                     "optimizer": optimizer,
                     "initial_adapter": initial_adapter,
+                    "training_identity": identity,
                     "trainable_parameter_dtypes": trainable_dtypes,
                     "package_versions": runtime_versions(),
                 },
@@ -404,6 +476,7 @@ def train(
             ),
             "optimizer": optimizer,
             "initial_adapter": initial_adapter,
+            "training_identity_sha256": identity["identity_sha256"],
             "checkpoint": checkpoint_relative,
             "resumed_from": checkpoint,
             "stage_runtime_seconds": stage_runtime,

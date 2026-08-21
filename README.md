@@ -162,3 +162,8 @@ spider-study --config configs/studies/sandbox_coordinate_bias.yaml
 
 See [`docs/RESEARCH_PIPELINE.md`](docs/RESEARCH_PIPELINE.md) for the idea-to-ablation contract,
 portable artifact layout, budget tiers, and planned RL loop.
+
+EXP005 adds a trustworthy nested 10K/30K/100K browser-training ladder and an immutable
+`recipe × size × seed` matrix planner. See
+[`experiments/exp005_browser_ablation_bed/README.md`](experiments/exp005_browser_ablation_bed/README.md)
+for the frozen data, leakage, parallel-execution, and scaling-study contracts.

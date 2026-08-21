@@ -1,0 +1,36 @@
+matrix:
+  id: exp005_browser_training
+  base_config: ../experiment5.yaml
+  data_dir: ../../data/exp005_browser_ablation_v1
+  dataset_ladder_manifest: dataset_ladder.json
+  validation_manifest: manifests/eval_domain_balanced.jsonl
+  output_dir: ../../outputs/ablation-matrices
+  datasets:
+    small:
+      train_manifest: manifests/train_small.jsonl
+    medium:
+      train_manifest: manifests/train_medium.jsonl
+    large:
+      train_manifest: manifests/train_large.jsonl
+  recipes:
+    - id: exp004_reference
+      overlay: {}
+  budgets:
+    smoke:
+      recipes: [exp004_reference]
+      sizes: [small]
+      seeds: [53]
+      max_steps: 20
+    pilot:
+      recipes: [exp004_reference]
+      sizes: [medium]
+      seeds: [53]
+      max_steps: 250
+    confirm:
+      recipes: [exp004_reference]
+      sizes: [medium]
+      seeds: [53, 59, 61]
+    scaling:
+      recipes: [exp004_reference]
+      sizes: [small, medium, large]
+      seeds: [53, 59, 61]

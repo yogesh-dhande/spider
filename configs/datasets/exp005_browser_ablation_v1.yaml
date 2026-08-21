@@ -1,0 +1,35 @@
+dataset_ladder:
+  id: exp005_browser_ablation_v1
+  seed: 53
+  output_dir: ../../data/exp005_browser_ablation_v1
+  # These metadata-only candidate manifests are created by the full-shard inventory phase.
+  # Images are downloaded only after the manifests and leakage audit are frozen.
+  train_manifests:
+    - ../../data/exp005_browser_inventory/manifests/action_train_candidates.jsonl
+    - ../../data/exp005_browser_inventory/manifests/qa_train_candidates.jsonl
+    - ../../data/exp005_browser_inventory/manifests/grounding_train_candidates.jsonl
+  evaluation_suites:
+    iid:
+      - ../../data/exp005_browser_inventory/manifests/eval_iid.jsonl
+    domain_balanced:
+      - ../../data/exp005_browser_inventory/manifests/eval_domain_balanced.jsonl
+    distribution_shift:
+      - ../../data/exp005_browser_inventory/manifests/eval_distribution_shift.jsonl
+  unknown_domain_policy: reject
+  max_combined_domain_share: 0.02
+  tasks:
+    action:
+      sizes: {small: 6000, medium: 18000, large: 60000}
+      temperature: 0.5
+      max_domain_share: 0.02
+      max_per_unit: 4
+    qa:
+      sizes: {small: 2000, medium: 6000, large: 20000}
+      temperature: 0.5
+      max_domain_share: 0.02
+      max_per_unit: 1
+    grounding:
+      sizes: {small: 2000, medium: 6000, large: 20000}
+      temperature: 0.5
+      max_domain_share: 0.02
+      max_per_unit: 1

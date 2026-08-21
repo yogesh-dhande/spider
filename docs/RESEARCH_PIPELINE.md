@@ -51,6 +51,47 @@ The intended budget ladder is:
 
 Only ideas that pass a cheaper tier advance. Final benchmarks never select configurations.
 
+## Training-size and parallel matrix contract
+
+Training-data scaling uses nested manifests, not independent samples. The default EXP005 ladder is
+10K, 30K, and 100K examples with `small ⊂ medium ⊂ large`; all tiers reference one shared image
+store and use identical evaluation manifests. This keeps a size ablation from also changing the
+websites or examples available at smaller scales.
+
+`spider-ablation-matrix` resolves a base config plus recipe overlays into a deterministic
+`recipe × dataset_size × seed` plan. Each job has a content-derived identity and isolated config,
+logs, checkpoints, and output directory. A plan is immutable once materialized. Atomic job claims
+support workers on a shared filesystem; independent cloud workers use deterministic shard indices.
+Training hashes the resolved config and train/validation manifests and refuses to reuse an output
+directory with a different identity. Matrix planning itself refuses to start until every selected
+training manifest and the fixed validation manifest match their hashes in `dataset_ladder.json`.
+Failed or abandoned claims are never stolen automatically; an explicit `requeue` archives the old
+claim, result, and log before making the job available again.
+
+Most ideas screen on one seed and one size. Only promising frozen recipes advance to the full
+three-size, three-seed scaling matrix. Fixed-epoch scaling measures the practical data-plus-compute
+curve; a separately labeled fixed-update-budget study is required to isolate data diversity from
+additional optimization.
+
+Build and inspect the nested manifests:
+
+```bash
+spider-build-data-ladder --config configs/datasets/exp005_browser_ablation_v1.yaml
+```
+
+Materialize a matrix without launching compute:
+
+```bash
+spider-ablation-matrix plan \
+  --config configs/ablations/experiment5_matrix.yaml \
+  --budget smoke
+```
+
+Parallel workers may then claim jobs from the same plan root, or receive disjoint
+`--shard-index/--num-shards` assignments. Matrix planning and data construction remain CPU-only;
+GPU jobs do not start implicitly. Job paths are relative to the plan root so a plan archive is
+portable; a cloud worker supplies its mounted corpus with `worker --data-dir /mounted/corpus`.
+
 ## Current vertical slice
 
 `spider-study` currently provides:

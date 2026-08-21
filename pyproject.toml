@@ -49,6 +49,8 @@ spider-evaluate-actions = "spider.action_evaluate:main"
 spider-finalize-exp4-data = "spider.exp4_data:main"
 spider-merge-actions = "spider.action_merge:main"
 spider-audit-diversity = "spider.diversity:main"
+spider-build-data-ladder = "spider.data_ladder:main"
+spider-ablation-matrix = "spider.ablation_matrix:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spider"]
