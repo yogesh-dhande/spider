@@ -243,14 +243,14 @@ def materialize_group(
     return realized
 
 
-def _retry_group(operation: Any, label: str, attempts: int = 5) -> Any:
+def _retry_group(operation: Any, label: str, attempts: int = 10) -> Any:
     for attempt in range(1, attempts + 1):
         try:
             return operation()
         except Exception as error:
             if attempt == attempts:
                 raise
-            delay = min(2 ** (attempt - 1), 16)
+            delay = min(2 ** (attempt - 1), 60)
             _emit(
                 "materialization_retry",
                 label=label,

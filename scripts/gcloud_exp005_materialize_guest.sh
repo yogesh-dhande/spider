@@ -49,6 +49,7 @@ export PYTHONPATH=/opt/spider/src
 export HF_HUB_DOWNLOAD_TIMEOUT=300
 export HF_HUB_ETAG_TIMEOUT=60
 export HF_HUB_DISABLE_PROGRESS_BARS=1
+export HF_XET_NUM_CONCURRENT_RANGE_GETS=4
 export SPIDER_SELECTION_DIR="${SELECTION_ROOT}"
 export SPIDER_DATA_DIR="${OUTPUT_ROOT}"
 python -m spider.corpus_materializer \

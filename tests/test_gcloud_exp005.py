@@ -16,6 +16,14 @@ def test_managed_filter_is_narrowly_scoped() -> None:
     assert MODULE.MONITOR_FAILURE_LIMIT == 20
 
 
+def test_bootstrap_is_restart_safe() -> None:
+    bootstrap = MODULE._bootstrap("abc123", "scripts/guest.sh")
+    assert "if [[ ! -d /opt/spider/.git ]]" in bootstrap
+    assert "git -C /opt/spider fetch -q origin" in bootstrap
+    assert "git -C /opt/spider checkout -q abc123" in bootstrap
+    assert "test ! -e /opt/spider" not in bootstrap
+
+
 def test_materialization_shard_rejects_invalid_partition() -> None:
     try:
         MODULE.create_materialization_shard("run", "zone", "revision", 4, 4, "6h")

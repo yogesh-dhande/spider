@@ -109,8 +109,12 @@ set -Eeuo pipefail
 trap 'shutdown -h now' EXIT
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git
-test ! -e /opt/spider
-git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+if [[ ! -d /opt/spider/.git ]]; then
+  rm -rf /opt/spider
+  git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
+else
+  git -C /opt/spider fetch -q origin
+fi
 git -C /opt/spider checkout -q {repo_revision}
 chmod +x /opt/spider/{guest_script}
 exec /opt/spider/{guest_script}
