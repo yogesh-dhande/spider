@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import io
 import json
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -353,8 +354,8 @@ def run_materializer(
     spec = config.get("materialization")
     if not isinstance(spec, dict):
         raise TypeError("Config requires a materialization mapping")
-    selection = Path(spec["selection_dir"])
-    output = Path(spec["output_dir"])
+    selection = Path(os.environ.get("SPIDER_SELECTION_DIR", spec["selection_dir"]))
+    output = Path(os.environ.get("SPIDER_DATA_DIR", spec["output_dir"]))
     if not selection.is_absolute():
         selection = (config_path.parent / selection).resolve()
     if not output.is_absolute():

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import time
 from collections import Counter
 from collections.abc import Iterator
@@ -569,7 +570,12 @@ def freeze_manifests(
     for task in TASKS:
         source = pools / f"train_{task}.jsonl"
         target = manifests / f"{task}_train_candidates.jsonl"
-        source.replace(target)
+        # Keep the partition pool intact until the complete inventory is frozen. If a
+        # later evaluation-capacity audit fails, a rerun can resume finalization without
+        # rebuilding hundreds of gigabytes of source metadata.
+        temporary = target.with_suffix(target.suffix + ".tmp")
+        shutil.copyfile(source, temporary)
+        temporary.replace(target)
         training_outputs[task] = {
             "manifest": str(target.relative_to(output)),
             "examples": counts[("train", task)],
