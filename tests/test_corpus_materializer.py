@@ -58,6 +58,26 @@ def test_trajectory_lookup_and_aspect_preserving_resize() -> None:
     assert selected.size == (200, 100)
 
 
+def test_trajectory_lookup_uses_parallel_image_paths() -> None:
+    buffer = io.BytesIO()
+    Image.new("RGB", (320, 180), "blue").save(buffer, format="PNG")
+    selected = _trajectory_image(
+        [{"bytes": buffer.getvalue(), "path": None}],
+        "screenshot_004.png",
+        ["folder/screenshot_004.png"],
+    )
+    assert selected.size == (320, 180)
+
+
+def test_trajectory_lookup_falls_back_to_positional_names() -> None:
+    buffer = io.BytesIO()
+    Image.new("RGB", (640, 360), "green").save(buffer, format="PNG")
+    selected = _trajectory_image(
+        [{"bytes": buffer.getvalue(), "path": None}], "screenshot_001.png"
+    )
+    assert selected.size == (640, 360)
+
+
 def test_encode_preserves_aspect_ratio() -> None:
     payload, dimensions = _encode_selected_image(
         Image.new("RGB", (2000, 1000), "white"),

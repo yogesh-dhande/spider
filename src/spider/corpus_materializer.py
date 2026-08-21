@@ -82,10 +82,17 @@ def _decode_image(value: Any) -> Image.Image:
     raise ValueError("Unsupported Parquet image value")
 
 
-def _trajectory_image(images: list[Any], screenshot: str) -> Image.Image:
+def _trajectory_image(
+    images: list[Any], screenshot: str, image_paths: list[Any] | None = None
+) -> Image.Image:
     expected = Path(screenshot).name
-    for value in images:
+    paths = image_paths or []
+    for index, value in enumerate(images):
         path = str(value.get("path") or "") if isinstance(value, dict) else ""
+        if not path and index < len(paths):
+            path = str(paths[index] or "")
+        if not path:
+            path = f"screenshot_{index + 1:03d}.png"
         if path == screenshot or Path(path).name == expected:
             return _decode_image(value)
     raise ValueError(f"Trajectory screenshot is absent from image list: {screenshot}")
@@ -146,7 +153,14 @@ def materialize_group(
         column = "images" if kinds == {"trajectory_screenshot"} else "image"
         fs = HfFileSystem()
         with fs.open(remote, "rb") as handle:
-            table = pq.ParquetFile(handle).read_row_group(row_group, columns=[column])
+            parquet = pq.ParquetFile(handle)
+            columns = [column]
+            if (
+                kinds == {"trajectory_screenshot"}
+                and "image_paths" in parquet.schema_arrow.names
+            ):
+                columns.append("image_paths")
+            table = parquet.read_row_group(row_group, columns=columns)
         rows = table.to_pylist()
     realized: dict[str, dict[str, Any]] = {}
     image_dir = output / "images" / "shared"
@@ -160,7 +174,9 @@ def materialize_group(
                 row = rows[int(locator["row_in_group"])]
                 if locator["kind"] == "trajectory_screenshot":
                     image = _trajectory_image(
-                        list(row["images"] or []), str(locator["screenshot"])
+                        list(row["images"] or []),
+                        str(locator["screenshot"]),
+                        list(row.get("image_paths") or []),
                     )
                 else:
                     image = _decode_image(row["image"])
