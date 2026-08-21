@@ -56,7 +56,7 @@ test("production dashboard renders and every referenced image exists", async (co
   assert.match(html, /Spider Lab/);
   assert.match(html, /EXP005 · data audit/);
   assert.match(html, /Browse training examples/);
-  assert.match(html, /Website categories in training candidates/);
+  assert.match(html, /Website categories in the frozen training tier/);
   assert.match(html, /Model diagnostics/);
   assert.ok(html.includes(dataset.summary.examples.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 })));
 

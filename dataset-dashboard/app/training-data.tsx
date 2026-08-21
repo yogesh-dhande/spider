@@ -151,8 +151,8 @@ export function TrainingDataView({ onDiagnostics }: { onDiagnostics: () => void 
         <div className="dataHeroGrid">
           <div><p className="eyebrow">MolmoWeb · {dataset.meta.provenance}</p><h1>Know what<br />we train on.</h1><p className="dek">Browse the website mix, task coverage, and a deterministic cross-category sample before trusting an ablation result.</p><div className="diagnosis"><span className="pulse" /><p><strong>Reproducible sample:</strong> seed {dataset.meta.sample_seed}; {dataset.meta.sample_examples} records, including {dataset.meta.image_examples} materialized visual previews.</p></div></div>
           <div className="metricGrid dataMetrics">
-            <div className="metricCard teal"><span>Training candidates</span><strong>{compact(dataset.summary.examples)}</strong><small>{Object.entries(dataset.summary.task_counts).map(([name, count]) => `${name} ${compact(count)}`).join(" · ")}</small></div>
-            <div className="metricCard"><span>Websites represented</span><strong>{dataset.summary.websites.toLocaleString()}</strong><small>registrable domains in the candidate pool</small></div>
+            <div className="metricCard teal"><span>Frozen training tier</span><strong>{compact(dataset.summary.examples)}</strong><small>{Object.entries(dataset.summary.task_counts).map(([name, count]) => `${name} ${compact(count)}`).join(" · ")}</small></div>
+            <div className="metricCard"><span>Websites represented</span><strong>{dataset.summary.websites.toLocaleString()}</strong><small>registrable domains in the 100K tier</small></div>
             <div className="metricCard"><span>Application examples</span><strong>{(appExamples / dataset.summary.examples * 100).toFixed(1)}%</strong><small>work + transaction + service applications</small></div>
             <div className="metricCard orange"><span>Classification audit</span><strong>{dataset.websites.filter((row) => row.confidence === "unknown").length.toLocaleString()}</strong><small>websites use conservative fallback labels</small></div>
           </div>
@@ -160,7 +160,7 @@ export function TrainingDataView({ onDiagnostics }: { onDiagnostics: () => void 
       </header>
 
       <section className="categorySection">
-        <div className="sectionHeading"><div><p className="eyebrow">Composition</p><h2>Website categories in training candidates</h2></div><p>Bars count examples; the right column counts distinct websites. Categories are transparent heuristics and manual overrides, not claims about site identity.</p></div>
+        <div className="sectionHeading"><div><p className="eyebrow">Composition</p><h2>Website categories in the frozen training tier</h2></div><p>Bars count examples; the right column counts distinct websites. Categories are transparent heuristics and manual overrides, not claims about site identity.</p></div>
         <div className="categoryBars">{CATEGORIES.map((name) => <div className="categoryRow" key={name}><span>{label(name)}</span><div><i style={{ width: `${Math.max(1, (dataset.summary.category_counts[name] ?? 0) / maxCategory * 100)}%` }} /></div><b>{(dataset.summary.category_counts[name] ?? 0).toLocaleString()}</b><small>{dataset.summary.category_website_counts[name] ?? 0} sites</small></div>)}</div>
       </section>
 
@@ -176,7 +176,7 @@ export function TrainingDataView({ onDiagnostics }: { onDiagnostics: () => void 
       </section>
 
       <section className="websiteSection" id="websites">
-        <div className="sectionHeading"><div><p className="eyebrow">Website inventory</p><h2>{websites.length.toLocaleString()} matching websites</h2></div><p>Counts reflect training candidates, before the final nested ladder is selected.</p></div>
+        <div className="sectionHeading"><div><p className="eyebrow">Website inventory</p><h2>{websites.length.toLocaleString()} matching websites</h2></div><p>Counts reflect the frozen 100K large tier. The 10K and 30K ablations are nested prefixes of this selection.</p></div>
         <div className="inlineFilters websiteFilters"><input aria-label="Search websites" onChange={(event) => { setWebsiteQuery(event.target.value); setWebsiteLimit(80); }} placeholder="Search domain, surface, source…" type="search" value={websiteQuery} /><select aria-label="Filter websites by category" onChange={(event) => { setWebsiteCategory(event.target.value); setWebsiteLimit(80); }} value={websiteCategory}><option value="all">All categories</option>{CATEGORIES.map((name) => <option key={name} value={name}>{label(name)}</option>)}</select></div>
         <div className="websiteTableWrap"><table><thead><tr><th>Website</th><th>Category</th><th>Examples</th><th>Task mix</th><th>Top surfaces</th><th>Confidence</th></tr></thead><tbody>{websites.slice(0, websiteLimit).map((website) => <tr key={website.domain}><td><strong>{website.domain}</strong><small>{Object.keys(website.sources).join(" · ")}</small></td><td><span className={`categoryPill ${website.category}`}>{label(website.category)}</span></td><td>{website.examples.toLocaleString()}</td><td>{Object.entries(website.tasks).map(([name, count]) => <span className="countPair" key={name}>{name} <b>{compact(count)}</b></span>)}</td><td>{Object.keys(website.surfaces).slice(0, 3).join(" · ")}</td><td>{website.confidence}</td></tr>)}</tbody></table></div>
         {websiteLimit < websites.length && <button className="loadMore" onClick={() => setWebsiteLimit((value) => value + 80)}>Show 80 more websites</button>}
