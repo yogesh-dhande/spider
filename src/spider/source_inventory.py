@@ -491,9 +491,27 @@ def inventory_source_file(
     return summary
 
 
-def _iter_cached_records(cache_root: Path) -> Iterator[dict[str, Any]]:
-    for identity_path in sorted(cache_root.glob("*/identity.json")):
-        target = identity_path.parent
+def _iter_cached_records(
+    cache_root: Path, source_files: list[dict[str, Any]]
+) -> Iterator[dict[str, Any]]:
+    """Read only cache directories belonging to the currently pinned source inventory."""
+    for source_file in source_files:
+        target = _source_cache_dir(cache_root, source_file)
+        identity_path = target / "identity.json"
+        if not identity_path.is_file():
+            raise ValueError(f"Missing inventory shard: {target}")
+        cached_source = (json.loads(identity_path.read_text()).get("source") or {})
+        source_identity_fields = (
+            "id",
+            "dataset",
+            "source_revision",
+            "data_revision",
+            "file",
+            "size",
+            "blob_id",
+        )
+        if any(cached_source.get(key) != source_file.get(key) for key in source_identity_fields):
+            raise ValueError(f"Inventory shard source identity changed: {target}")
         summary_path = target / "summary.json"
         if not summary_path.is_file() or not json.loads(summary_path.read_text()).get("complete"):
             raise ValueError(f"Incomplete inventory shard: {target}")
@@ -546,7 +564,7 @@ def freeze_manifests(
                 path = pools / f"{destination}_{task}.jsonl.tmp"
                 temporary_paths[(destination, task)] = path
                 handles[(destination, task)] = path.open("w", encoding="utf-8")
-        for record in _iter_cached_records(output / "cache"):
+        for record in _iter_cached_records(output / "cache", source_files):
             catalog.add(record)
             destination = record_destination(
                 record,
