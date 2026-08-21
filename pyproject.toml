@@ -56,6 +56,7 @@ spider-inventory-sources = "spider.source_inventory:main"
 spider-materialize-corpus = "spider.corpus_materializer:main"
 spider-benchmark-eval = "spider.benchmark_eval:main"
 spider-ablation-matrix = "spider.ablation_matrix:main"
+spider-build-dataset-dashboard = "spider.dataset_dashboard:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spider"]

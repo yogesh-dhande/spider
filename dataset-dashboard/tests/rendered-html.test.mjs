@@ -39,7 +39,7 @@ async function waitForPage(url, child) {
   throw lastError || new Error("Dashboard did not start");
 }
 
-test("production dashboard renders and every diagnostic image exists", async (context) => {
+test("production dashboard renders and every referenced image exists", async (context) => {
   const port = await availablePort();
   const child = spawn("npm", ["run", "start", "--", "--port", String(port)], {
     cwd: root,
@@ -52,12 +52,21 @@ test("production dashboard renders and every diagnostic image exists", async (co
 
   const html = await waitForPage(`http://127.0.0.1:${port}/`, child);
   const payload = JSON.parse(await readFile(path.join(root, "app/qa-probe.json"), "utf8"));
+  const dataset = JSON.parse(await readFile(path.join(root, "app/exp005-data.json"), "utf8"));
   assert.match(html, /Spider Lab/);
-  assert.match(html, /EXP004 · model diagnostics/);
-  assert.match(html, /Screenshot QA/);
-  assert.match(html, /GUI grounding/);
-  assert.match(html, /QA · latest/);
-  assert.ok(html.includes(`QA · ${payload.meta.checkpoint_labels.baseline}`));
+  assert.match(html, /EXP005 · data audit/);
+  assert.match(html, /Browse training examples/);
+  assert.match(html, /Website categories in training candidates/);
+  assert.match(html, /Model diagnostics/);
+  assert.ok(html.includes(dataset.summary.examples.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 })));
+
+  assert.ok(dataset.records.length > 0, "dataset audit must retain sample records");
+  for (const record of dataset.records.filter((row) => row.image_available)) {
+    assert.ok(record.image, "available sample image must have a path");
+    const image = path.join(root, "public", record.image.replace(/^\//, ""));
+    const bytes = await readFile(image);
+    assert.ok(bytes.length > 0, `${record.image} must be non-empty`);
+  }
 
   for (const task of ["qa", "grounding", "action"]) {
     if (!payload[task]) continue;

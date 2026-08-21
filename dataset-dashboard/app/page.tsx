@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import probeData from "./qa-probe.json";
+import { TrainingDataView } from "./training-data";
 
 type QaScore = { exact: boolean; token_f1: number };
 type QaRecord = {
@@ -218,6 +219,7 @@ function ActionCard({ record, eager }: { record: ActionRecord; eager: boolean })
 }
 
 export default function Home() {
+  const [view, setView] = useState<"data" | "diagnostics">("data");
   const [task, setTask] = useState<"qa" | "grounding" | "action">("qa");
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
@@ -259,10 +261,12 @@ export default function Home() {
   const switchTask = (next: "qa" | "grounding" | "action") => { setTask(next); setQuery(""); setType("all"); setStatus("all"); setVisible(PAGE_SIZE); };
   const resetFilters = () => { setQuery(""); setType("all"); setStatus("all"); setVisible(PAGE_SIZE); };
 
+  if (view === "data") return <TrainingDataView onDiagnostics={() => setView("diagnostics")} />;
+
   return (
     <main>
       <header className="hero">
-        <nav><div className="brandMark">SP</div><div className="brandText"><strong>Spider Lab</strong><span>EXP004 · model diagnostics</span></div><a href="#examples">Browse examples ↓</a></nav>
+        <nav><div className="brandMark">SP</div><div className="brandText"><strong>Spider Lab</strong><span>EXP004 · model diagnostics</span></div><div className="viewSwitch"><button onClick={() => setView("data")}>Training data</button><button className="active">Model diagnostics</button></div></nav>
         <div className="heroGrid">
           <div className="heroCopy">
             <p className="eyebrow">MolmoWeb · {SPLIT_LABEL}</p>
