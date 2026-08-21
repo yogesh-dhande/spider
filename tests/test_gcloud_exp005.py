@@ -85,6 +85,15 @@ def test_training_stage_rejects_invalid_bounds() -> None:
         raise AssertionError("invalid training stage bounds were accepted")
 
 
+def test_inventory_sync_rejects_invalid_layout(tmp_path) -> None:
+    try:
+        MODULE.sync_inventory_artifacts("run", "screenshot_qa", 5, tmp_path, "other")
+    except ValueError as error:
+        assert "layout" in str(error)
+    else:
+        raise AssertionError("unknown inventory layout was accepted")
+
+
 def test_training_stage_rejects_unsafe_job_id() -> None:
     try:
         MODULE.create_training_stage("run", "zone", "revision", "Unsafe Job", 0, 125, "4h")

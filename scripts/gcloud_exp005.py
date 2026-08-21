@@ -5,7 +5,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -298,6 +300,72 @@ def upload_training_config(job_id: str, config_path: str | Path) -> str:
     return destination
 
 
+def sync_inventory_artifacts(
+    run_id: str,
+    source_id: str,
+    num_shards: int,
+    destination: str | Path,
+    layout: str,
+) -> Path:
+    if not SAFE_SOURCE_ID.fullmatch(source_id):
+        raise ValueError("source_id must be a safe lowercase identifier")
+    if num_shards <= 0:
+        raise ValueError("num_shards must be positive")
+    if layout not in {"legacy-qa", "source"}:
+        raise ValueError("layout must be legacy-qa or source")
+    destination = Path(destination).resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="spider-inventory-sync-") as temporary:
+        temporary_root = Path(temporary)
+        for shard_index in range(num_shards):
+            label = f"shard_{shard_index:02d}_of_{num_shards:02d}"
+            if layout == "legacy-qa":
+                remote_root = f"{BUCKET}/exp005/qa-inventory/{run_id}/{label}"
+            else:
+                remote_root = (
+                    f"{BUCKET}/exp005/source-inventory/{run_id}/{source_id}/{label}"
+                )
+            archive = temporary_root / f"{label}.tar.zst"
+            run(
+                ["gcloud", "storage", "cp", f"{remote_root}/inventory.tar.zst", str(archive)],
+                capture=False,
+            )
+            extracted = temporary_root / label
+            extracted.mkdir()
+            run(
+                [
+                    "tar",
+                    "--use-compress-program=unzstd",
+                    "-xf",
+                    str(archive),
+                    "-C",
+                    str(extracted),
+                ],
+                capture=False,
+            )
+            inventory = extracted / "inventory"
+            if not (inventory / "cache").is_dir():
+                raise ValueError(f"Inventory archive has no cache directory: {archive}")
+            shutil.copytree(inventory / "cache", destination / "cache", dirs_exist_ok=True)
+            for summary in inventory.glob("scan_shard_*.json"):
+                shutil.copy2(summary, destination / summary.name)
+    append_registry(
+        "inventory_synced",
+        run_id=run_id,
+        source_id=source_id,
+        num_shards=num_shards,
+        destination=str(destination),
+        layout=layout,
+    )
+    emit(
+        "gcloud_inventory_synced",
+        run_id=run_id,
+        source_id=source_id,
+        destination=str(destination),
+    )
+    return destination
+
+
 def create_training_stage(
     run_id: str,
     zone: str,
@@ -487,6 +555,12 @@ def main() -> None:
     upload_config = subparsers.add_parser("upload-training-config")
     upload_config.add_argument("--job-id", required=True)
     upload_config.add_argument("--config", type=Path, required=True)
+    sync_inventory = subparsers.add_parser("sync-inventory")
+    sync_inventory.add_argument("--run-id", required=True)
+    sync_inventory.add_argument("--source-id", required=True)
+    sync_inventory.add_argument("--num-shards", type=int, required=True)
+    sync_inventory.add_argument("--destination", type=Path, required=True)
+    sync_inventory.add_argument("--layout", choices=("legacy-qa", "source"), required=True)
     training = subparsers.add_parser("training-stage")
     training.add_argument("--run-id", required=True)
     training.add_argument("--zone", required=True)
@@ -570,6 +644,18 @@ def main() -> None:
         }
     elif args.command == "upload-training-config":
         payload = {"destination": upload_training_config(args.job_id, args.config)}
+    elif args.command == "sync-inventory":
+        payload = {
+            "destination": str(
+                sync_inventory_artifacts(
+                    args.run_id,
+                    args.source_id,
+                    args.num_shards,
+                    args.destination,
+                    args.layout,
+                )
+            )
+        }
     elif args.command == "training-stage":
         payload = {
             "name": create_training_stage(
