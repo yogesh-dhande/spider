@@ -114,6 +114,7 @@ def _create(
     machine_type: str,
     boot_disk_size: str,
     gpu: bool,
+    boot_disk_type: str = "pd-balanced",
 ) -> str:
     startup = Path("/tmp") / f"{name}-startup.sh"
     startup.write_text(_bootstrap(repo_revision, guest_script), encoding="utf-8")
@@ -133,7 +134,7 @@ def _create(
         f"--zone={zone}",
         f"--machine-type={machine_type}",
         f"--boot-disk-size={boot_disk_size}",
-        "--boot-disk-type=pd-balanced",
+        f"--boot-disk-type={boot_disk_type}",
         "--scopes=cloud-platform",
         (
             "--labels=spider-managed=true,spider-experiment=exp005,"
@@ -224,6 +225,7 @@ def create_qa_inventory_shard(
         machine_type="c3-standard-8",
         boot_disk_size="150GB",
         gpu=False,
+        boot_disk_type="pd-standard",
     )
 
 
@@ -255,8 +257,9 @@ def create_source_inventory_shard(
         },
         max_run=max_run,
         machine_type="c3-standard-8",
-        boot_disk_size="150GB",
+        boot_disk_size="50GB",
         gpu=False,
+        boot_disk_type="pd-standard",
     )
 
 
