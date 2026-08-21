@@ -117,7 +117,7 @@ def test_training_stage_rejects_unsafe_job_id() -> None:
         raise AssertionError("unsafe training job ID was accepted")
 
 
-def test_training_stage_uses_two_l4_shape(monkeypatch) -> None:
+def test_training_stage_uses_available_single_l4_shape(monkeypatch) -> None:
     received = {}
 
     def create(**kwargs):
@@ -130,7 +130,7 @@ def test_training_stage_uses_two_l4_shape(monkeypatch) -> None:
     )
 
     assert name == "spider-exp005-train-00125-run-a"
-    assert received["machine_type"] == "g2-standard-24"
+    assert received["machine_type"] == "g2-standard-8"
     assert received["gpu"] is True
     assert received["metadata"] == {
         "spider-job-id": "small-seed53",

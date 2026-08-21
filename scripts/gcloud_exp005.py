@@ -394,7 +394,7 @@ def create_training_stage(
             "spider-stage-stop": stop_step,
         },
         max_run=max_run,
-        machine_type="g2-standard-24",
+        machine_type="g2-standard-8",
         boot_disk_size="200GB",
         gpu=True,
     )

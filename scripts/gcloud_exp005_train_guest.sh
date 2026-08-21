@@ -78,12 +78,14 @@ mkdir -p /mnt/spider-cache/torch-kernels
 export PYTORCH_KERNEL_CACHE_PATH=/mnt/spider-cache/torch-kernels
 
 if [[ "${START_STEP}" -eq 0 ]]; then
-  torchrun --standalone --nproc-per-node=2 -m spider.train \
-    --config "${CONFIG_PATH}" --resume auto --max-steps "${STOP_STEP}"
+  python -m spider.train \
+    --config "${CONFIG_PATH}" --resume auto --max-steps "${STOP_STEP}" \
+    --gradient-accumulation-steps 16
 else
-  torchrun --standalone --nproc-per-node=2 -m spider.train \
+  python -m spider.train \
     --config "${CONFIG_PATH}" --resume auto \
-    --additional-steps "$((STOP_STEP - START_STEP))"
+    --additional-steps "$((STOP_STEP - START_STEP))" \
+    --gradient-accumulation-steps 16
 fi
 
 python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" "${STOP_STEP}" <<'PY'
@@ -97,7 +99,7 @@ start, stop = map(int, sys.argv[2:])
 assert state["status"] == "complete", state
 assert state["start_step"] == start, state
 assert state["completed_step"] == stop, state
-assert state["world_size"] == 2, state
+assert state["world_size"] == 1, state
 assert state["effective_batch_size"] == 16, state
 assert math.isfinite(float(state["metrics"]["train_loss"])), state
 PY
