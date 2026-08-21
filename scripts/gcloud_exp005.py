@@ -113,6 +113,7 @@ if [[ ! -d /opt/spider/.git ]]; then
   rm -rf /opt/spider
   git clone -q https://github.com/yogesh-dhande/spider.git /opt/spider
 else
+  git -C /opt/spider config core.fileMode false
   git -C /opt/spider fetch -q origin
 fi
 git -C /opt/spider checkout -q {repo_revision}
