@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "run_id": "corpus-v2-0821a",
+  "status": "complete",
+  "verified_utc": "2026-08-21T22:27:25Z",
+  "source_revision": "372d685d55da216e59eb8c7892bb2c7390869d03",
+  "merge_revision": "b8d0aaaa35e39906f6b1ab23fdab44bc4c269b0a",
+  "dataset_identity_sha256": "1e3c06eca32f4a01240e08b8c0a7debcd11bd3f105c8c6f718aaf410d8dff9c0",
+  "materialization_config_sha256": "d3bbddc53f5d8a535a9f54a6a85023e5f15ad165f7cca609e2b2546f6064278d",
+  "dataset_ladder_sha256": "f4f8476d448eab7209be268607bec8970da9e4036d8c66bda4283b0a0a2637e7",
+  "num_shards": 8,
+  "shard_group_counts": [207, 207, 207, 207, 207, 207, 206, 206],
+  "source_groups": 1654,
+  "unique_images": 91976,
+  "missing_images": 0,
+  "terminal": {
+    "event": "materialization_merge_terminal",
+    "status": "complete",
+    "exit_code": 0
+  },
+  "objects": {
+    "corpus": {
+      "url": "gs://keptune-spider-experiments-1088401257609/exp005/data/corpus.tar.zst#1787350672654772",
+      "size_bytes": 10436603788,
+      "crc32c_base64": "XeKW/Q=="
+    },
+    "dataset_ladder": {
+      "url": "gs://keptune-spider-experiments-1088401257609/exp005/data/dataset_ladder.json",
+      "size_bytes": 185117
+    },
+    "manifests": {
+      "url": "gs://keptune-spider-experiments-1088401257609/exp005/data/manifests.tar.zst#1787350678905934",
+      "size_bytes": 57828644,
+      "crc32c_base64": "6uooYg==",
+      "md5_base64": "j3vccVk69puS/0g6Jp3Yrg=="
+    }
+  },
+  "notes": [
+    "Every shard summary reported status complete and missing_count 0.",
+    "Shard 2 retained an earlier failed marker from a transient Hugging Face Xet 429; its later exact complete marker is authoritative.",
+    "The guarded merge validated exact run, shard, and shard-count identities before publishing the frozen corpus."
+  ]
+}

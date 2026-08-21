@@ -1,5 +1,8 @@
 # Spider browser VLM experiments
 
+Concurrent experiment work must follow the durable conventions in [`AGENTS.md`](AGENTS.md) and
+the current handoff in [`docs/ACTIVE_EXPERIMENTS.md`](docs/ACTIVE_EXPERIMENTS.md).
+
 The active experiment tests whether `Qwen/Qwen3.5-2B` can learn browser screenshot
 understanding and precise GUI grounding from a small, balanced slice of MolmoWeb data.
 It is deliberately limited to visual perception. Browser actions, trajectories, custom action

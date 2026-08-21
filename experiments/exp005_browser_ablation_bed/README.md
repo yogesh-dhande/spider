@@ -1,10 +1,12 @@
 # EXP005 — trustworthy browser-training ablation bed
 
-Status: leakage-safe 10K/30K/100K manifests frozen; corrected shared screenshot corpus
-materialization is running as `corpus-v2-0821a`. The zero-missing gate rejected and stopped the
-first attempt before merge when it exposed a trajectory image-path decoder bug; the immutable
-incident receipt is `artifacts/materialization_attempt_v1.json`. No EXP005 model inference,
-training, or model-quality claim has started.
+Status: leakage-safe 10K/30K/100K manifests and the corrected shared screenshot corpus are frozen.
+The zero-missing gate rejected and stopped the first materialization attempt before merge when it
+exposed a trajectory image-path decoder bug; the immutable incident receipt is
+`artifacts/materialization_attempt_v1.json`. Corrected run `corpus-v2-0821a` then completed all
+eight shards with zero missing screenshots and passed the guarded merge; its receipt is
+`artifacts/materialization_attempt_v2.json`. Untouched-model evaluation is active as
+`base-all-0821a`; no EXP005 training or model-quality claim has started.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
@@ -116,11 +118,12 @@ The authoritative receipt is `artifacts/dataset_freeze_v1.json`. It registers th
 all six manifests, nesting checks, leakage results, realized website composition, and hashes.
 Amendment 003 records the pre-freeze whole-trajectory correction and the fixed 54/33/13 task mix.
 
-## Next data-build phase
+## Materialized corpus
 
-Materialize only screenshots referenced by the frozen large tier and evaluation manifests into one
-shared image store. The operation is resumable at source row-group boundaries and uses sparse JSON
-progress events. The smaller tiers reference the same files rather than copying images.
+Only screenshots referenced by the frozen large tier and evaluation manifests were materialized
+into one shared image store. The corrected run resolved 91,976 unique images across 1,654 source
+groups, with zero missing images in every shard. The smaller tiers reference the same files rather
+than copying images.
 
 The evaluation controls are (1) untouched `Qwen/Qwen3.5-2B`, (2) the frozen EXP002 perception
 adapter, and (3) each EXP005 reference SFT run. All controls use identical manifests, image
