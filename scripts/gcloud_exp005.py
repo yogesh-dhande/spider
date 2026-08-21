@@ -122,6 +122,14 @@ exec /opt/spider/{guest_script}
 """
 
 
+def resolve_repo_revision(repo_revision: str) -> str:
+    """Resolve a requested revision locally before creating a billable VM."""
+    resolved = run(["git", "rev-parse", "--verify", f"{repo_revision}^{{commit}}"])
+    if not re.fullmatch(r"[0-9a-f]{40,64}", resolved):
+        raise ValueError(f"Git returned a non-commit revision: {resolved!r}")
+    return resolved
+
+
 def _create(
     *,
     name: str,
@@ -137,6 +145,7 @@ def _create(
     gpu: bool,
     boot_disk_type: str = "pd-balanced",
 ) -> str:
+    repo_revision = resolve_repo_revision(repo_revision)
     startup = Path("/tmp") / f"{name}-startup.sh"
     startup.write_text(_bootstrap(repo_revision, guest_script), encoding="utf-8")
     attributes = {

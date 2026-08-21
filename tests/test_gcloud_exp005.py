@@ -24,6 +24,28 @@ def test_bootstrap_is_restart_safe() -> None:
     assert "test ! -e /opt/spider" not in bootstrap
 
 
+def test_repo_revision_is_resolved_before_launch(monkeypatch) -> None:
+    calls = []
+
+    def run(command, capture=True):
+        calls.append((command, capture))
+        return "a" * 40
+
+    monkeypatch.setattr(MODULE, "run", run)
+    assert MODULE.resolve_repo_revision("main") == "a" * 40
+    assert calls == [(["git", "rev-parse", "--verify", "main^{commit}"], True)]
+
+
+def test_repo_revision_rejects_non_commit_output(monkeypatch) -> None:
+    monkeypatch.setattr(MODULE, "run", lambda *_args, **_kwargs: "not-a-commit")
+    try:
+        MODULE.resolve_repo_revision("broken")
+    except ValueError as error:
+        assert "non-commit" in str(error)
+    else:
+        raise AssertionError("invalid resolved revision was accepted")
+
+
 def test_materialization_shard_rejects_invalid_partition() -> None:
     try:
         MODULE.create_materialization_shard("run", "zone", "revision", 4, 4, "6h")
