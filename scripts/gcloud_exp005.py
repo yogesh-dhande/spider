@@ -314,6 +314,37 @@ def upload_training_config(job_id: str, config_path: str | Path) -> str:
     return destination
 
 
+def validate_inventory_terminal(
+    payload: dict[str, Any],
+    *,
+    run_id: str,
+    source_id: str,
+    shard_index: int,
+    num_shards: int,
+) -> None:
+    expected = {
+        "run_id": run_id,
+        "shard_index": shard_index,
+        "num_shards": num_shards,
+        "status": "complete",
+        "exit_code": 0,
+    }
+    mismatches = {
+        key: {"expected": value, "actual": payload.get(key)}
+        for key, value in expected.items()
+        if payload.get(key) != value
+    }
+    # The first full QA worker predates the generic source_id field. Generic
+    # source workers always include it, and any present value must agree.
+    if payload.get("source_id") not in {None, source_id}:
+        mismatches["source_id"] = {
+            "expected": source_id,
+            "actual": payload.get("source_id"),
+        }
+    if mismatches:
+        raise ValueError(f"Inventory shard terminal marker mismatch: {mismatches}")
+
+
 def sync_inventory_artifacts(
     run_id: str,
     source_id: str,
@@ -339,6 +370,18 @@ def sync_inventory_artifacts(
                 remote_root = (
                     f"{BUCKET}/exp005/source-inventory/{run_id}/{source_id}/{label}"
                 )
+            terminal = temporary_root / f"{label}.complete.json"
+            run(
+                ["gcloud", "storage", "cp", f"{remote_root}/complete.json", str(terminal)],
+                capture=False,
+            )
+            validate_inventory_terminal(
+                json.loads(terminal.read_text(encoding="utf-8")),
+                run_id=run_id,
+                source_id=source_id,
+                shard_index=shard_index,
+                num_shards=num_shards,
+            )
             archive = temporary_root / f"{label}.tar.zst"
             run(
                 ["gcloud", "storage", "cp", f"{remote_root}/inventory.tar.zst", str(archive)],

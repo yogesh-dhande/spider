@@ -108,6 +108,68 @@ def test_inventory_sync_rejects_invalid_layout(tmp_path) -> None:
         raise AssertionError("unknown inventory layout was accepted")
 
 
+def test_inventory_terminal_marker_accepts_generic_and_legacy_qa_records() -> None:
+    common = {
+        "run_id": "run-a",
+        "shard_index": 1,
+        "num_shards": 5,
+        "status": "complete",
+        "exit_code": 0,
+    }
+    MODULE.validate_inventory_terminal(
+        {**common, "source_id": "screenshot_qa"},
+        run_id="run-a",
+        source_id="screenshot_qa",
+        shard_index=1,
+        num_shards=5,
+    )
+    MODULE.validate_inventory_terminal(
+        common,
+        run_id="run-a",
+        source_id="screenshot_qa",
+        shard_index=1,
+        num_shards=5,
+    )
+
+
+def test_inventory_terminal_marker_rejects_failed_or_wrong_shard() -> None:
+    marker = {
+        "run_id": "run-a",
+        "source_id": "grounding_gpt",
+        "shard_index": 0,
+        "num_shards": 1,
+        "status": "failed",
+        "exit_code": 1,
+    }
+    try:
+        MODULE.validate_inventory_terminal(
+            marker,
+            run_id="run-a",
+            source_id="grounding_gpt",
+            shard_index=0,
+            num_shards=1,
+        )
+    except ValueError as error:
+        assert "status" in str(error)
+        assert "exit_code" in str(error)
+    else:
+        raise AssertionError("failed inventory marker was accepted")
+
+    marker.update({"status": "complete", "exit_code": 0, "shard_index": 1})
+    try:
+        MODULE.validate_inventory_terminal(
+            marker,
+            run_id="run-a",
+            source_id="grounding_gpt",
+            shard_index=0,
+            num_shards=1,
+        )
+    except ValueError as error:
+        assert "shard_index" in str(error)
+    else:
+        raise AssertionError("wrong inventory shard marker was accepted")
+
+
 def test_training_stage_rejects_unsafe_job_id() -> None:
     try:
         MODULE.create_training_stage("run", "zone", "revision", "Unsafe Job", 0, 125, "4h")
