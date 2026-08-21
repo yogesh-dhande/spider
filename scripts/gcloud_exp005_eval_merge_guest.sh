@@ -51,10 +51,40 @@ labels=()
 for ((shard=0; shard<NUM_SHARDS; shard++)); do
   label="${CONTROL}-${SUITE}-shard-$(printf '%02d' "${shard}")-of-$(printf '%02d' "${NUM_SHARDS}")"
   labels+=("${label}")
+  gcloud storage cp \
+    "${BUCKET}/exp005/evaluation/${RUN_ID}/${label}/complete.json" \
+    "/tmp/${label}.complete.json"
   source="${BUCKET}/exp005/evaluation/${RUN_ID}/${label}/evaluation.tar.zst"
   gcloud storage cp "${source}" "/tmp/${label}.tar.zst"
   tar --use-compress-program=unzstd -xf "/tmp/${label}.tar.zst" -C "${OUTPUT_ROOT}"
 done
+
+python - "${RUN_ID}" "${CONTROL}" "${SUITE}" "${NUM_SHARDS}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+run_id, control, suite = sys.argv[1:4]
+num_shards = int(sys.argv[4])
+for shard_index in range(num_shards):
+    label = f"{control}-{suite}-shard-{shard_index:02d}-of-{num_shards:02d}"
+    terminal = json.loads(Path(f"/tmp/{label}.complete.json").read_text())
+    expected = {
+        "run_id": run_id,
+        "control": control,
+        "suite": suite,
+        "shard_index": shard_index,
+        "num_shards": num_shards,
+        "status": "complete",
+        "exit_code": 0,
+    }
+    mismatches = {
+        key: {"expected": value, "actual": terminal.get(key)}
+        for key, value in expected.items()
+        if terminal.get(key) != value
+    }
+    assert not mismatches, f"{label} terminal mismatch: {mismatches}"
+PY
 
 joined_labels="$(IFS=,; echo "${labels[*]}")"
 export PYTHONPATH=/opt/spider/src

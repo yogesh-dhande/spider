@@ -22,8 +22,8 @@ finish() {
   set +e
   marker=failed
   [[ ${status} -eq 0 ]] && marker=complete
-  printf '{"event":"evaluation_terminal","run_id":"%s","control":"%s","suite":"%s","shard_index":%s,"status":"%s","exit_code":%s}\n' \
-    "${RUN_ID}" "${CONTROL}" "${SUITE}" "${SHARD_INDEX}" "${marker}" "${status}" \
+  printf '{"event":"evaluation_terminal","run_id":"%s","control":"%s","suite":"%s","shard_index":%s,"num_shards":%s,"status":"%s","exit_code":%s}\n' \
+    "${RUN_ID}" "${CONTROL}" "${SUITE}" "${SHARD_INDEX}" "${NUM_SHARDS}" "${marker}" "${status}" \
     >/tmp/terminal.json
   gcloud storage cp "${LOG_PATH}" "${DESTINATION}/guest.log"
   gcloud storage cp /tmp/terminal.json "${DESTINATION}/${marker}.json"
