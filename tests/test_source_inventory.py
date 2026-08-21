@@ -4,6 +4,7 @@ from pathlib import Path
 import huggingface_hub
 from datasets import Dataset
 
+from spider import source_inventory
 from spider.prepare import read_jsonl
 from spider.source_inventory import (
     action_metadata_examples,
@@ -205,3 +206,39 @@ def test_split_assignment_is_domain_and_unit_aware() -> None:
         record_destination(shifted, seed=53, percentages=percentages, iid_percent=5)
         == "distribution_shift"
     )
+
+
+def test_single_source_worker_never_attempts_global_finalization(
+    tmp_path: Path, monkeypatch
+) -> None:
+    config_path = tmp_path / "inventory.yaml"
+    config_path.write_text(
+        "inventory:\n  id: test\n  output_dir: output\n  sources: []\n",
+        encoding="utf-8",
+    )
+    source_file = {"id": "grounding_gpt", "file": "gpt/train.parquet"}
+    monkeypatch.setattr(
+        source_inventory,
+        "_resolve_sources",
+        lambda _spec: ([source_file], [{"source_revision": "abc"}]),
+    )
+    monkeypatch.setattr(
+        source_inventory,
+        "inventory_source_file",
+        lambda *_args, **_kwargs: {"complete": True, "accepted_examples": 130370},
+    )
+    monkeypatch.setattr(
+        source_inventory,
+        "freeze_manifests",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("single-source worker attempted global finalization")
+        ),
+    )
+
+    output = source_inventory.build_inventory(
+        config_path,
+        source_ids={"grounding_gpt"},
+    )
+
+    assert output.name == "scan_shard_00_of_01.json"
+    assert json.loads(output.read_text())[0]["accepted_examples"] == 130370

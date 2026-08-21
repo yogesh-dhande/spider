@@ -875,12 +875,12 @@ def build_inventory(
                 ),
             )
         )
-    if num_shards > 1 or (
+    if source_ids or num_shards > 1 or (
         max_row_groups is not None and any(not row["complete"] for row in summaries)
     ):
         label = (
             f"scan_shard_{shard_index:02d}_of_{num_shards:02d}.json"
-            if num_shards > 1
+            if num_shards > 1 or source_ids
             else "smoke_summary.json"
         )
         scan = output / label

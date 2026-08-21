@@ -251,6 +251,14 @@ def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages()
     assert 'assert state["gradient_accumulation_steps"] == accumulation, state' in guest
 
 
+def test_inventory_recovery_guest_verifies_completed_cache_before_upload() -> None:
+    guest = (MODULE_PATH.parent / "gcloud_exp005_inventory_recovery_guest.sh").read_text()
+
+    assert 'assert all(row.get("complete") for row in summaries)' in guest
+    assert '"${DESTINATION}/inventory.tar.zst"' in guest
+    assert "shutdown -h now" in guest
+
+
 def test_evaluation_rejects_unknown_control() -> None:
     try:
         MODULE.create_evaluation_shard(
