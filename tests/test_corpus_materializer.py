@@ -37,6 +37,16 @@ def test_locators_group_by_remote_row_group() -> None:
     assert next(iter(groups.values())) == {image_locator_id(locator): locator}
 
 
+def test_arrow_locators_group_by_file_for_single_download() -> None:
+    first = {**_locator(), "kind": "arrow_single_image", "row_index": 1}
+    second = {**_locator(), "kind": "arrow_single_image", "row_index": 999}
+    groups = group_image_locators(
+        [{"id": "a", "image_locator": first}, {"id": "b", "image_locator": second}]
+    )
+    assert list(groups) == [("test/data", "abc", "part.parquet", -1)]
+    assert len(next(iter(groups.values()))) == 2
+
+
 def test_trajectory_lookup_and_aspect_preserving_resize() -> None:
     buffer = io.BytesIO()
     Image.new("RGB", (200, 100), "white").save(buffer, format="PNG")

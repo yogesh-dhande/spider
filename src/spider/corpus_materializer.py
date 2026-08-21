@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import tempfile
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -57,11 +58,12 @@ def group_image_locators(
         locator = record.get("image_locator")
         if not isinstance(locator, dict):
             raise TypeError(f"Selected record has no image locator: {record.get('id')}")
+        row_group = -1 if locator.get("kind") == "arrow_single_image" else int(locator["row_group"])
         key = (
             str(locator["dataset"]),
             str(locator["revision"]),
             str(locator["file"]),
-            int(locator["row_group"]),
+            row_group,
         )
         groups[key][image_locator_id(locator)] = locator
     return groups
@@ -122,20 +124,42 @@ def materialize_group(
     kinds = {str(locator["kind"]) for locator in locators.values()}
     if len(kinds) != 1:
         raise ValueError(f"Mixed image locator kinds in one row group: {kinds}")
-    column = "images" if kinds == {"trajectory_screenshot"} else "image"
-    fs = HfFileSystem()
-    with fs.open(remote, "rb") as handle:
-        table = pq.ParquetFile(handle).read_row_group(row_group, columns=[column])
-    rows = table.to_pylist()
+    rows: list[dict[str, Any]] | None = None
+    arrow_dataset: Any = None
+    temporary_download: tempfile.TemporaryDirectory[str] | None = None
+    if kinds == {"arrow_single_image"}:
+        from datasets import Dataset, disable_progress_bars
+        from huggingface_hub import hf_hub_download
+
+        disable_progress_bars()
+        temporary_download = tempfile.TemporaryDirectory(prefix="spider-arrow-")
+        local_file = hf_hub_download(
+            repo_id=dataset,
+            repo_type="dataset",
+            revision=revision,
+            filename=file_path,
+            local_dir=temporary_download.name,
+        )
+        arrow_dataset = Dataset.from_file(local_file)
+    else:
+        column = "images" if kinds == {"trajectory_screenshot"} else "image"
+        fs = HfFileSystem()
+        with fs.open(remote, "rb") as handle:
+            table = pq.ParquetFile(handle).read_row_group(row_group, columns=[column])
+        rows = table.to_pylist()
     realized: dict[str, dict[str, Any]] = {}
     image_dir = output / "images" / "shared"
     image_dir.mkdir(parents=True, exist_ok=True)
     for locator_id, locator in locators.items():
-        row = rows[int(locator["row_in_group"])]
-        if locator["kind"] == "trajectory_screenshot":
-            image = _trajectory_image(list(row["images"] or []), str(locator["screenshot"]))
+        if locator["kind"] == "arrow_single_image":
+            image = _decode_image(arrow_dataset[int(locator["row_index"])]["image"])
         else:
-            image = _decode_image(row["image"])
+            assert rows is not None
+            row = rows[int(locator["row_in_group"])]
+            if locator["kind"] == "trajectory_screenshot":
+                image = _trajectory_image(list(row["images"] or []), str(locator["screenshot"]))
+            else:
+                image = _decode_image(row["image"])
         payload, dimensions = _encode_selected_image(
             image, max_width=max_width, max_height=max_height, quality=quality
         )
@@ -155,6 +179,8 @@ def materialize_group(
             "jpeg_sha256": hashlib.sha256(payload).hexdigest(),
             "jpeg_bytes": len(payload),
         }
+    if temporary_download is not None:
+        temporary_download.cleanup()
     return realized
 
 

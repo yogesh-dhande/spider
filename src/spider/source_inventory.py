@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import shutil
 import time
 from collections import Counter
@@ -195,6 +196,7 @@ def screenshot_metadata_examples(
         return []
     url = str(metadata.get("url") or "").strip()
     domain = canonical_domain(metadata)
+    source_format = str(source.get("format") or "parquet")
     locator = {
         "dataset": str(source["dataset"]),
         "revision": str(source.get("data_revision") or source["source_revision"]),
@@ -202,7 +204,7 @@ def screenshot_metadata_examples(
         "row_group": row_group,
         "row_in_group": row_in_group,
         "row_index": row_index,
-        "kind": "single_image",
+        "kind": "arrow_single_image" if source_format == "arrow" else "single_image",
     }
     valid: list[dict[str, Any]] = []
     for message_index, message in enumerate(row.get("messages") or []):
@@ -394,6 +396,47 @@ def inventory_source_file(
     spec: dict[str, Any],
     max_row_groups: int | None = None,
 ) -> dict[str, Any]:
+    target = _source_cache_dir(cache_root, source_file)
+    identity_path = target / "identity.json"
+    summary_path = target / "summary.json"
+    if identity_path.is_file() and summary_path.is_file():
+        cached_source = (json.loads(identity_path.read_text()).get("source") or {})
+        source_fields = (
+            "id",
+            "dataset",
+            "source_revision",
+            "data_revision",
+            "file",
+            "size",
+            "blob_id",
+        )
+        summary = json.loads(summary_path.read_text())
+        if summary.get("complete") and all(
+            cached_source.get(key) == source_file.get(key) for key in source_fields
+        ):
+            return summary
+    if str(source_file.get("format") or "parquet") == "arrow":
+        return inventory_arrow_source_file(
+            source_file,
+            cache_root=cache_root,
+            spec=spec,
+            max_batches=max_row_groups,
+        )
+    return inventory_parquet_source_file(
+        source_file,
+        cache_root=cache_root,
+        spec=spec,
+        max_row_groups=max_row_groups,
+    )
+
+
+def inventory_parquet_source_file(
+    source_file: dict[str, Any],
+    *,
+    cache_root: Path,
+    spec: dict[str, Any],
+    max_row_groups: int | None = None,
+) -> dict[str, Any]:
     import pyarrow.parquet as pq
     from huggingface_hub import HfFileSystem
 
@@ -481,6 +524,104 @@ def inventory_source_file(
         "file": source_file["file"],
         "rows": int(metadata.num_rows),
         "row_groups": row_groups,
+        "completed_row_groups": limit,
+        "accepted_examples": accepted,
+        "rejections": dict(sorted(rejected.items())),
+        "complete": complete,
+        "cache_dir": str(target),
+    }
+    (target / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    return summary
+
+
+def inventory_arrow_source_file(
+    source_file: dict[str, Any],
+    *,
+    cache_root: Path,
+    spec: dict[str, Any],
+    max_batches: int | None = None,
+) -> dict[str, Any]:
+    """Inventory a pinned Arrow shard while projecting away its large image column."""
+    from datasets import Dataset, disable_progress_bars
+    from huggingface_hub import hf_hub_download
+
+    if source_file["task"] == "action":
+        raise ValueError("Arrow action sources are not supported")
+    disable_progress_bars()
+    target = _source_cache_dir(cache_root, source_file)
+    target.mkdir(parents=True, exist_ok=True)
+    identity = {
+        "schema_version": 1,
+        "source": source_file,
+        "inventory_config_sha256": _canonical_hash(spec),
+    }
+    identity_path = target / "identity.json"
+    if identity_path.exists() and json.loads(identity_path.read_text()) != identity:
+        raise ValueError(f"Inventory cache identity changed: {target}")
+    identity_path.write_text(json.dumps(identity, indent=2, sort_keys=True) + "\n")
+    local_file = _retry(
+        f"download-arrow:{source_file['id']}:{source_file['file']}",
+        lambda: hf_hub_download(
+            repo_id=str(source_file["dataset"]),
+            repo_type="dataset",
+            revision=str(source_file.get("data_revision") or source_file["source_revision"]),
+            filename=str(source_file["file"]),
+        ),
+    )
+    dataset = Dataset.from_file(local_file).select_columns(["messages", "metadata"])
+    batch_rows = int(spec.get("arrow_batch_rows", 500))
+    if batch_rows <= 0:
+        raise ValueError("arrow_batch_rows must be positive")
+    batches = math.ceil(len(dataset) / batch_rows)
+    limit = min(batches, max_batches) if max_batches is not None else batches
+    accepted = 0
+    rejected: Counter[str] = Counter()
+    for batch_index in range(limit):
+        part = target / f"row-group-{batch_index:05d}.jsonl"
+        if part.exists():
+            accepted += sum(1 for line in part.open(encoding="utf-8") if line.strip())
+            continue
+        start = batch_index * batch_rows
+        stop = min(start + batch_rows, len(dataset))
+        columns = dataset[start:stop]
+        records: list[dict[str, Any]] = []
+        for offset, (messages, metadata) in enumerate(
+            zip(columns["messages"], columns["metadata"], strict=True)
+        ):
+            row_index = start + offset
+            try:
+                rows = screenshot_metadata_examples(
+                    {"messages": messages, "metadata": metadata},
+                    source=source_file,
+                    file_path=str(source_file["file"]),
+                    row_group=batch_index,
+                    row_in_group=offset,
+                    row_index=row_index,
+                    max_messages=int(spec["max_candidates_per_unit"][source_file["task"]]),
+                    website_rules=list(spec.get("website_rules") or []),
+                )
+                records.extend(rows)
+                if not rows:
+                    rejected["no_valid_examples"] += 1
+            except (TypeError, ValueError, json.JSONDecodeError):
+                rejected["malformed_row"] += 1
+        write_jsonl(part, records)
+        accepted += len(records)
+        if (batch_index + 1) % 25 == 0 or batch_index + 1 == limit:
+            _emit(
+                "inventory_progress",
+                source=source_file["id"],
+                file=source_file["file"],
+                completed_row_groups=batch_index + 1,
+                total_row_groups=batches,
+                accepted_examples=accepted,
+            )
+    complete = limit == batches
+    summary = {
+        "source": source_file["id"],
+        "file": source_file["file"],
+        "rows": len(dataset),
+        "row_groups": batches,
         "completed_row_groups": limit,
         "accepted_examples": accepted,
         "rejections": dict(sorted(rejected.items())),
@@ -666,6 +807,7 @@ def build_inventory(
     shard_index: int = 0,
     num_shards: int = 1,
     finalize_only: bool = False,
+    source_ids: set[str] | None = None,
 ) -> Path:
     config_path = Path(config_path).resolve()
     config = load_config(config_path)
@@ -687,10 +829,18 @@ def build_inventory(
     source_files, revisions = _resolve_sources(spec)
     _emit("inventory_resolved", files=len(source_files), sources=len(spec["sources"]))
     if finalize_only:
+        if source_ids:
+            raise ValueError("Source filters cannot be used while finalizing the inventory")
         result = freeze_manifests(spec, output, source_files, revisions)
         _emit("inventory_complete", inventory=str(result))
         return result
     summaries = []
+    if source_ids:
+        available = {str(source["id"]) for source in source_files}
+        unknown = sorted(source_ids - available)
+        if unknown:
+            raise ValueError(f"Unknown source IDs: {unknown}")
+        source_files = [source for source in source_files if source["id"] in source_ids]
     selected_files = [
         source_file
         for index, source_file in enumerate(source_files)
@@ -744,6 +894,7 @@ def main() -> None:
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--num-shards", type=int, default=1)
     parser.add_argument("--finalize-only", action="store_true")
+    parser.add_argument("--source-id", action="append", default=[])
     args = parser.parse_args()
     output = build_inventory(
         args.config,
@@ -751,6 +902,7 @@ def main() -> None:
         shard_index=args.shard_index,
         num_shards=args.num_shards,
         finalize_only=args.finalize_only,
+        source_ids=set(args.source_id) or None,
     )
     print(json.dumps({"status": "complete", "output": str(output)}, sort_keys=True))
 

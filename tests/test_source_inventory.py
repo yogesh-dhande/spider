@@ -1,8 +1,14 @@
 import json
+from pathlib import Path
 
+import huggingface_hub
+from datasets import Dataset
+
+from spider.prepare import read_jsonl
 from spider.source_inventory import (
     action_metadata_examples,
     domain_partition,
+    inventory_arrow_source_file,
     record_destination,
     screenshot_metadata_examples,
 )
@@ -117,6 +123,57 @@ def test_qa_and_grounding_metadata_inventory() -> None:
         **common,
     )
     assert ground[0]["target_point_normalized"] == [200.0, 200.0]
+
+
+def test_arrow_inventory_projects_metadata_and_preserves_row_locator(
+    tmp_path: Path, monkeypatch
+) -> None:
+    saved = tmp_path / "saved"
+    Dataset.from_dict(
+        {
+            "image": [b"not-read"],
+            "messages": [
+                [
+                    {
+                        "question": "What is the document title?",
+                        "answer": "Roadmap",
+                        "question_type": "OCR",
+                        "question_form": "first_person",
+                    }
+                ]
+            ],
+            "metadata": [{"website": "docs", "url": "https://docs.google.com/document/d/1"}],
+        }
+    ).save_to_disk(saved)
+    arrow = next(saved.glob("*.arrow"))
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", lambda **_kwargs: str(arrow))
+    source = {
+        "id": "qa-full",
+        "task": "qa",
+        "generator": "synthetic_qa",
+        "role": "training",
+        "format": "arrow",
+        "dataset": "test/qa",
+        "source_revision": "abc",
+        "data_revision": "abc",
+        "file": "train/data.arrow",
+        "size": arrow.stat().st_size,
+        "blob_id": "blob",
+    }
+    summary = inventory_arrow_source_file(
+        source,
+        cache_root=tmp_path / "cache",
+        spec={
+            "arrow_batch_rows": 1,
+            "max_candidates_per_unit": {"qa": 3},
+            "website_rules": [],
+        },
+    )
+    rows = read_jsonl(Path(summary["cache_dir"]) / "row-group-00000.jsonl")
+    assert summary["complete"] is True
+    assert rows[0]["answer"] == "Roadmap"
+    assert rows[0]["image_locator"]["kind"] == "arrow_single_image"
+    assert rows[0]["image_locator"]["row_index"] == 0
 
 
 def test_split_assignment_is_domain_and_unit_aware() -> None:
