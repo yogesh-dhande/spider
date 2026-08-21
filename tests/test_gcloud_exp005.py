@@ -66,6 +66,17 @@ def test_evaluation_rejects_invalid_partition() -> None:
         raise AssertionError("invalid evaluation shard was accepted")
 
 
+def test_evaluation_merge_rejects_non_positive_shards() -> None:
+    try:
+        MODULE.create_evaluation_merge(
+            "run", "zone", "revision", "base", "iid", 0, "2h"
+        )
+    except ValueError as error:
+        assert "positive" in str(error)
+    else:
+        raise AssertionError("invalid evaluation merge was accepted")
+
+
 def test_monitor_retries_transient_inventory_failure_without_stopping(monkeypatch) -> None:
     calls = 0
     stop_calls: list[str] = []

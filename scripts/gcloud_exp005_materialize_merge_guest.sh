@@ -58,3 +58,6 @@ python -m spider.corpus_materializer \
 tar --use-compress-program='zstd -3 -T0' -cf /tmp/corpus.tar.zst -C "${OUTPUT_ROOT}" .
 gcloud storage cp /tmp/corpus.tar.zst "${BUCKET}/exp005/data/corpus.tar.zst"
 gcloud storage cp "${OUTPUT_ROOT}/dataset_ladder.json" "${BUCKET}/exp005/data/dataset_ladder.json"
+tar --use-compress-program='zstd -3 -T0' -cf /tmp/manifests.tar.zst \
+  -C "${OUTPUT_ROOT}" dataset_ladder.json manifests
+gcloud storage cp /tmp/manifests.tar.zst "${BUCKET}/exp005/data/manifests.tar.zst"

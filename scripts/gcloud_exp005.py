@@ -251,6 +251,40 @@ def create_evaluation_shard(
     )
 
 
+def create_evaluation_merge(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    control: str,
+    suite: str,
+    num_shards: int,
+    max_run: str,
+) -> str:
+    if control not in {"base", "exp002"}:
+        raise ValueError("control must be base or exp002")
+    if suite not in {"iid", "domain_balanced", "distribution_shift"}:
+        raise ValueError("Unknown evaluation suite")
+    if num_shards <= 0:
+        raise ValueError("num_shards must be positive")
+    return _create(
+        name=f"spider-exp005-eval-merge-{control}-{suite[:6]}-{run_id}",
+        run_id=run_id,
+        role="evaluation-merge",
+        zone=zone,
+        repo_revision=repo_revision,
+        guest_script="scripts/gcloud_exp005_eval_merge_guest.sh",
+        metadata={
+            "spider-control": control,
+            "spider-eval-suite": suite,
+            "spider-num-shards": num_shards,
+        },
+        max_run=max_run,
+        machine_type="e2-standard-4",
+        boot_disk_size="100GB",
+        gpu=False,
+    )
+
+
 def monitor(run_id: str, poll_seconds: int, timeout_seconds: int) -> None:
     started = time.monotonic()
     last: dict[str, str] = {}
@@ -316,6 +350,16 @@ def main() -> None:
     evaluation.add_argument("--shard-index", type=int, required=True)
     evaluation.add_argument("--num-shards", type=int, required=True)
     evaluation.add_argument("--max-run", default="4h")
+    evaluation_merge = subparsers.add_parser("evaluation-merge")
+    evaluation_merge.add_argument("--run-id", required=True)
+    evaluation_merge.add_argument("--zone", required=True)
+    evaluation_merge.add_argument("--repo-revision", required=True)
+    evaluation_merge.add_argument("--control", choices=("base", "exp002"), required=True)
+    evaluation_merge.add_argument(
+        "--suite", choices=("iid", "domain_balanced", "distribution_shift"), required=True
+    )
+    evaluation_merge.add_argument("--num-shards", type=int, required=True)
+    evaluation_merge.add_argument("--max-run", default="2h")
     args = parser.parse_args()
     if args.command == "inventory":
         payload: Any = managed_instances()
@@ -341,7 +385,7 @@ def main() -> None:
                 args.run_id, args.zone, args.repo_revision, args.num_shards, args.max_run
             )
         }
-    else:
+    elif args.command == "evaluation-shard":
         payload = {
             "name": create_evaluation_shard(
                 args.run_id,
@@ -350,6 +394,18 @@ def main() -> None:
                 args.control,
                 args.suite,
                 args.shard_index,
+                args.num_shards,
+                args.max_run,
+            )
+        }
+    else:
+        payload = {
+            "name": create_evaluation_merge(
+                args.run_id,
+                args.zone,
+                args.repo_revision,
+                args.control,
+                args.suite,
                 args.num_shards,
                 args.max_run,
             )
