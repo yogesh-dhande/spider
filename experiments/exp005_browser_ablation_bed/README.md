@@ -1,7 +1,10 @@
 # EXP005 — trustworthy browser-training ablation bed
 
-Status: leakage-safe 10K/30K/100K manifests frozen; shared screenshot corpus materialization is
-the next gate. No EXP005 model inference, training, or model-quality claim has started.
+Status: leakage-safe 10K/30K/100K manifests frozen; corrected shared screenshot corpus
+materialization is running as `corpus-v2-0821a`. The zero-missing gate rejected and stopped the
+first attempt before merge when it exposed a trajectory image-path decoder bug; the immutable
+incident receipt is `artifacts/materialization_attempt_v1.json`. No EXP005 model inference,
+training, or model-quality claim has started.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005_browser_ablation_bed",
+  "run_id": "corpus-v1-0821a",
+  "status": "invalid_stopped",
+  "started_utc": "2026-08-21T16:49:10+00:00",
+  "stopped_utc": "2026-08-21T19:07:58+00:00",
+  "repo_revision": "26fd6ab31c5d65e3f83a000c5e50b69e80f95627",
+  "selection_identity_sha256": "12f23de9de2b13dd84e1c08b6d8f1f1046865d95d0ed0cde948217c5389cb677",
+  "merge_attempted": false,
+  "completed_shards": [
+    5,
+    6,
+    7
+  ],
+  "missing_by_completed_shard": {
+    "5": 432,
+    "6": 369,
+    "7": 412
+  },
+  "observed_missing_total": 1213,
+  "failure": {
+    "class": "trajectory_image_path_resolution",
+    "symptom": "Trajectory screenshot is absent from image list",
+    "root_cause": "MolmoWeb trajectory Parquet rows may store image bytes in images and the corresponding filenames in the parallel image_paths column. The materializer read only images and therefore could not name byte-only image entries.",
+    "detection": "The zero-missing merge gate rejected the first completed shard summaries before any corpus merge, model inference, or training.",
+    "source_confirmation": {
+      "dataset": "allenai/MolmoWeb-SyntheticSkills",
+      "revision": "34f786938a2b8e2d590c754093b2dc0a8a51c62e",
+      "file": "data/train-00001.parquet",
+      "row_group": 49,
+      "row_in_group": 34,
+      "requested_screenshot": "screenshot_004.png",
+      "image_count": 7,
+      "image_path_count": 7,
+      "resolved_size": [
+        1280,
+        720
+      ]
+    }
+  },
+  "correction": {
+    "repo_revision": "372d685d55da216e59eb8c7892bb2c7390869d03",
+    "change": "Read image_paths when present and resolve trajectory screenshots by explicit path, basename, or deterministic positional fallback.",
+    "replacement_run_id": "corpus-v2-0821a"
+  },
+  "artifacts": "gs://keptune-spider-experiments-1088401257609/exp005/materialization/corpus-v1-0821a/"
+}
