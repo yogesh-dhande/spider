@@ -36,9 +36,12 @@ combined contribution from one registrable domain is 2%.
 
 Unknown domains are rejected. Complete trajectories/screenshots remain within one split. Training
 allows at most four action steps per trajectory, three QA examples per screenshot, and one grounding
-example per screenshot during ladder selection. The QA cap is required because the pinned source has
-roughly 10,000 screenshots but many questions per screenshot. The exact realized manifests,
+example per screenshot during ladder selection. The QA cap prevents repeated questions from one
+screenshot from displacing screenshot and website diversity. The exact realized manifests,
 configuration, source revisions, and SHA-256 checksums are immutable publication artifacts.
+
+Browser-internal error documents such as `chromewebdata` and localhost pages are explicitly
+excluded and counted in the inventory record; they are not treated as website domains.
 
 ## Website coverage and application focus
 

@@ -9,6 +9,10 @@ inventory:
   iid_unit_percent: 5
   max_past_steps: 4
   arrow_batch_rows: 500
+  # Browser-internal error/document schemes are not websites and cannot support meaningful tasks.
+  excluded_domains:
+    - chromewebdata
+    - localhost
   max_candidates_per_unit:
     action: 4
     qa: 3

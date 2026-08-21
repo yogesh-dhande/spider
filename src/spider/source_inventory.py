@@ -700,6 +700,8 @@ def freeze_manifests(
     temporary_paths: dict[tuple[str, str], Path] = {}
     catalog = WebsiteCatalogAccumulator()
     counts: Counter[tuple[str, str]] = Counter()
+    excluded_counts: Counter[str] = Counter()
+    excluded_domains = {str(value).lower() for value in spec.get("excluded_domains") or []}
     try:
         for destination in ("train", *SUITES):
             for task in TASKS:
@@ -711,6 +713,9 @@ def freeze_manifests(
             # Reapply the current auditable rule set during finalization. This permits
             # manual category review after a metadata scan without fetching source data again.
             record = annotate_website(cached_record, website_rules)
+            if str(record.get("domain") or "unknown").lower() in excluded_domains:
+                excluded_counts[str(record.get("domain") or "unknown").lower()] += 1
+                continue
             catalog.add(record)
             destination = record_destination(
                 record,
@@ -795,6 +800,7 @@ def freeze_manifests(
             "iid_unit_percent": spec["iid_unit_percent"],
         },
         "catalog": catalog_summary,
+        "excluded_domain_counts": dict(sorted(excluded_counts.items())),
         "training": training_outputs,
         "evaluation": evaluation_outputs,
         "created_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
