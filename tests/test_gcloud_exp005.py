@@ -243,6 +243,67 @@ def test_training_stage_rejects_unsupported_gpu_count() -> None:
         raise AssertionError("unsupported training GPU count was accepted")
 
 
+def test_multinode_training_requires_supported_size_and_distinct_regions() -> None:
+    try:
+        MODULE.create_multinode_training_stage(
+            "run-a", ["us-west1-a", "us-west1-b"], "revision", "small-seed53", 0, 125, "6h"
+        )
+    except ValueError as error:
+        assert "distinct regions" in str(error)
+    else:
+        raise AssertionError("same-region multinode cluster was accepted")
+
+    try:
+        MODULE.create_multinode_training_stage(
+            "run-a", ["us-west1-a", "us-west2-a", "us-west3-a"], "revision", "small-seed53", 0, 125, "6h"
+        )
+    except ValueError as error:
+        assert "2, 4, 8, or 16" in str(error)
+    else:
+        raise AssertionError("unsupported multinode cluster size was accepted")
+
+
+def test_multinode_training_preserves_effective_batch_and_leader_address(monkeypatch) -> None:
+    created: list[dict] = []
+
+    def create(**kwargs):
+        created.append(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    monkeypatch.setattr(MODULE, "append_registry", lambda *args, **kwargs: None)
+    monkeypatch.setattr(MODULE, "emit", lambda *args, **kwargs: None)
+    names = MODULE.create_multinode_training_stage(
+        "run-a",
+        ["us-west1-b", "us-west2-a", "us-east1-d", "us-east4-c"],
+        "abc123",
+        "small-seed53",
+        0,
+        125,
+        "6h",
+    )
+
+    assert len(names) == len(created) == 4
+    assert all(row["machine_type"] == "g2-standard-8" for row in created)
+    assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
+    assert all(
+        row["metadata"]["spider-master-address"]
+        == "spider-exp005-train-mn-r00-00125-run-a.us-west1-b.c.keptune.internal"
+        for row in created
+    )
+
+
+def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> None:
+    guest = (MODULE_PATH.parent / "gcloud_exp005_train_multinode_guest.sh").read_text()
+
+    assert '--nnodes="${NUM_NODES}"' in guest
+    assert '--node_rank="${NODE_RANK}"' in guest
+    assert '--master_addr="${MASTER_ADDRESS}"' in guest
+    assert 'ready_count=' in guest
+    assert 'if [[ "${NODE_RANK}" -eq 0 ]]; then' in guest
+    assert 'assert state["world_size"] == world_size, state' in guest
+
+
 def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages() -> None:
     guest = (MODULE_PATH.parent / "gcloud_exp005_train_guest.sh").read_text()
 

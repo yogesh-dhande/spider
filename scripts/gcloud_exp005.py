@@ -33,6 +33,7 @@ TRAINING_MACHINE_TYPES = {
     2: "g2-standard-24",
     4: "g2-standard-48",
 }
+MULTINODE_TRAINING_SIZES = {2, 4, 8, 16}
 
 
 def utc_now() -> str:
@@ -462,6 +463,82 @@ def create_training_stage(
     )
 
 
+def create_multinode_training_stage(
+    run_id: str,
+    zones: list[str],
+    repo_revision: str,
+    job_id: str,
+    start_step: int,
+    stop_step: int,
+    max_run: str,
+) -> list[str]:
+    num_nodes = len(zones)
+    if not SAFE_ID.fullmatch(job_id):
+        raise ValueError("job_id must be a GCloud-safe lowercase identifier")
+    if start_step < 0 or stop_step <= start_step:
+        raise ValueError("training stage bounds must be non-negative and increasing")
+    if num_nodes not in MULTINODE_TRAINING_SIZES:
+        raise ValueError("multinode training requires 2, 4, 8, or 16 zones")
+    regions = [zone.rsplit("-", 1)[0] for zone in zones]
+    if len(set(regions)) != num_nodes:
+        raise ValueError("multinode zones must use distinct regions under the current L4 quota")
+    accumulation = 16 // num_nodes
+    names: list[str] = []
+    leader_name = f"spider-exp005-train-mn-r00-{stop_step:05d}-{run_id}"
+    master_address = f"{leader_name}.{zones[0]}.c.{PROJECT}.internal"
+    try:
+        for node_rank, zone in enumerate(zones):
+            name = f"spider-exp005-train-mn-r{node_rank:02d}-{stop_step:05d}-{run_id}"
+            metadata: dict[str, str | int] = {
+                "spider-job-id": job_id,
+                "spider-stage-start": start_step,
+                "spider-stage-stop": stop_step,
+                "spider-node-rank": node_rank,
+                "spider-num-nodes": num_nodes,
+                "spider-master-address": master_address,
+                "spider-master-port": 29500,
+                "spider-gradient-accumulation": accumulation,
+            }
+            created = _create(
+                name=name,
+                run_id=run_id,
+                role="training-multinode",
+                zone=zone,
+                repo_revision=repo_revision,
+                guest_script="scripts/gcloud_exp005_train_multinode_guest.sh",
+                metadata=metadata,
+                max_run=max_run,
+                machine_type="g2-standard-8",
+                boot_disk_size="200GB",
+                gpu=True,
+            )
+            names.append(created)
+        append_registry(
+            "multinode_training_cluster_created",
+            run_id=run_id,
+            job_id=job_id,
+            start_step=start_step,
+            stop_step=stop_step,
+            zones=zones,
+            names=names,
+            world_size=num_nodes,
+            gradient_accumulation_steps=accumulation,
+            effective_batch_size=16,
+            master_address=master_address,
+        )
+        emit(
+            "gcloud_multinode_training_cluster_created",
+            run_id=run_id,
+            names=names,
+            world_size=num_nodes,
+            effective_batch_size=16,
+        )
+        return names
+    except Exception:
+        stop_instances(run_id)
+        raise
+
+
 def create_evaluation_shard(
     run_id: str,
     zone: str,
@@ -634,6 +711,14 @@ def main() -> None:
     training.add_argument("--stop-step", type=int, required=True)
     training.add_argument("--gpu-count", type=int, choices=sorted(TRAINING_MACHINE_TYPES), default=1)
     training.add_argument("--max-run", default="4h")
+    multinode_training = subparsers.add_parser("multinode-training-stage")
+    multinode_training.add_argument("--run-id", required=True)
+    multinode_training.add_argument("--zones", required=True)
+    multinode_training.add_argument("--repo-revision", required=True)
+    multinode_training.add_argument("--job-id", required=True)
+    multinode_training.add_argument("--start-step", type=int, required=True)
+    multinode_training.add_argument("--stop-step", type=int, required=True)
+    multinode_training.add_argument("--max-run", default="6h")
     evaluation = subparsers.add_parser("evaluation-shard")
     evaluation.add_argument("--run-id", required=True)
     evaluation.add_argument("--zone", required=True)
@@ -732,6 +817,18 @@ def main() -> None:
                 args.stop_step,
                 args.max_run,
                 args.gpu_count,
+            )
+        }
+    elif args.command == "multinode-training-stage":
+        payload = {
+            "names": create_multinode_training_stage(
+                args.run_id,
+                [zone.strip() for zone in args.zones.split(",") if zone.strip()],
+                args.repo_revision,
+                args.job_id,
+                args.start_step,
+                args.stop_step,
+                args.max_run,
             )
         }
     elif args.command == "evaluation-shard":
