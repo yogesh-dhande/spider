@@ -150,3 +150,43 @@ def test_build_data_ladder_rejects_domain_leakage(tmp_path: Path) -> None:
     config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
     with pytest.raises(ValueError, match="leakage"):
         build_data_ladder(config_path)
+
+
+def test_iid_suite_may_share_domains_but_not_sampling_units(tmp_path: Path) -> None:
+    train_path = tmp_path / "train.jsonl"
+    eval_path = tmp_path / "eval.jsonl"
+    training = _records("qa", ["shared.test"], 2)
+    evaluation = _records("qa", ["shared.test"], 1)
+    evaluation[0]["id"] = "iid-eval"
+    evaluation[0]["image"] = "images/iid-eval.jpg"
+    write_jsonl(train_path, training)
+    write_jsonl(eval_path, evaluation)
+    config = {
+        "dataset_ladder": {
+            "id": "iid",
+            "seed": 1,
+            "output_dir": "output",
+            "train_manifests": ["train.jsonl"],
+            "evaluation_suites": {
+                "iid": {
+                    "manifests": ["eval.jsonl"],
+                    "required_disjoint": ["id", "sampling_unit"],
+                }
+            },
+            "max_combined_domain_share": 1.0,
+            "tasks": {
+                "qa": {
+                    "sizes": {"small": 1},
+                    "max_domain_share": 1.0,
+                    "max_per_unit": 1,
+                }
+            },
+        }
+    }
+    config_path = tmp_path / "ladder.yaml"
+    config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    output = build_data_ladder(config_path)
+    provenance = json.loads((output / "dataset_ladder.json").read_text())
+    assert provenance["evaluation_suites"]["iid"]["leakage_audit"][
+        "known_domain_overlap_count"
+    ] == 1

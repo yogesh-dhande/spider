@@ -29,8 +29,10 @@ website, trajectory, screenshot, effective-domain count, and website concentrati
 combined contribution from one registrable domain is 2%.
 
 Unknown domains are rejected. Complete trajectories/screenshots remain within one split. Training
-allows at most four action steps per trajectory and one QA/grounding example per screenshot sampling
-unit during ladder selection. The exact realized manifests, configuration, source revisions, and
+allows at most four action steps per trajectory, three QA examples per screenshot, and one grounding
+example per screenshot during ladder selection. The QA cap is required because the pinned source has
+roughly 10,000 screenshots but many questions per screenshot. The exact realized manifests,
+configuration, source revisions, and
 SHA-256 checksums are immutable publication artifacts.
 
 ## Fixed evaluation stack
@@ -41,9 +43,10 @@ SHA-256 checksums are immutable publication artifacts.
 4. Larger verified closed-loop browser suite used for model selection after the harness is frozen.
 5. Sealed external browser-only benchmarks used only after all choices are frozen.
 
-Training/evaluation ID, sampling-unit, and known-domain overlap must all be zero. Evaluation
-uncertainty is clustered by domain, trajectory, or screenshot rather than treating repeated steps
-and questions as independent examples.
+Training/evaluation ID and sampling-unit overlap must always be zero. Known-domain overlap must also
+be zero for the domain-balanced and distribution-shift suites; it is intentionally allowed for the
+IID suite. Evaluation uncertainty is clustered by domain, trajectory, or screenshot rather than
+treating repeated steps and questions as independent examples.
 
 ## Ablation execution contract
 

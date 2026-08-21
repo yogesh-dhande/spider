@@ -10,11 +10,17 @@ dataset_ladder:
     - ../../data/exp005_browser_inventory/manifests/grounding_train_candidates.jsonl
   evaluation_suites:
     iid:
-      - ../../data/exp005_browser_inventory/manifests/eval_iid.jsonl
+      manifests:
+        - ../../data/exp005_browser_inventory/manifests/eval_iid.jsonl
+      required_disjoint: [id, sampling_unit]
     domain_balanced:
-      - ../../data/exp005_browser_inventory/manifests/eval_domain_balanced.jsonl
+      manifests:
+        - ../../data/exp005_browser_inventory/manifests/eval_domain_balanced.jsonl
+      required_disjoint: [id, sampling_unit, known_domain]
     distribution_shift:
-      - ../../data/exp005_browser_inventory/manifests/eval_distribution_shift.jsonl
+      manifests:
+        - ../../data/exp005_browser_inventory/manifests/eval_distribution_shift.jsonl
+      required_disjoint: [id, sampling_unit, known_domain]
   unknown_domain_policy: reject
   max_combined_domain_share: 0.02
   tasks:
@@ -27,7 +33,7 @@ dataset_ladder:
       sizes: {small: 2000, medium: 6000, large: 20000}
       temperature: 0.5
       max_domain_share: 0.02
-      max_per_unit: 1
+      max_per_unit: 3
     grounding:
       sizes: {small: 2000, medium: 6000, large: 20000}
       temperature: 0.5

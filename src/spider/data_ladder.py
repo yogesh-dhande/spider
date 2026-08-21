@@ -238,10 +238,27 @@ def build_data_ladder(config_path: str | Path) -> Path:
         evaluation_suites_source = {"evaluation": list(spec.get("evaluation_manifests") or [])}
     if not isinstance(evaluation_suites_source, dict) or not evaluation_suites_source:
         raise ValueError("evaluation_suites must be a non-empty mapping")
-    evaluation_paths_by_suite = {
-        str(suite): _resolve_paths(config_path, list(values or []))
-        for suite, values in evaluation_suites_source.items()
-    }
+    evaluation_paths_by_suite: dict[str, list[Path]] = {}
+    required_disjoint_by_suite: dict[str, list[str]] = {}
+    valid_disjoint = {"id", "sampling_unit", "known_domain"}
+    for suite, value in evaluation_suites_source.items():
+        suite = str(suite)
+        if isinstance(value, dict):
+            manifests = value.get("manifests")
+            required = list(value.get("required_disjoint") or sorted(valid_disjoint))
+        else:
+            manifests = value
+            required = sorted(valid_disjoint)
+        if not isinstance(manifests, list):
+            raise TypeError(f"Evaluation suite {suite} manifests must be a list")
+        unknown_requirements = sorted(set(required) - valid_disjoint)
+        if unknown_requirements:
+            raise ValueError(
+                f"Evaluation suite {suite} has unknown disjoint requirements: "
+                f"{unknown_requirements}"
+            )
+        evaluation_paths_by_suite[suite] = _resolve_paths(config_path, manifests)
+        required_disjoint_by_suite[suite] = required
     for suite in evaluation_paths_by_suite:
         if not SAFE_LABEL.fullmatch(suite):
             raise ValueError(f"Unsafe evaluation suite label: {suite}")
@@ -304,11 +321,25 @@ def build_data_ladder(config_path: str | Path) -> Path:
     if len(ids) != len(set(ids)):
         raise ValueError("Training candidate IDs must be globally unique")
     leakage = leakage_audit(training, evaluation)
-    if any(
-        leakage[field]
-        for field in ("id_overlap_count", "sampling_unit_overlap_count", "known_domain_overlap_count")
-    ):
+    if leakage["id_overlap_count"] or leakage["sampling_unit_overlap_count"]:
         raise ValueError(f"Training/evaluation leakage detected: {leakage}")
+    suite_leakage = {
+        suite: leakage_audit(training, records)
+        for suite, records in evaluation_by_suite.items()
+    }
+    overlap_fields = {
+        "id": "id_overlap_count",
+        "sampling_unit": "sampling_unit_overlap_count",
+        "known_domain": "known_domain_overlap_count",
+    }
+    for suite, required in required_disjoint_by_suite.items():
+        violations = {
+            requirement: suite_leakage[suite][overlap_fields[requirement]]
+            for requirement in required
+            if suite_leakage[suite][overlap_fields[requirement]]
+        }
+        if violations:
+            raise ValueError(f"Training/evaluation leakage detected in {suite}: {violations}")
     if str(spec.get("unknown_domain_policy", "reject")) == "reject" and (
         leakage["training_unknown_domains"] or leakage["evaluation_unknown_domains"]
     ):
@@ -372,7 +403,8 @@ def build_data_ladder(config_path: str | Path) -> Path:
                 "manifest": f"manifests/eval_{suite}.jsonl",
                 "sha256": sha256_file(manifest_dir / f"eval_{suite}.jsonl"),
                 "audit": audit_records(evaluation_by_suite[suite]),
-                "leakage_audit": leakage_audit(training, evaluation_by_suite[suite]),
+                "required_disjoint": required_disjoint_by_suite[suite],
+                "leakage_audit": suite_leakage[suite],
             }
             for suite, paths in evaluation_paths_by_suite.items()
         },
