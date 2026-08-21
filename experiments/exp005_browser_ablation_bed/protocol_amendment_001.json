@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "amendment_id": "exp005-protocol-001-full-qa-source",
+  "recorded_at_utc": "2026-08-21T12:06:00+00:00",
+  "status": "adopted_before_dataset_freeze_or_model_evaluation",
+  "trigger": "The Hugging Face automatic partial Parquet conversion was discovered to be an alphabetically truncated and website-skewed view of the pinned ScreenshotQA source.",
+  "evidence": {
+    "partial_conversion_revision": "11db52ea32ee60fef4106cae6dc773630c9dda18",
+    "screenshots": 16000,
+    "capped_qa_examples": 48000,
+    "registrable_domains": 18,
+    "top_domains": {
+      "allrecipes.com": 28716,
+      "amazon.com": 12519
+    },
+    "website_category_counts": {
+      "content_reference": 228,
+      "general_web": 33966,
+      "service_application": 102,
+      "transactional_application": 13701,
+      "work_application": 3
+    }
+  },
+  "decision": "Exclude the automatic partial Parquet conversion from every EXP005 training and evaluation manifest. Inventory all five original pinned Arrow shards instead.",
+  "replacement_source": {
+    "dataset": "allenai/MolmoWeb-SyntheticQA",
+    "revision": "8b6199086b04057106c576504c84e44333b49fea",
+    "files": 5,
+    "screenshots": 394195,
+    "bytes": 107944964328
+  },
+  "validity": {
+    "training_started_before_decision": false,
+    "exp005_evaluation_started_before_decision": false,
+    "sealed_benchmark_observed": false,
+    "reason": "This is a pre-registration data-quality correction and cannot be influenced by model results because no EXP005 inference or training had begun."
+  },
+  "implementation_commit": "1241ecf"
+}

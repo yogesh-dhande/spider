@@ -1,6 +1,12 @@
 # EXP005 — trustworthy browser-training ablation bed
 
-Status: infrastructure setup. No EXP005 training or model-quality claim has started.
+Status: full-source inventory and corpus setup. No EXP005 training or model-quality claim has
+started.
+
+Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
+alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
+skew was measured, and replaces it with all five original pinned Arrow shards before any EXP005
+dataset freeze, inference, or training.
 
 ## Objective
 
