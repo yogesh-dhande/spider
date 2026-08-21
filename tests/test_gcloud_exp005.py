@@ -225,6 +225,7 @@ def test_training_stage_uses_available_single_l4_shape(monkeypatch) -> None:
     assert name == "spider-exp005-train-00125-run-a"
     assert received["machine_type"] == "g2-standard-8"
     assert received["gpu"] is True
+    assert received["boot_disk_type"] == "pd-standard"
     assert received["metadata"] == {
         "spider-job-id": "small-seed53",
         "spider-stage-start": 0,
@@ -316,6 +317,7 @@ def test_multinode_training_preserves_effective_batch_and_leader_address(monkeyp
 
     assert len(names) == len(created) == 4
     assert all(row["machine_type"] == "g2-standard-8" for row in created)
+    assert all(row["boot_disk_type"] == "pd-standard" for row in created)
     assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
     assert all(
         row["metadata"]["spider-master-address"]

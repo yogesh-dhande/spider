@@ -474,6 +474,7 @@ def create_training_stage(
         max_run=max_run,
         machine_type=TRAINING_MACHINE_TYPES[gpu_count],
         boot_disk_size="200GB",
+        boot_disk_type="pd-standard",
         gpu=True,
     )
 
@@ -525,6 +526,7 @@ def create_multinode_training_stage(
                 max_run=max_run,
                 machine_type="g2-standard-8",
                 boot_disk_size="200GB",
+                boot_disk_type="pd-standard",
                 gpu=True,
             )
             names.append(created)
