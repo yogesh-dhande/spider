@@ -97,6 +97,13 @@ The matrix planner refuses to overwrite an existing plan with different content.
 hashes its config and train/validation manifests and refuses to resume an output directory belonging
 to another job.
 
+Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
+`g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16
+(16, 8, or 4 accumulation steps respectively). A job cannot change its GPU world size between
+resumable stages: the restored training state must match the requested GPU count and accumulation
+before another optimizer step can run. This lets runtime scale without silently changing the SFT
+recipe.
+
 ## Next data-build phase
 
 Inventory metadata across every eligible pinned MolmoWeb shard/config without downloading images.

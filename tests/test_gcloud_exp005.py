@@ -181,6 +181,14 @@ def test_training_stage_rejects_unsupported_gpu_count() -> None:
         raise AssertionError("unsupported training GPU count was accepted")
 
 
+def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages() -> None:
+    guest = (MODULE_PATH.parent / "gcloud_exp005_train_guest.sh").read_text()
+
+    assert '--nproc_per_node="${GPU_COUNT}"' in guest
+    assert 'assert state["world_size"] == gpu_count, state' in guest
+    assert 'assert state["gradient_accumulation_steps"] == accumulation, state' in guest
+
+
 def test_evaluation_rejects_unknown_control() -> None:
     try:
         MODULE.create_evaluation_shard(

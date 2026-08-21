@@ -67,6 +67,20 @@ else
   INITIAL_ADAPTER="${OUTPUT_ROOT}/adapter/checkpoint-${START_STEP}"
   test -f "${INITIAL_ADAPTER}/adapter_config.json"
   test -f "${INITIAL_ADAPTER}/trainer_state.json"
+  python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" \
+    "${GPU_COUNT}" "${GRADIENT_ACCUMULATION}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+state = json.loads(Path(sys.argv[1]).read_text())
+start, gpu_count, accumulation = map(int, sys.argv[2:])
+assert state["status"] == "complete", state
+assert state["completed_step"] == start, state
+assert state["world_size"] == gpu_count, state
+assert state["gradient_accumulation_steps"] == accumulation, state
+assert state["effective_batch_size"] == 16, state
+PY
 fi
 
 export PYTHONPATH=/opt/spider/src
