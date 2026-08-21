@@ -193,7 +193,7 @@ def create_materialization_shard(
         guest_script="scripts/gcloud_exp005_materialize_guest.sh",
         metadata={"spider-shard-index": shard_index, "spider-num-shards": num_shards},
         max_run=max_run,
-        machine_type="c3-standard-8",
+        machine_type="n2-standard-8",
         boot_disk_size="80GB",
         gpu=False,
     )
@@ -222,7 +222,7 @@ def create_qa_inventory_shard(
             "spider-num-shards": num_shards,
         },
         max_run=max_run,
-        machine_type="c3-standard-8",
+        machine_type="n2-standard-8",
         boot_disk_size="150GB",
         gpu=False,
         boot_disk_type="pd-standard",

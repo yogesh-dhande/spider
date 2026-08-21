@@ -41,7 +41,7 @@ def test_qa_inventory_shard_uses_cpu_and_rejects_invalid_partition(monkeypatch) 
     monkeypatch.setattr(MODULE, "_create", create)
     MODULE.create_qa_inventory_shard("run-a", "zone", "revision", 2, 5, "5h")
     assert received["gpu"] is False
-    assert received["machine_type"] == "c3-standard-8"
+    assert received["machine_type"] == "n2-standard-8"
     assert received["metadata"] == {
         "spider-source-id": "screenshot_qa",
         "spider-shard-index": 2,
