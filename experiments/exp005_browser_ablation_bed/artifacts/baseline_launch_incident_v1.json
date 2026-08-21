@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "run_id": "base-all-0821a",
+  "status": "resolved_before_inference",
+  "detected_utc": "2026-08-21T22:31:30Z",
+  "invalid_revision": "25413d66fa2bba1a518a48e7f8102f8594bf3dea",
+  "actual_revision": "25413d6ec08a730b195db809d173d4e9ebd58239",
+  "affected_attempts": [
+    {
+      "suite": "distribution_shift",
+      "shard_index": 3,
+      "zone": "asia-northeast1-c"
+    },
+    {
+      "suite": "domain_balanced",
+      "shard_index": 3,
+      "zone": "us-west1-c"
+    }
+  ],
+  "impact": "The bootstrap checkout failed before the evaluation guest started. No predictions, metrics, or terminal evaluation markers were produced.",
+  "resolution": "Both terminated instances and their boot disks were deleted, then the exact shard identities were rerun successfully.",
+  "prevention": {
+    "commit": "7e18bedfdb76e8ba67d9096c324aa1d0a6f626a4",
+    "change": "The launcher resolves and validates every requested Git revision locally before creating a billable VM."
+  }
+}

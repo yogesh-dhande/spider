@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-21T22:27:25Z
+Last verified: 2026-08-21T23:39:31Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -11,22 +11,17 @@ scientific history belongs in the relevant experiment record.
 Status: active.
 
 Corrected shared-corpus run `corpus-v2-0821a` completed and merged with zero missing screenshots.
-The untouched `Qwen/Qwen3.5-2B` baseline is running under `base-all-0821a`. Seven of twelve planned
-suite shards are active; five remain queued because the attempted L4 zones reported stockout. No
-EXP005 training or model-quality claim has started. The authoritative research status and receipts
-are under `experiments/exp005_browser_ablation_bed/`.
+The untouched `Qwen/Qwen3.5-2B` baseline `base-all-0821a` completed all twelve evaluation shards
+and three guarded suite merges. All associated VMs are terminated. The next authorized phase is a
+two-node, two-optimizer-step compatibility/speed smoke before any long SFT stage. No EXP005
+training has started. The authoritative research status and receipts are under
+`experiments/exp005_browser_ablation_bed/`.
 
-At the last verification, a local monitor was running:
-
-```text
-.venv/bin/python scripts/gcloud_exp005.py monitor \
-  --run-id base-all-0821a --poll-seconds 30 --timeout-seconds 14400
-```
-
-The monitor only polls EXP005-labelled Google Cloud instances and appends terminal state to the
-EXP005 GCloud registry. Its PID is not durable; inspect the process table rather than relying on a
-recorded PID. Before merge, verify all twelve exact identities (three suites times four shards),
-because this monitor observes launched VMs and cannot infer the five capacity-queued shards.
+The baseline monitor exited after verifying shutdown. There is no expected local EXP005 monitor at
+this handoff. Before starting SFT, verify the scaling plan hash
+`5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`, upload the selected job
+configuration, and run the two-node compatibility smoke. Preserve world size across any resumed
+training stages.
 
 Protected EXP005 scope:
 

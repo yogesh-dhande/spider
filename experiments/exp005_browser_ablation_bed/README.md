@@ -5,8 +5,10 @@ The zero-missing gate rejected and stopped the first materialization attempt bef
 exposed a trajectory image-path decoder bug; the immutable incident receipt is
 `artifacts/materialization_attempt_v1.json`. Corrected run `corpus-v2-0821a` then completed all
 eight shards with zero missing screenshots and passed the guarded merge; its receipt is
-`artifacts/materialization_attempt_v2.json`. Untouched-model evaluation is active as
-`base-all-0821a`; no EXP005 training or model-quality claim has started.
+`artifacts/materialization_attempt_v2.json`. Untouched-model evaluation `base-all-0821a` completed
+all twelve shards and three guarded merges. Its machine-readable receipt and shard tables are
+`artifacts/baseline_base_all_0821a.json` and `artifacts/baseline_base_all_0821a.md`. No EXP005
+training has started.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
@@ -128,3 +130,20 @@ than copying images.
 The evaluation controls are (1) untouched `Qwen/Qwen3.5-2B`, (2) the frozen EXP002 perception
 adapter, and (3) each EXP005 reference SFT run. All controls use identical manifests, image
 preprocessing, prompts, decoding, and scoring.
+
+## Untouched-model baseline
+
+The pinned untouched model is `Qwen/Qwen3.5-2B` revision
+`15852e8c16360a2fea060d615a32b45270f8a8fc`. Its merged primary metrics are:
+
+| Suite | Examples | QA exact | Grounding click | Action name | Exact action |
+|---|---:|---:|---:|---:|---:|
+| IID | 1,536 | 21.09% | 46.68% | 34.96% | 4.88% |
+| Domain-balanced unseen websites | 1,536 | 26.95% | 61.72% | 31.45% | 2.54% |
+| Distribution shift | 1,024 | — | 54.10% | 37.50% | 1.76% |
+
+These are matched development controls, not sealed external benchmark claims. Individual shard
+metrics, unweighted shard means, sample standard deviations, signatures, and artifact hashes are
+preserved in the baseline receipt. Two infrastructure-only launch attempts checked out a mistyped
+commit hash and stopped before inference; `artifacts/baseline_launch_incident_v1.json` records the
+incident and the launcher guard added before the successful reruns.
