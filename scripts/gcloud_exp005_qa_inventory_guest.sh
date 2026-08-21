@@ -7,12 +7,13 @@ metadata() {
 }
 
 RUN_ID="$(metadata spider-run-id)"
+SOURCE_ID="$(metadata spider-source-id)"
 SHARD_INDEX="$(metadata spider-shard-index)"
 NUM_SHARDS="$(metadata spider-num-shards)"
 BUCKET="$(metadata spider-bucket)"
 LABEL="shard_$(printf '%02d' "${SHARD_INDEX}")_of_$(printf '%02d' "${NUM_SHARDS}")"
-DESTINATION="${BUCKET}/exp005/qa-inventory/${RUN_ID}/${LABEL}"
-LOG_PATH="/var/log/spider-exp005-qa-inventory-${RUN_ID}-${LABEL}.log"
+DESTINATION="${BUCKET}/exp005/source-inventory/${RUN_ID}/${SOURCE_ID}/${LABEL}"
+LOG_PATH="/var/log/spider-exp005-inventory-${RUN_ID}-${SOURCE_ID}-${LABEL}.log"
 exec > >(tee -a "${LOG_PATH}") 2>&1
 
 finish() {
@@ -20,8 +21,8 @@ finish() {
   set +e
   marker=failed
   [[ ${status} -eq 0 ]] && marker=complete
-  printf '{"event":"qa_inventory_terminal","run_id":"%s","shard_index":%s,"num_shards":%s,"status":"%s","exit_code":%s}\n' \
-    "${RUN_ID}" "${SHARD_INDEX}" "${NUM_SHARDS}" "${marker}" "${status}" >/tmp/terminal.json
+  printf '{"event":"source_inventory_terminal","run_id":"%s","source_id":"%s","shard_index":%s,"num_shards":%s,"status":"%s","exit_code":%s}\n' \
+    "${RUN_ID}" "${SOURCE_ID}" "${SHARD_INDEX}" "${NUM_SHARDS}" "${marker}" "${status}" >/tmp/terminal.json
   gcloud storage cp "${LOG_PATH}" "${DESTINATION}/guest.log"
   gcloud storage cp /tmp/terminal.json "${DESTINATION}/${marker}.json"
   shutdown -h now
@@ -48,7 +49,7 @@ export HF_HUB_DISABLE_PROGRESS_BARS=1
 export SPIDER_INVENTORY_DIR="${INVENTORY_ROOT}"
 python -m spider.source_inventory \
   --config /opt/spider/configs/datasets/exp005_molmoweb_inventory.yaml \
-  --source-id screenshot_qa --shard-index "${SHARD_INDEX}" --num-shards "${NUM_SHARDS}"
+  --source-id "${SOURCE_ID}" --shard-index "${SHARD_INDEX}" --num-shards "${NUM_SHARDS}"
 
 tar --use-compress-program='zstd -3 -T0' -cf /tmp/inventory.tar.zst \
   -C /mnt/spider inventory

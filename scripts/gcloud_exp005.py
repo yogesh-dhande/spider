@@ -18,6 +18,7 @@ REGISTRY = EXPERIMENT_DIR / "artifacts/gcloud/vm_registry.jsonl"
 MANAGED_FILTER = "labels.spider-managed=true AND labels.spider-experiment=exp005"
 ACTIVE_STATES = {"PROVISIONING", "STAGING", "RUNNING", "REPAIRING", "SUSPENDING"}
 SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+SAFE_SOURCE_ID = re.compile(r"^[a-z0-9][a-z0-9_]{0,62}$")
 
 
 def utc_now() -> str:
@@ -214,7 +215,44 @@ def create_qa_inventory_shard(
         zone=zone,
         repo_revision=repo_revision,
         guest_script="scripts/gcloud_exp005_qa_inventory_guest.sh",
-        metadata={"spider-shard-index": shard_index, "spider-num-shards": num_shards},
+        metadata={
+            "spider-source-id": "screenshot_qa",
+            "spider-shard-index": shard_index,
+            "spider-num-shards": num_shards,
+        },
+        max_run=max_run,
+        machine_type="c3-standard-8",
+        boot_disk_size="150GB",
+        gpu=False,
+    )
+
+
+def create_source_inventory_shard(
+    run_id: str,
+    zone: str,
+    repo_revision: str,
+    source_id: str,
+    shard_index: int,
+    num_shards: int,
+    max_run: str,
+) -> str:
+    if not SAFE_SOURCE_ID.fullmatch(source_id):
+        raise ValueError("source_id must be a safe lowercase identifier")
+    if num_shards <= 0 or not 0 <= shard_index < num_shards:
+        raise ValueError("Require num_shards > 0 and 0 <= shard_index < num_shards")
+    source_slug = source_id.replace("_", "-")[:20]
+    return _create(
+        name=f"spider-exp005-inventory-{source_slug}-{shard_index:02d}-{run_id}",
+        run_id=run_id,
+        role="source-inventory",
+        zone=zone,
+        repo_revision=repo_revision,
+        guest_script="scripts/gcloud_exp005_qa_inventory_guest.sh",
+        metadata={
+            "spider-source-id": source_id,
+            "spider-shard-index": shard_index,
+            "spider-num-shards": num_shards,
+        },
         max_run=max_run,
         machine_type="c3-standard-8",
         boot_disk_size="150GB",
@@ -429,6 +467,14 @@ def main() -> None:
     qa_inventory.add_argument("--shard-index", type=int, required=True)
     qa_inventory.add_argument("--num-shards", type=int, required=True)
     qa_inventory.add_argument("--max-run", default="5h")
+    source_inventory = subparsers.add_parser("source-inventory-shard")
+    source_inventory.add_argument("--run-id", required=True)
+    source_inventory.add_argument("--zone", required=True)
+    source_inventory.add_argument("--repo-revision", required=True)
+    source_inventory.add_argument("--source-id", required=True)
+    source_inventory.add_argument("--shard-index", type=int, required=True)
+    source_inventory.add_argument("--num-shards", type=int, required=True)
+    source_inventory.add_argument("--max-run", default="5h")
     merge = subparsers.add_parser("materialize-merge")
     merge.add_argument("--run-id", required=True)
     merge.add_argument("--zone", required=True)
@@ -496,6 +542,18 @@ def main() -> None:
                 args.run_id,
                 args.zone,
                 args.repo_revision,
+                args.shard_index,
+                args.num_shards,
+                args.max_run,
+            )
+        }
+    elif args.command == "source-inventory-shard":
+        payload = {
+            "name": create_source_inventory_shard(
+                args.run_id,
+                args.zone,
+                args.repo_revision,
+                args.source_id,
                 args.shard_index,
                 args.num_shards,
                 args.max_run,

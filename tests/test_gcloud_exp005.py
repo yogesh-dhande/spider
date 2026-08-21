@@ -42,7 +42,29 @@ def test_qa_inventory_shard_uses_cpu_and_rejects_invalid_partition(monkeypatch) 
     MODULE.create_qa_inventory_shard("run-a", "zone", "revision", 2, 5, "5h")
     assert received["gpu"] is False
     assert received["machine_type"] == "c3-standard-8"
-    assert received["metadata"] == {"spider-shard-index": 2, "spider-num-shards": 5}
+    assert received["metadata"] == {
+        "spider-source-id": "screenshot_qa",
+        "spider-shard-index": 2,
+        "spider-num-shards": 5,
+    }
+
+
+def test_generic_source_inventory_preserves_source_identity(monkeypatch) -> None:
+    received = {}
+
+    def create(**kwargs):
+        received.update(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    MODULE.create_source_inventory_shard(
+        "run-a", "zone", "revision", "grounding_template", 1, 2, "5h"
+    )
+    assert received["metadata"] == {
+        "spider-source-id": "grounding_template",
+        "spider-shard-index": 1,
+        "spider-num-shards": 2,
+    }
 
 
 def test_materialization_merge_rejects_non_positive_shards() -> None:
