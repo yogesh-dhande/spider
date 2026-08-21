@@ -25,6 +25,19 @@ def _hash_file(path: Path, digest: Any) -> None:
             digest.update(chunk)
 
 
+def adapter_sha256(adapter: str | Path) -> str:
+    """Hash the load-bearing adapter files and their names for cross-shard identity checks."""
+    digest = hashlib.sha256()
+    adapter_path = Path(adapter)
+    files = [path for path in sorted(adapter_path.glob("adapter*")) if path.is_file()]
+    if not files:
+        raise FileNotFoundError(f"No adapter files found in {adapter_path}")
+    for path in files:
+        digest.update(path.name.encode())
+        _hash_file(path, digest)
+    return digest.hexdigest()
+
+
 def evaluation_signature(
     config: dict[str, Any],
     adapter: str | None,
@@ -54,6 +67,7 @@ def evaluation_signature(
         for path in sorted(adapter_path.glob("adapter*")):
             if path.is_file():
                 _hash_file(path, digest)
+        payload["adapter_sha256"] = adapter_sha256(adapter_path)
     signature = digest.hexdigest()
     payload["signature"] = signature
     return signature, payload

@@ -15,6 +15,25 @@ def test_evaluation_signature_changes_with_manifest(tmp_path: Path) -> None:
     assert first != second
 
 
+def test_evaluation_signature_records_adapter_content_identity(tmp_path: Path) -> None:
+    manifest = tmp_path / "test.jsonl"
+    manifest.write_text('{"id":"one"}\n', encoding="utf-8")
+    adapter = tmp_path / "adapter"
+    adapter.mkdir()
+    (adapter / "adapter_config.json").write_text("{}", encoding="utf-8")
+    model = adapter / "adapter_model.safetensors"
+    model.write_bytes(b"first")
+    config = {"experiment": {"model_name": "model", "model_revision": "revision"}}
+
+    first, metadata = evaluation_signature(config, str(adapter), [manifest], "test")
+    assert metadata["adapter_sha256"]
+    model.write_bytes(b"second")
+    second, updated = evaluation_signature(config, str(adapter), [manifest], "test")
+
+    assert first != second
+    assert metadata["adapter_sha256"] != updated["adapter_sha256"]
+
+
 def test_select_records_partitions_each_manifest(tmp_path: Path) -> None:
     manifests = []
     for name in ("qa", "grounding"):

@@ -231,6 +231,7 @@ def merge_manifest_shards(
             row.get("model"),
             row.get("model_revision"),
             Path(str(row.get("adapter") or "none")).name,
+            row.get("adapter_sha256"),
             tuple(Path(value).name for value in row.get("manifests") or []),
         )
         for row in metadata_rows

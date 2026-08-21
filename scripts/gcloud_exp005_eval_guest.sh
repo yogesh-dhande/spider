@@ -58,6 +58,14 @@ if [[ "${CONTROL}" == exp002 ]]; then
     "${BUCKET}/exp004/inputs/exp002_parent/adapter_model.safetensors" \
     "${ADAPTER_ROOT}/"
   adapter_args=(--adapter "${ADAPTER_ROOT}")
+elif [[ "${CONTROL}" == sft ]]; then
+  TRAINING_JOB="$(metadata spider-training-job)"
+  TRAINING_STEP="$(metadata spider-training-step)"
+  gcloud storage cp \
+    "${BUCKET}/exp005/training/jobs/${TRAINING_JOB}/stages/step_$(printf '%05d' "${TRAINING_STEP}")/adapter.tar.zst" \
+    /tmp/adapter.tar.zst
+  tar --use-compress-program=unzstd -xf /tmp/adapter.tar.zst -C "${ADAPTER_ROOT}"
+  adapter_args=(--adapter "${ADAPTER_ROOT}")
 fi
 
 export PYTHONPATH=/opt/spider/src

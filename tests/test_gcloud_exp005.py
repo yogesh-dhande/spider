@@ -79,7 +79,7 @@ def test_evaluation_rejects_unknown_control() -> None:
             "run", "zone", "revision", "other", "iid", 0, 4, "4h"
         )
     except ValueError as error:
-        assert "base or exp002" in str(error)
+        assert "base, exp002, or sft" in str(error)
     else:
         raise AssertionError("unknown evaluation control was accepted")
 
@@ -104,6 +104,41 @@ def test_evaluation_rejects_invalid_partition() -> None:
         assert "shard_index" in str(error)
     else:
         raise AssertionError("invalid evaluation shard was accepted")
+
+
+def test_sft_evaluation_requires_checkpoint_identity() -> None:
+    try:
+        MODULE.create_evaluation_shard(
+            "run", "zone", "revision", "sft", "iid", 0, 4, "4h"
+        )
+    except ValueError as error:
+        assert "training_job" in str(error)
+    else:
+        raise AssertionError("SFT evaluation without a checkpoint was accepted")
+
+
+def test_sft_evaluation_passes_checkpoint_identity(monkeypatch) -> None:
+    received = {}
+
+    def create(**kwargs):
+        received.update(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    MODULE.create_evaluation_shard(
+        "run-a",
+        "zone",
+        "revision",
+        "sft",
+        "iid",
+        0,
+        4,
+        "4h",
+        "small-seed53",
+        125,
+    )
+    assert received["metadata"]["spider-training-job"] == "small-seed53"
+    assert received["metadata"]["spider-training-step"] == 125
 
 
 def test_evaluation_merge_rejects_non_positive_shards() -> None:

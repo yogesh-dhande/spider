@@ -273,13 +273,33 @@ def create_evaluation_shard(
     shard_index: int,
     num_shards: int,
     max_run: str,
+    training_job: str | None = None,
+    training_step: int | None = None,
 ) -> str:
-    if control not in {"base", "exp002"}:
-        raise ValueError("control must be base or exp002")
+    if control not in {"base", "exp002", "sft"}:
+        raise ValueError("control must be base, exp002, or sft")
     if suite not in {"iid", "domain_balanced", "distribution_shift"}:
         raise ValueError("Unknown evaluation suite")
     if num_shards <= 0 or not 0 <= shard_index < num_shards:
         raise ValueError("Require num_shards > 0 and 0 <= shard_index < num_shards")
+    if control == "sft" and (
+        training_job is None
+        or not SAFE_ID.fullmatch(training_job)
+        or training_step is None
+        or training_step <= 0
+    ):
+        raise ValueError("sft evaluation requires a safe training_job and positive training_step")
+    metadata: dict[str, str | int] = {
+        "spider-control": control,
+        "spider-eval-suite": suite,
+        "spider-shard-index": shard_index,
+        "spider-num-shards": num_shards,
+    }
+    if control == "sft":
+        assert training_job is not None and training_step is not None
+        metadata.update(
+            {"spider-training-job": training_job, "spider-training-step": training_step}
+        )
     return _create(
         name=f"spider-exp005-eval-{control}-{suite[:6]}-{shard_index:02d}-{run_id}",
         run_id=run_id,
@@ -287,12 +307,7 @@ def create_evaluation_shard(
         zone=zone,
         repo_revision=repo_revision,
         guest_script="scripts/gcloud_exp005_eval_guest.sh",
-        metadata={
-            "spider-control": control,
-            "spider-eval-suite": suite,
-            "spider-shard-index": shard_index,
-            "spider-num-shards": num_shards,
-        },
+        metadata=metadata,
         max_run=max_run,
         machine_type="g2-standard-8",
         boot_disk_size="100GB",
@@ -309,8 +324,8 @@ def create_evaluation_merge(
     num_shards: int,
     max_run: str,
 ) -> str:
-    if control not in {"base", "exp002"}:
-        raise ValueError("control must be base or exp002")
+    if control not in {"base", "exp002", "sft"}:
+        raise ValueError("control must be base, exp002, or sft")
     if suite not in {"iid", "domain_balanced", "distribution_shift"}:
         raise ValueError("Unknown evaluation suite")
     if num_shards <= 0:
@@ -403,18 +418,22 @@ def main() -> None:
     evaluation.add_argument("--run-id", required=True)
     evaluation.add_argument("--zone", required=True)
     evaluation.add_argument("--repo-revision", required=True)
-    evaluation.add_argument("--control", choices=("base", "exp002"), required=True)
+    evaluation.add_argument("--control", choices=("base", "exp002", "sft"), required=True)
     evaluation.add_argument(
         "--suite", choices=("iid", "domain_balanced", "distribution_shift"), required=True
     )
     evaluation.add_argument("--shard-index", type=int, required=True)
     evaluation.add_argument("--num-shards", type=int, required=True)
+    evaluation.add_argument("--training-job")
+    evaluation.add_argument("--training-step", type=int)
     evaluation.add_argument("--max-run", default="4h")
     evaluation_merge = subparsers.add_parser("evaluation-merge")
     evaluation_merge.add_argument("--run-id", required=True)
     evaluation_merge.add_argument("--zone", required=True)
     evaluation_merge.add_argument("--repo-revision", required=True)
-    evaluation_merge.add_argument("--control", choices=("base", "exp002"), required=True)
+    evaluation_merge.add_argument(
+        "--control", choices=("base", "exp002", "sft"), required=True
+    )
     evaluation_merge.add_argument(
         "--suite", choices=("iid", "domain_balanced", "distribution_shift"), required=True
     )
@@ -470,6 +489,8 @@ def main() -> None:
                 args.shard_index,
                 args.num_shards,
                 args.max_run,
+                args.training_job,
+                args.training_step,
             )
         }
     else:
