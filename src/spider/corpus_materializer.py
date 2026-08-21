@@ -141,12 +141,25 @@ def materialize_group(
 
         disable_progress_bars()
         temporary_download = tempfile.TemporaryDirectory(prefix="spider-arrow-")
+        _emit(
+            "materialization_arrow_download_started",
+            dataset=dataset,
+            file=file_path,
+            locators=len(locators),
+        )
         local_file = hf_hub_download(
             repo_id=dataset,
             repo_type="dataset",
             revision=revision,
             filename=file_path,
             local_dir=temporary_download.name,
+        )
+        _emit(
+            "materialization_arrow_download_completed",
+            dataset=dataset,
+            file=file_path,
+            bytes=Path(local_file).stat().st_size,
+            locators=len(locators),
         )
         arrow_dataset = Dataset.from_file(local_file)
     else:
@@ -165,7 +178,26 @@ def materialize_group(
     realized: dict[str, dict[str, Any]] = {}
     image_dir = output / "images" / "shared"
     image_dir.mkdir(parents=True, exist_ok=True)
-    for locator_id, locator in locators.items():
+    group_started = time.monotonic()
+
+    def emit_arrow_progress(completed: int) -> None:
+        if kinds != {"arrow_single_image"} or (
+            completed % 500 != 0 and completed != len(locators)
+        ):
+            return
+        elapsed = max(time.monotonic() - group_started, 1e-9)
+        rate = completed / elapsed
+        _emit(
+            "materialization_arrow_decode_progress",
+            dataset=dataset,
+            file=file_path,
+            completed_locators=completed,
+            total_locators=len(locators),
+            locators_per_second=round(rate, 2),
+            eta_seconds=round((len(locators) - completed) / rate, 1),
+        )
+
+    for locator_index, (locator_id, locator) in enumerate(locators.items(), start=1):
         try:
             if locator["kind"] == "arrow_single_image":
                 image = _decode_image(arrow_dataset[int(locator["row_index"])]["image"])
@@ -184,6 +216,7 @@ def materialize_group(
             if missing is None:
                 raise
             missing[locator_id] = str(error)[:500]
+            emit_arrow_progress(locator_index)
             continue
         payload, dimensions = _encode_selected_image(
             image, max_width=max_width, max_height=max_height, quality=quality
@@ -204,6 +237,7 @@ def materialize_group(
             "jpeg_sha256": hashlib.sha256(payload).hexdigest(),
             "jpeg_bytes": len(payload),
         }
+        emit_arrow_progress(locator_index)
     if temporary_download is not None:
         temporary_download.cleanup()
     return realized
