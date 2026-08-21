@@ -400,3 +400,10 @@ def test_create_evaluation_uses_gpu_and_scoped_metadata(monkeypatch) -> None:
         "spider-shard-index": 1,
         "spider-num-shards": 4,
     }
+
+
+def test_evaluation_guest_publishes_shard_metrics_separately() -> None:
+    guest = (MODULE_PATH.parent / "gcloud_exp005_eval_guest.sh").read_text()
+
+    assert '"${RESULT_ROOT}/metrics.json" "${DESTINATION}/metrics.json"' in guest
+    assert '"${RESULT_ROOT}/run_metadata.json" "${DESTINATION}/run_metadata.json"' in guest

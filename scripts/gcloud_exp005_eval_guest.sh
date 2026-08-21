@@ -81,6 +81,9 @@ python -m spider.benchmark_eval run \
   --shard-index "${SHARD_INDEX}" --num-shards "${NUM_SHARDS}" \
   "${adapter_args[@]}"
 
+RESULT_ROOT="${OUTPUT_ROOT}/benchmark_evaluation/${LABEL}"
 tar --use-compress-program='zstd -3 -T0' -cf /tmp/evaluation.tar.zst \
   -C "${OUTPUT_ROOT}" benchmark_evaluation
 gcloud storage cp /tmp/evaluation.tar.zst "${DESTINATION}/evaluation.tar.zst"
+gcloud storage cp "${RESULT_ROOT}/metrics.json" "${DESTINATION}/metrics.json"
+gcloud storage cp "${RESULT_ROOT}/run_metadata.json" "${DESTINATION}/run_metadata.json"
