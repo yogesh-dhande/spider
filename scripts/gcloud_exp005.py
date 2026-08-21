@@ -639,6 +639,7 @@ def create_evaluation_merge(
         max_run=max_run,
         machine_type="e2-standard-4",
         boot_disk_size="100GB",
+        boot_disk_type="pd-standard",
         gpu=False,
     )
 

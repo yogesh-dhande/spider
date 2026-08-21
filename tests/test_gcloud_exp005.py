@@ -430,6 +430,21 @@ def test_evaluation_merge_rejects_non_positive_shards() -> None:
         raise AssertionError("invalid evaluation merge was accepted")
 
 
+def test_evaluation_merge_uses_standard_disk(monkeypatch) -> None:
+    received = {}
+
+    def create(**kwargs):
+        received.update(kwargs)
+        return kwargs["name"]
+
+    monkeypatch.setattr(MODULE, "_create", create)
+    MODULE.create_evaluation_merge(
+        "run-a", "us-west1-b", "abc123", "base", "iid", 4, "2h"
+    )
+    assert received["gpu"] is False
+    assert received["boot_disk_type"] == "pd-standard"
+
+
 def test_monitor_retries_transient_inventory_failure_without_stopping(monkeypatch) -> None:
     calls = 0
     stop_calls: list[str] = []
