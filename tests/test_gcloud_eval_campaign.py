@@ -145,3 +145,42 @@ def test_complete_shards_checks_only_requested_identities(monkeypatch) -> None:
     assert completed == {requested}
     assert len(seen) == 2
     assert all("exp002-iid-shard-02-of-04" in uri for uri in seen)
+
+
+def test_terminal_grace_delays_relaunch_for_known_stopped_shard() -> None:
+    identity = MODULE.ShardIdentity("domain_balanced", 3)
+    missing_since = {}
+
+    launchable, deferred = MODULE.terminal_grace_filter(
+        missing={identity},
+        known={identity},
+        missing_since=missing_since,
+        now=100.0,
+        grace_seconds=180,
+    )
+    assert launchable == []
+    assert deferred == [identity]
+    assert missing_since == {identity: 100.0}
+
+    launchable, deferred = MODULE.terminal_grace_filter(
+        missing={identity},
+        known={identity},
+        missing_since=missing_since,
+        now=281.0,
+        grace_seconds=180,
+    )
+    assert launchable == [identity]
+    assert deferred == []
+
+
+def test_terminal_grace_does_not_delay_never_created_shard() -> None:
+    identity = MODULE.ShardIdentity("distribution_shift", 0)
+    launchable, deferred = MODULE.terminal_grace_filter(
+        missing={identity},
+        known=set(),
+        missing_since={},
+        now=100.0,
+        grace_seconds=180,
+    )
+    assert launchable == [identity]
+    assert deferred == []

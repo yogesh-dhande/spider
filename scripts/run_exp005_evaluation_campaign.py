@@ -167,6 +167,43 @@ def active_shards(instances: list[dict[str, Any]]) -> set[ShardIdentity]:
     return active
 
 
+def known_shards(instances: list[dict[str, Any]]) -> set[ShardIdentity]:
+    known: set[ShardIdentity] = set()
+    for instance in instances:
+        metadata = metadata_dict(instance)
+        suite = metadata.get("spider-eval-suite")
+        shard = metadata.get("spider-shard-index")
+        if suite in SUITES and shard is not None:
+            known.add(ShardIdentity(suite, int(shard)))
+    return known
+
+
+def terminal_grace_filter(
+    *,
+    missing: set[ShardIdentity],
+    known: set[ShardIdentity],
+    missing_since: dict[ShardIdentity, float],
+    now: float,
+    grace_seconds: int,
+) -> tuple[list[ShardIdentity], list[ShardIdentity]]:
+    """Delay replacement while a stopped guest may still be uploading its marker."""
+    for identity in set(missing_since) - missing:
+        missing_since.pop(identity)
+    launchable: list[ShardIdentity] = []
+    deferred: list[ShardIdentity] = []
+    for identity in sorted(missing):
+        if identity not in known:
+            missing_since.pop(identity, None)
+            launchable.append(identity)
+            continue
+        first_seen = missing_since.setdefault(identity, now)
+        if now - first_seen < grace_seconds:
+            deferred.append(identity)
+        else:
+            launchable.append(identity)
+    return launchable, deferred
+
+
 def merge_complete(run_id: str, control: str, suite: str) -> bool:
     root = f"{cloud.BUCKET}/exp005/evaluation/{run_id}/merged-{control}-{suite}"
     failed = storage_json(f"{root}/failed.json")
@@ -252,6 +289,7 @@ def main() -> None:
     parser.add_argument("--max-active", type=int, default=8)
     parser.add_argument("--poll-seconds", type=int, default=120)
     parser.add_argument("--retry-seconds", type=int, default=600)
+    parser.add_argument("--terminal-grace-seconds", type=int, default=180)
     parser.add_argument("--timeout-seconds", type=int, default=21600)
     parser.add_argument("--state-log", type=Path)
     args = parser.parse_args()
@@ -278,6 +316,7 @@ def main() -> None:
         for shard_index in range(args.num_shards)
     }
     retry_after: dict[str, float] = {}
+    missing_since: dict[ShardIdentity, float] = {}
     completed: set[ShardIdentity] = set()
     completed_merges: set[str] = set()
     deadline = time.monotonic() + args.timeout_seconds
@@ -340,8 +379,30 @@ def main() -> None:
             continue
 
         slots = max(args.max_active - len(active), 0)
-        missing = sorted(expected - completed - active)
+        missing = expected - completed - active
         if slots and missing:
+            late_completed = complete_shards(
+                run_id=args.run_id,
+                control=args.control,
+                num_shards=args.num_shards,
+                identities=missing,
+            )
+            completed.update(late_completed)
+            missing -= late_completed
+            missing, deferred = terminal_grace_filter(
+                missing=missing,
+                known=known_shards(run_instances),
+                missing_since=missing_since,
+                now=time.monotonic(),
+                grace_seconds=args.terminal_grace_seconds,
+            )
+            for identity in deferred:
+                record(
+                    "evaluation_campaign_terminal_grace",
+                    suite=identity.suite,
+                    shard_index=identity.shard_index,
+                    grace_seconds=args.terminal_grace_seconds,
+                )
             occupied = active_gpu_regions(list_instances())
             now = time.monotonic()
             candidates = [
