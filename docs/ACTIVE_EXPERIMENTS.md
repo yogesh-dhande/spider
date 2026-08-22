@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T02:57:46Z
+Last verified: 2026-08-22T03:08:28Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -29,6 +29,10 @@ anonymous Hugging Face downloads.
 The exact 10K/seed-53 stage was relaunched as `small53-s00000-e00500-0822b`, steps 0 through 500,
 on the selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local
 model snapshot.
+All nine immutable scaling-job configurations are now staged under their content-derived GCS job
+prefixes. The eight newly staged configurations were checked byte-for-byte against the local
+matrix plan, and each parsed configuration matches its registered canonical configuration hash.
+No additional training jobs were launched by this staging step.
 All twelve EXP002-control shards and all three guarded suite merges completed with exact terminal
 markers; every associated VM is terminated. The validated receipt is
 `artifacts/exp002_control_all_0822a.{json,md}` and the baseline/control comparison is
