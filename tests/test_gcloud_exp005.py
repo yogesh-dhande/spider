@@ -87,6 +87,21 @@ def test_model_cache_uses_pinned_model_and_cpu_worker(monkeypatch) -> None:
     }
 
 
+def test_model_files_repackages_frozen_cache_on_cpu(monkeypatch) -> None:
+    received = {}
+    monkeypatch.setattr(
+        MODULE, "_create", lambda **kwargs: received.update(kwargs) or kwargs["name"]
+    )
+
+    MODULE.create_model_files("files-a", "us-east4-b", "abc123", "2h")
+
+    assert received["gpu"] is False
+    assert received["metadata"] == {
+        "spider-source-model-cache-id": "qwen35-2b-15852e8c",
+        "spider-model-cache-id": "qwen35-2b-15852e8c-files",
+    }
+
+
 def test_qa_inventory_shard_uses_cpu_and_rejects_invalid_partition(monkeypatch) -> None:
     try:
         MODULE.create_qa_inventory_shard("run", "zone", "revision", 5, 5, "5h")
@@ -387,7 +402,7 @@ def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> Non
     assert 'python -m spider.safetensor_health' in guest
     assert '"${STAGE_ROOT}/adapter_health.json"' in guest
     assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
-    assert "qwen35-2b-15852e8c/model.tar.zst" in guest
+    assert "qwen35-2b-15852e8c-files/snapshot" in guest
 
 
 def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages() -> None:
@@ -402,7 +417,7 @@ def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages()
 def test_evaluation_guest_uses_frozen_local_model_snapshot() -> None:
     guest = (MODULE_PATH.parent / "gcloud_exp005_eval_guest.sh").read_text()
 
-    assert "qwen35-2b-15852e8c/model.tar.zst" in guest
+    assert "qwen35-2b-15852e8c-files/snapshot" in guest
     assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
     assert "export HF_HUB_OFFLINE=1" in guest
 

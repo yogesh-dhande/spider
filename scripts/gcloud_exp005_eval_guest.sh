@@ -51,10 +51,9 @@ MODEL_ROOT="${WORK_ROOT}/model"
 mkdir -p "${DATA_ROOT}" "${OUTPUT_ROOT}" "${ADAPTER_ROOT}" "${MODEL_ROOT}"
 gcloud storage cp "${BUCKET}/exp005/data/corpus.tar.zst" /tmp/corpus.tar.zst
 tar --use-compress-program=unzstd -xf /tmp/corpus.tar.zst -C "${DATA_ROOT}"
-gcloud storage cp \
-  "${BUCKET}/exp005/inputs/models/qwen35-2b-15852e8c/model.tar.zst" \
-  /tmp/model.tar.zst
-tar --use-compress-program=unzstd -xf /tmp/model.tar.zst -C "${MODEL_ROOT}"
+gcloud storage rsync --recursive \
+  "${BUCKET}/exp005/inputs/models/qwen35-2b-15852e8c-files/snapshot" \
+  "${MODEL_ROOT}"
 
 adapter_args=()
 if [[ "${CONTROL}" == exp002 ]]; then
