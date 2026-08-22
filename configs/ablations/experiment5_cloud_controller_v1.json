@@ -177,7 +177,8 @@
       "prerequisites": [
         "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-53--faf1ae77cd/job_result.json",
         "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-59--723d8e36b6/job_result.json",
-        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json"
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/releases/large_v1.json"
       ]
     },
     {
@@ -187,7 +188,8 @@
       "prerequisites": [
         "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-53--faf1ae77cd/job_result.json",
         "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-59--723d8e36b6/job_result.json",
-        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json"
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/releases/large_v1.json"
       ]
     },
     {
@@ -197,7 +199,8 @@
       "prerequisites": [
         "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-53--faf1ae77cd/job_result.json",
         "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-59--723d8e36b6/job_result.json",
-        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json"
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/releases/large_v1.json"
       ]
     }
   ]

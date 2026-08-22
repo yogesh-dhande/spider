@@ -32,6 +32,17 @@ def test_controller_manifest_preserves_full_scaling_matrix() -> None:
     assert all(item.max_attempts == 1 for item in processes[3:])
 
 
+def test_large_jobs_require_explicit_release_after_medium() -> None:
+    config = load_config()
+    large_jobs = [item for item in config["jobs"] if "--large--" in item["job_id"]]
+    assert len(large_jobs) == 3
+    assert all(
+        "experiments/exp005_browser_ablation_bed/artifacts/releases/large_v1.json"
+        in item["prerequisites"]
+        for item in large_jobs
+    )
+
+
 def test_recovery_keeps_existing_scientific_revision_and_namespace() -> None:
     config = load_config()
     processes = MODULE.load_processes(config)
