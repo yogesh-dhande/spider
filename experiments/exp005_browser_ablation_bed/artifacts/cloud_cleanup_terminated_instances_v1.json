@@ -10,17 +10,27 @@
     },
     "status": "TERMINATED"
   },
-  "deleted_instances": 146,
+  "deleted_instances": 153,
   "deleted_by_role": {
     "data-shard": 12,
-    "evaluation": 93,
-    "evaluation-merge": 14,
+    "evaluation": 97,
+    "evaluation-merge": 17,
     "model-cache": 1,
     "model-files": 1,
     "qa-inventory": 4,
     "source-inventory": 2,
     "training-multinode": 19
   },
+  "batches": [
+    {
+      "completed_at_utc": "2026-08-22T17:46:00+00:00",
+      "deleted_instances": 146
+    },
+    {
+      "completed_at_utc": "2026-08-22T17:56:00+00:00",
+      "deleted_instances": 7
+    }
+  ],
   "failures": [],
   "verification": {
     "terminated_instances_remaining": 0,
