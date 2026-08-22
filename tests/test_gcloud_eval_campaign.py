@@ -114,3 +114,34 @@ def test_launch_available_shards_falls_through_stockout_immediately() -> None:
         "evaluation_campaign_launch_retry",
         "evaluation_campaign_shard_launched",
     ]
+
+
+def test_complete_shards_checks_only_requested_identities(monkeypatch) -> None:
+    requested = MODULE.ShardIdentity("iid", 2)
+    seen = []
+
+    def storage_json(uri):
+        seen.append(uri)
+        if uri.endswith("failed.json"):
+            return None
+        return {
+            "run_id": "run-a",
+            "control": "exp002",
+            "suite": "iid",
+            "shard_index": 2,
+            "num_shards": 4,
+            "status": "complete",
+            "exit_code": 0,
+        }
+
+    monkeypatch.setattr(MODULE, "storage_json", storage_json)
+    completed = MODULE.complete_shards(
+        run_id="run-a",
+        control="exp002",
+        num_shards=4,
+        identities={requested},
+    )
+
+    assert completed == {requested}
+    assert len(seen) == 2
+    assert all("exp002-iid-shard-02-of-04" in uri for uri in seen)

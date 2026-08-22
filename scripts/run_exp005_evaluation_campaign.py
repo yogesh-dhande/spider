@@ -121,27 +121,36 @@ def validate_shard_terminal(
 
 
 def complete_shards(
-    *, run_id: str, control: str, num_shards: int
+    *,
+    run_id: str,
+    control: str,
+    num_shards: int,
+    identities: set[ShardIdentity] | None = None,
 ) -> set[ShardIdentity]:
     completed: set[ShardIdentity] = set()
-    for suite in SUITES:
-        for shard_index in range(num_shards):
-            identity = ShardIdentity(suite, shard_index)
-            root = f"{cloud.BUCKET}/exp005/evaluation/{run_id}/{label(control, identity, num_shards)}"
-            failed = storage_json(f"{root}/failed.json")
-            if failed is not None:
-                raise RuntimeError(f"Evaluation shard failed: {failed}")
-            terminal = storage_json(f"{root}/complete.json")
-            if terminal is None:
-                continue
-            validate_shard_terminal(
-                terminal,
-                run_id=run_id,
-                control=control,
-                identity=identity,
-                num_shards=num_shards,
-            )
-            completed.add(identity)
+    targets = identities
+    if targets is None:
+        targets = {
+            ShardIdentity(suite, shard_index)
+            for suite in SUITES
+            for shard_index in range(num_shards)
+        }
+    for identity in sorted(targets):
+        root = f"{cloud.BUCKET}/exp005/evaluation/{run_id}/{label(control, identity, num_shards)}"
+        failed = storage_json(f"{root}/failed.json")
+        if failed is not None:
+            raise RuntimeError(f"Evaluation shard failed: {failed}")
+        terminal = storage_json(f"{root}/complete.json")
+        if terminal is None:
+            continue
+        validate_shard_terminal(
+            terminal,
+            run_id=run_id,
+            control=control,
+            identity=identity,
+            num_shards=num_shards,
+        )
+        completed.add(identity)
     return completed
 
 
@@ -269,12 +278,19 @@ def main() -> None:
         for shard_index in range(args.num_shards)
     }
     retry_after: dict[str, float] = {}
+    completed: set[ShardIdentity] = set()
+    completed_merges: set[str] = set()
     deadline = time.monotonic() + args.timeout_seconds
     last_state: tuple[int, int] | None = None
 
     while time.monotonic() < deadline:
-        completed = complete_shards(
-            run_id=args.run_id, control=args.control, num_shards=args.num_shards
+        completed.update(
+            complete_shards(
+                run_id=args.run_id,
+                control=args.control,
+                num_shards=args.num_shards,
+                identities=expected - completed,
+            )
         )
         run_instances = list_instances(args.run_id)
         active = active_shards(run_instances)
@@ -300,7 +316,10 @@ def main() -> None:
             for suite, zone in zip(
                 SUITES, merge_zones[: len(SUITES)], strict=True
             ):
+                if suite in completed_merges:
+                    continue
                 if merge_complete(args.run_id, args.control, suite):
+                    completed_merges.add(suite)
                     continue
                 if suite in active_merge_suites:
                     continue
@@ -314,7 +333,7 @@ def main() -> None:
                     "2h",
                 )
                 record("evaluation_campaign_merge_launched", suite=suite, zone=zone)
-            if all(merge_complete(args.run_id, args.control, suite) for suite in SUITES):
+            if completed_merges == set(SUITES):
                 record("evaluation_campaign_complete", run_id=args.run_id)
                 return
             time.sleep(args.poll_seconds)
