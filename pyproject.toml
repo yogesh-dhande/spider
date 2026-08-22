@@ -59,6 +59,7 @@ spider-compare-eval-shards = "spider.eval_reproducibility:main"
 spider-build-scaling-schedule = "spider.scaling_schedule:main"
 spider-scaling-gate = "spider.scaling_gate:main"
 spider-register-candidate = "spider.candidate_registry:main"
+spider-extract-dashboard-images = "spider.dashboard_images:main"
 spider-ablation-matrix = "spider.ablation_matrix:main"
 spider-build-dataset-dashboard = "spider.dataset_dashboard:main"
 

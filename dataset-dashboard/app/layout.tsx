@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 
-const title = "Browser model diagnostics · Spider EXP004";
+const title = "Browser model diagnostics · Spider EXP005";
 const description =
-  "Compare Qwen3.5-2B browser ScreenshotQA, GUI-grounding, and action predictions across EXP004 checkpoints.";
+  "Compare Qwen3.5-2B browser ScreenshotQA, GUI-grounding, and action predictions across EXP005 scaling checkpoints.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

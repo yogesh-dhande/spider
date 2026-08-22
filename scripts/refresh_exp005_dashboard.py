@@ -92,6 +92,7 @@ def refresh_dashboard(
     dashboard_json: Path,
     public_images: Path,
     display_limit: int,
+    copy_images: bool = True,
 ) -> dict[str, Any]:
     prediction_paths = {
         "baseline": merged_predictions(baseline_root, suite, "base"),
@@ -112,8 +113,9 @@ def refresh_dashboard(
     )
     verify_dashboard_metrics(payload, _load(baseline_receipt_path), "baseline", suite)
     verify_dashboard_metrics(payload, _load(latest_receipt_path), "latest", suite)
-    copy_perception_dashboard_images(payload, corpus_root, public_images)
-    copy_action_dashboard_images(payload["action"], corpus_root, public_images / "action")
+    if copy_images:
+        copy_perception_dashboard_images(payload, corpus_root, public_images)
+        copy_action_dashboard_images(payload["action"], corpus_root, public_images / "action")
     write_dashboard_json(payload, dashboard_json)
     return payload
 
@@ -135,6 +137,7 @@ def main() -> None:
         "--public-images", type=Path, default=Path("dataset-dashboard/public/images")
     )
     parser.add_argument("--display-limit", type=int, default=64)
+    parser.add_argument("--skip-images", action="store_true")
     args = parser.parse_args()
     payload = refresh_dashboard(
         baseline_root=args.baseline_root,
@@ -148,6 +151,7 @@ def main() -> None:
         dashboard_json=args.dashboard_json,
         public_images=args.public_images,
         display_limit=args.display_limit,
+        copy_images=not args.skip_images,
     )
     print(
         json.dumps(

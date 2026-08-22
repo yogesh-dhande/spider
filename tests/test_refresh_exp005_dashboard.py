@@ -62,3 +62,9 @@ def test_verify_dashboard_metrics_accepts_receipt_exactly() -> None:
 def test_verify_dashboard_metrics_rejects_stale_payload() -> None:
     with pytest.raises(ValueError, match="Dashboard/receipt metric mismatch"):
         MODULE.verify_dashboard_metrics(_payload(0.4), _receipt(0.5), "latest", "iid")
+
+
+def test_refresh_cli_supports_payload_first_image_materialization() -> None:
+    source = MODULE_PATH.read_text(encoding="utf-8")
+    assert 'parser.add_argument("--skip-images", action="store_true")' in source
+    assert "copy_images=not args.skip_images" in source

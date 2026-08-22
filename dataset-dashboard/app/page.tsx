@@ -266,7 +266,7 @@ export default function Home() {
   return (
     <main>
       <header className="hero">
-        <nav><div className="brandMark">SP</div><div className="brandText"><strong>Spider Lab</strong><span>EXP004 · model diagnostics</span></div><div className="viewSwitch"><button onClick={() => setView("data")}>Training data</button><button className="active">Model diagnostics</button></div></nav>
+        <nav><div className="brandMark">SP</div><div className="brandText"><strong>Spider Lab</strong><span>EXP005 · scaling diagnostics</span></div><div className="viewSwitch"><button onClick={() => setView("data")}>Training data</button><button className="active">Model diagnostics</button></div></nav>
         <div className="heroGrid">
           <div className="heroCopy">
             <p className="eyebrow">MolmoWeb · {SPLIT_LABEL}</p>
@@ -305,7 +305,7 @@ export default function Home() {
           {visible < filtered.length && <button className="loadMore" onClick={() => setVisible((value) => value + PAGE_SIZE)}>Load {Math.min(PAGE_SIZE, filtered.length - visible)} more</button>}
         </div>
       </section>
-      <footer><span>Spider EXP004 · generated from immutable Kaggle prediction artifacts</span><span>MolmoWeb · ODC-BY 1.0</span></footer>
+      <footer><span>Spider EXP005 · generated from validated, content-addressed prediction receipts</span><span>MolmoWeb · ODC-BY 1.0</span></footer>
     </main>
   );
 }

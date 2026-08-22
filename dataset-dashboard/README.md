@@ -7,11 +7,11 @@ cross-task sample. Action and grounding cards include selectively materialized s
 ground-truth click overlays; QA prompt/answer cards remain browsable without downloading the
 multi-gigabyte Arrow shards just for the dashboard.
 
-During
-EXP004 training it compares the EXP002 parent checkpoint with the latest completed stage on the
-fixed development probes: 128 ScreenshotQA examples, 128 GUI-grounding examples, and 256 browser
-actions. After checkpoint selection and the sealed evaluation, the metric cards cover the complete
-sealed sets while each task view retains a deterministic 64-example diagnostic sample.
+For EXP005 it compares untouched Qwen3.5-2B with the latest validated scaling checkpoint on the
+frozen IID development suite. Metric cards use the complete merged suite; each task view retains a
+deterministic diagnostic sample with both model outputs and click overlays. The candidate registry
+and regression gate update before the hosted payload, so the dashboard cannot display an
+unreceipted checkpoint.
 
 Grounding and browser-action views overlay the annotated element box and target center with both
 checkpoint click predictions. Failure-first ordering makes OCR, semantic, output-format, and
@@ -55,3 +55,21 @@ npm run dev -- --port 4173
 The screenshots come from AllenAI's MolmoWeb synthetic datasets under ODC-BY 1.0. The Kaggle
 orchestrator regenerates the payload after every completed development probe and once more from
 the matched sealed predictions at the end of EXP004.
+
+For EXP005, first build the verified payload without copying images, extract only its selected
+images from the shared GCS corpus archive, then rerun with image copying enabled:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/refresh_exp005_dashboard.py \
+  --baseline-root outputs/experiment5/baseline/base-all-0821a \
+  --latest-root <archived-evaluation-root> \
+  --baseline-receipt experiments/exp005_browser_ablation_bed/artifacts/baseline_base_all_0821a.json \
+  --latest-receipt <validated-evaluation-receipt> \
+  --latest-name '<size/seed/step label>' --latest-step <step> \
+  --corpus-root outputs/experiment5/dashboard_corpus_subset --skip-images
+
+PYTHONPATH=src .venv/bin/python -m spider.dashboard_images \
+  --payload dataset-dashboard/app/qa-probe.json \
+  --archive outputs/experiment5/dashboard_corpus.tar.zst \
+  --destination outputs/experiment5/dashboard_corpus_subset
+```
