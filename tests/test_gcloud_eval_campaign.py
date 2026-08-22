@@ -147,6 +147,23 @@ def test_complete_shards_checks_only_requested_identities(monkeypatch) -> None:
     assert all("exp002-iid-shard-02-of-04" in uri for uri in seen)
 
 
+def test_complete_shards_skips_missing_object_reads_with_index(monkeypatch) -> None:
+    requested = MODULE.ShardIdentity("iid", 2)
+
+    def unexpected_read(uri):
+        raise AssertionError(f"unexpected object read: {uri}")
+
+    monkeypatch.setattr(MODULE, "storage_json", unexpected_read)
+    completed = MODULE.complete_shards(
+        run_id="run-a",
+        control="exp002",
+        num_shards=4,
+        identities={requested},
+        objects=set(),
+    )
+    assert completed == set()
+
+
 def test_terminal_grace_delays_relaunch_for_known_stopped_shard() -> None:
     identity = MODULE.ShardIdentity("domain_balanced", 3)
     missing_since = {}

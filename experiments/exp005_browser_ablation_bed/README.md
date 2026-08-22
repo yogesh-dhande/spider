@@ -118,6 +118,9 @@ evaluation suites, binds the evaluated adapter hash to the trained checkpoint, w
 receipts, and stops any remaining training or evaluation VMs in a `finally` path. The command runs
 one stage only so metrics can be reviewed for regression before the next registered stage begins;
 independent size/seed jobs may use separate invocations in parallel.
+The evaluation controller indexes a run prefix with batched object listings before reading exact
+terminals, avoiding dozens of sequential not-found requests on every poll. Existing healthy
+training receipts are identity-checked and reused when an evaluation-only retry is required.
 
 The exact one-epoch schedule is frozen in `artifacts/scaling_schedule_v2.json` with schedule hash
 `eec4b382e410c9cfc6b20e8c51b298d71f83dfd85bc046811eae55ef3f2c1679`. At effective batch 16,

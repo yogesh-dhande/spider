@@ -94,6 +94,19 @@ def storage_json(uri: str) -> dict[str, Any] | None:
     return json.loads(result.stdout)
 
 
+def storage_objects(run_id: str) -> set[str]:
+    root = f"{cloud.BUCKET}/exp005/evaluation/{run_id}/**"
+    result = subprocess.run(
+        ["gcloud", "storage", "ls", "-r", root],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode:
+        return set()
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
 def validate_shard_terminal(
     terminal: dict[str, Any],
     *,
@@ -126,6 +139,7 @@ def complete_shards(
     control: str,
     num_shards: int,
     identities: set[ShardIdentity] | None = None,
+    objects: set[str] | None = None,
 ) -> set[ShardIdentity]:
     completed: set[ShardIdentity] = set()
     targets = identities
@@ -137,10 +151,12 @@ def complete_shards(
         }
     for identity in sorted(targets):
         root = f"{cloud.BUCKET}/exp005/evaluation/{run_id}/{label(control, identity, num_shards)}"
-        failed = storage_json(f"{root}/failed.json")
+        failure_uri = f"{root}/failed.json"
+        complete_uri = f"{root}/complete.json"
+        failed = storage_json(failure_uri) if objects is None or failure_uri in objects else None
         if failed is not None:
             raise RuntimeError(f"Evaluation shard failed: {failed}")
-        terminal = storage_json(f"{root}/complete.json")
+        terminal = storage_json(complete_uri) if objects is None or complete_uri in objects else None
         if terminal is None:
             continue
         validate_shard_terminal(
@@ -204,12 +220,16 @@ def terminal_grace_filter(
     return launchable, deferred
 
 
-def merge_complete(run_id: str, control: str, suite: str) -> bool:
+def merge_complete(
+    run_id: str, control: str, suite: str, *, objects: set[str] | None = None
+) -> bool:
     root = f"{cloud.BUCKET}/exp005/evaluation/{run_id}/merged-{control}-{suite}"
-    failed = storage_json(f"{root}/failed.json")
+    failure_uri = f"{root}/failed.json"
+    complete_uri = f"{root}/complete.json"
+    failed = storage_json(failure_uri) if objects is None or failure_uri in objects else None
     if failed is not None:
         raise RuntimeError(f"Evaluation merge failed: {failed}")
-    terminal = storage_json(f"{root}/complete.json")
+    terminal = storage_json(complete_uri) if objects is None or complete_uri in objects else None
     if terminal is None:
         return False
     expected = {
@@ -324,12 +344,14 @@ def main() -> None:
     last_state: tuple[int, int] | None = None
 
     while time.monotonic() < deadline:
+        objects = storage_objects(args.run_id)
         completed.update(
             complete_shards(
                 run_id=args.run_id,
                 control=args.control,
                 num_shards=args.num_shards,
                 identities=expected - completed,
+                objects=objects,
             )
         )
         run_instances = list_instances(args.run_id)
@@ -358,7 +380,9 @@ def main() -> None:
             ):
                 if suite in completed_merges:
                     continue
-                if merge_complete(args.run_id, args.control, suite):
+                if merge_complete(
+                    args.run_id, args.control, suite, objects=objects
+                ):
                     completed_merges.add(suite)
                     continue
                 if suite in active_merge_suites:
@@ -387,6 +411,7 @@ def main() -> None:
                 control=args.control,
                 num_shards=args.num_shards,
                 identities=missing,
+                objects=storage_objects(args.run_id),
             )
             completed.update(late_completed)
             missing -= late_completed
