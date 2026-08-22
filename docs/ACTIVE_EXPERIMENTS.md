@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:23:49Z
+Last verified: 2026-08-22T03:26:41Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -63,6 +63,10 @@ from 1,345 to 182 seconds (7.39×, saving 1,163 seconds per shard), so the image
 future opt-in EXP005 evaluations subject to the invalidation conditions in
 `artifacts/warm_eval_image_v1.json`. The already-running first step-500 controller remains on its
 registered cold-image path.
+Reusable runner `scripts/run_exp005_scaling_stage.py` now packages one exact resumable training
+stage and its full matched validation, refuses ambiguous prior stage state, and guarantees a final
+VM-stop sweep. Use separate invocations for parallel size/seed jobs; do not use it to replace the
+already-running step-500 controller.
 
 Protected EXP005 scope:
 

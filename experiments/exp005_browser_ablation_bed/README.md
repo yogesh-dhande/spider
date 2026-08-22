@@ -110,6 +110,14 @@ The matrix planner refuses to overwrite an existing plan with different content.
 hashes its config and train/validation manifests and refuses to resume an output directory belonging
 to another job.
 
+`scripts/run_exp005_scaling_stage.py` is the reusable cloud stage boundary. It inspects an exact
+two-rank terminal state before launch, refuses partial, failed, or orphaned attempts, preserves the
+effective batch-16 topology, waits for a checksumed training receipt, runs all three frozen
+evaluation suites, binds the evaluated adapter hash to the trained checkpoint, writes isolated
+receipts, and stops any remaining training or evaluation VMs in a `finally` path. The command runs
+one stage only so metrics can be reviewed for regression before the next registered stage begins;
+independent size/seed jobs may use separate invocations in parallel.
+
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16
 (16, 8, or 4 accumulation steps respectively). A job cannot change its GPU world size between
