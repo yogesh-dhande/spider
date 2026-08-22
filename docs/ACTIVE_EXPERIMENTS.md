@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T00:49:25Z
+Last verified: 2026-08-22T00:54:22Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -17,12 +17,17 @@ two-node topology was selected because the dispersed four-node topology was slow
 VMs are terminated and deleted. The registered 20-step numerical smoke
 `smoke20-small53-0822a` completed successfully: dynamic FP16 loss scaling recovered, the last ten
 reported steps had finite gradient norms, both ranks emitted exact complete markers, and the final
-adapter contained zero non-finite values. No long EXP005 training stage has started. The
-authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
+adapter contained zero non-finite values. The first long reference stage
+`small53-s00000-e00500-0822a` is active on two nearby L4 nodes for job
+`exp004-reference--small--seed-53--50619370ee`, steps 0 through 500. Four matched EXP002-control
+evaluation shards are also active under `exp002-all-0822a`; four other launch attempts encountered
+capacity and created no VM, and will be retried after capacity recycles. The authoritative research
+status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-The smoke monitor exited after verifying shutdown. There is no expected local EXP005 monitor at
-this handoff. The first 500-step two-node reference stage is now authorized, followed by matched
-development evaluation before further continuation. The verified scaling plan hash is
+Local monitors are active for `small53-s00000-e00500-0822a` and `exp002-all-0822a`. Do not stop
+their VMs or switch this worktree's branch. Require exact complete markers and finite adapter health
+for the training stage, then run matched development evaluation before further continuation. Retry
+the uncreated EXP002 shards as regions become available. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
 
