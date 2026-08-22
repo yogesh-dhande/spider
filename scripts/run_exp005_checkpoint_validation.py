@@ -176,6 +176,7 @@ def main() -> None:
     parser.add_argument("--evaluation-markdown", type=Path, required=True)
     parser.add_argument("--state-log", type=Path, required=True)
     parser.add_argument("--poll-seconds", type=int, default=120)
+    parser.add_argument("--evaluation-retry-seconds", type=int, default=60)
     parser.add_argument("--training-timeout-seconds", type=int, default=21600)
     parser.add_argument("--evaluation-timeout-seconds", type=int, default=21600)
     args = parser.parse_args()
@@ -251,7 +252,7 @@ def main() -> None:
             "--poll-seconds",
             str(args.poll_seconds),
             "--retry-seconds",
-            "600",
+            str(args.evaluation_retry_seconds),
             "--terminal-grace-seconds",
             "180",
             "--timeout-seconds",

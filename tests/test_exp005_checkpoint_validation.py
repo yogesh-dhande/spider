@@ -63,6 +63,12 @@ def test_checkpoint_validation_cli_exposes_opt_in_warm_image() -> None:
     assert 'evaluation_command.extend(["--warm-image", args.warm_image])' in source
 
 
+def test_checkpoint_validation_uses_short_capacity_retry_backoff() -> None:
+    source = MODULE_PATH.read_text(encoding="utf-8")
+    assert 'parser.add_argument("--evaluation-retry-seconds", type=int, default=60)' in source
+    assert 'str(args.evaluation_retry_seconds)' in source
+
+
 def test_validate_training_receipt_allows_exact_healthy_reuse(tmp_path: Path) -> None:
     path = tmp_path / "training.json"
     receipt = {
