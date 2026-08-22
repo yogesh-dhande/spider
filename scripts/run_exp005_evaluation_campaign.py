@@ -10,7 +10,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gcloud_exp005 as cloud
@@ -183,6 +183,49 @@ def emit(event: str, **fields: Any) -> None:
     print(json.dumps({"event": event, **fields}, sort_keys=True), flush=True)
 
 
+def launch_available_shards(
+    *,
+    missing: list[ShardIdentity],
+    candidates: list[str],
+    slots: int,
+    retry_after: dict[str, float],
+    retry_seconds: int,
+    now: float,
+    launch: Callable[[ShardIdentity, str], None],
+    record: Callable[..., None],
+) -> list[tuple[ShardIdentity, str]]:
+    """Fill slots, falling through to another region immediately on stockout."""
+    launched: list[tuple[ShardIdentity, str]] = []
+    remaining_zones = list(candidates)
+    for identity in missing:
+        if slots == 0:
+            break
+        while remaining_zones:
+            zone = remaining_zones.pop(0)
+            try:
+                launch(identity, zone)
+            except subprocess.CalledProcessError as error:
+                retry_after[zone] = now + retry_seconds
+                record(
+                    "evaluation_campaign_launch_retry",
+                    suite=identity.suite,
+                    shard_index=identity.shard_index,
+                    zone=zone,
+                    returncode=error.returncode,
+                )
+                continue
+            slots -= 1
+            launched.append((identity, zone))
+            record(
+                "evaluation_campaign_shard_launched",
+                suite=identity.suite,
+                shard_index=identity.shard_index,
+                zone=zone,
+            )
+            break
+    return launched
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
@@ -283,37 +326,31 @@ def main() -> None:
                 for zone in zones
                 if region_for_zone(zone) not in occupied and retry_after.get(zone, 0) <= now
             ]
-            for identity, zone in zip(missing[:slots], candidates, strict=False):
-                try:
-                    cloud.create_evaluation_shard(
-                        args.run_id,
-                        zone,
-                        args.repo_revision,
-                        args.control,
-                        identity.suite,
-                        identity.shard_index,
-                        args.num_shards,
-                        "4h",
-                        args.training_job,
-                        args.training_step,
-                    )
-                except subprocess.CalledProcessError as error:
-                    retry_after[zone] = time.monotonic() + args.retry_seconds
-                    record(
-                        "evaluation_campaign_launch_retry",
-                        suite=identity.suite,
-                        shard_index=identity.shard_index,
-                        zone=zone,
-                        returncode=error.returncode,
-                    )
-                    continue
-                occupied.add(region_for_zone(zone))
-                record(
-                    "evaluation_campaign_shard_launched",
-                    suite=identity.suite,
-                    shard_index=identity.shard_index,
-                    zone=zone,
+            def launch(identity: ShardIdentity, zone: str) -> None:
+                cloud.create_evaluation_shard(
+                    args.run_id,
+                    zone,
+                    args.repo_revision,
+                    args.control,
+                    identity.suite,
+                    identity.shard_index,
+                    args.num_shards,
+                    "4h",
+                    args.training_job,
+                    args.training_step,
                 )
+
+            launched = launch_available_shards(
+                missing=missing,
+                candidates=candidates,
+                slots=slots,
+                retry_after=retry_after,
+                retry_seconds=args.retry_seconds,
+                now=now,
+                launch=launch,
+                record=record,
+            )
+            occupied.update(region_for_zone(zone) for _, zone in launched)
         time.sleep(args.poll_seconds)
 
     cloud.stop_instances(args.run_id)

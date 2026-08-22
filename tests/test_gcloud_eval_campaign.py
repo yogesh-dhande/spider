@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -76,3 +77,40 @@ def test_validate_shard_terminal_rejects_wrong_identity() -> None:
         assert "shard_index" in str(error)
     else:
         raise AssertionError("wrong shard terminal was accepted")
+
+
+def test_launch_available_shards_falls_through_stockout_immediately() -> None:
+    identity = MODULE.ShardIdentity("distribution_shift", 0)
+    attempts = []
+    events = []
+    retry_after = {}
+
+    def launch(shard, zone):
+        attempts.append((shard, zone))
+        if zone == "asia-east1-c":
+            raise subprocess.CalledProcessError(1, ["gcloud", "compute"])
+
+    def record(event, **fields):
+        events.append((event, fields))
+
+    launched = MODULE.launch_available_shards(
+        missing=[identity],
+        candidates=["asia-east1-c", "europe-west1-c"],
+        slots=1,
+        retry_after=retry_after,
+        retry_seconds=600,
+        now=100.0,
+        launch=launch,
+        record=record,
+    )
+
+    assert attempts == [
+        (identity, "asia-east1-c"),
+        (identity, "europe-west1-c"),
+    ]
+    assert launched == [(identity, "europe-west1-c")]
+    assert retry_after == {"asia-east1-c": 700.0}
+    assert [event for event, _ in events] == [
+        "evaluation_campaign_launch_retry",
+        "evaluation_campaign_shard_launched",
+    ]
