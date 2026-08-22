@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T02:37:30Z
+Last verified: 2026-08-22T02:40:00Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -39,7 +39,12 @@ The authoritative research status and receipts are under `experiments/exp005_bro
 
 The local monitor remains active for `small53-s00000-e00500-0822b`; do not stop its VMs or switch
 this worktree's branch. Require exact rank markers, training state, and adapter health before
-launching matched step-500 validation. The completed control campaign's sparse state log is
+launching matched step-500 validation. Checkpoint handoff controller
+`run_exp005_checkpoint_validation.py` is also active for this stage: after both exact rank markers
+arrive it will archive the training receipt, launch `sft-small53-step0500-0822a` across all three
+frozen suites, archive its receipt and predictions, and require the evaluated adapter hash to match
+the trained checkpoint. It does not authorize or launch the next training stage. The completed
+control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
