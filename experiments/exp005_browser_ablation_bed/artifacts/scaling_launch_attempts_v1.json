@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "exp005_scaling_capacity_attempts",
-  "verified_utc": "2026-08-22T03:44:22Z",
+  "verified_utc": "2026-08-22T03:45:20Z",
   "repo_revision_preflight": {
     "mistyped_revision_attempts": 1,
     "boundary": "Local git revision validation",
@@ -52,7 +52,14 @@
       ["europe-west4-a", "europe-west6-c"],
       ["europe-west4-c", "europe-west6-c"]
     ],
-    "status": "retry_pending_after_registered_nearby_pair_is_released"
+    "replacement": {
+      "run_id": "t-s61-527140-01b-v2",
+      "evaluation_run_id": "e-s61-527140-01-v2",
+      "zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "b8ffcd604c0c09cd9b2eab1f5299a5c269915826",
+      "trigger": "Launch only after both active small/seed-53 training instances leave all active states."
+    },
+    "status": "replacement_controller_waiting_for_registered_nearby_pair"
   },
-  "decision": "Continue seed 59. Retry seed 61 with a new attempt-specific run ID after the active northamerica-northeast1/northamerica-northeast2 pair is released; never resume the zero-step orphaned attempt."
+  "decision": "Continue seed 59. A background handoff will launch seed 61 with a new attempt-specific run ID immediately after the active northamerica-northeast1/northamerica-northeast2 pair is released; never resume the zero-step orphaned attempt."
 }

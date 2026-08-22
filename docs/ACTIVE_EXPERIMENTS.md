@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:44:22Z
+Last verified: 2026-08-22T03:45:20Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -88,6 +88,10 @@ The seed-59 training workers are pinned to revision
 before any checkpoint or evaluation because it forwarded symbolic `HEAD`; the replacement pins the
 same resolved revision for evaluation and did not interrupt either GPU worker. The stage runner now
 resolves a revision once before launching or constructing any downstream command.
+Seed-61 replacement controller is waiting for the current small/seed-53 training pair to leave all
+active states, then will launch `t-s61-527140-01b-v2` on the same registered nearby regions at
+revision `b8ffcd604c0c09cd9b2eab1f5299a5c269915826`. It will not touch the active seed-53
+workers and will use its own warm validation and shutdown sweep.
 
 Protected EXP005 scope:
 
