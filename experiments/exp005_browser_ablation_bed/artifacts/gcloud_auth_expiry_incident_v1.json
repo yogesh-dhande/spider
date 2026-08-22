@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_infrastructure_incident",
+  "incident_id": "gcloud-auth-expiry-0822a",
+  "detected_at_utc": "2026-08-22T08:35:00+00:00",
+  "status": "awaiting_local_reauthentication",
+  "scientific_validity": "preserved",
+  "cause": "The local gcloud CLI refresh token expired and non-interactive controller subprocesses could not prompt for reauthentication.",
+  "error": "Reauthentication failed. cannot prompt during non-interactive execution.",
+  "last_verified_state": {
+    "small_seed53_step500": {
+      "completed_shards": 12,
+      "total_shards": 12,
+      "completed_merges": [
+        "iid",
+        "domain_balanced"
+      ],
+      "pending": "distribution_shift merge and local receipt archival"
+    },
+    "small_seed59_step500": {
+      "completed_shards_at_last_storage_audit": 6,
+      "additional_launched_before_expiry": [
+        "domain_balanced:2",
+        "domain_balanced:3",
+        "iid:0"
+      ]
+    },
+    "small_seed61_step500": {
+      "launched_before_expiry": [
+        "distribution_shift:0",
+        "distribution_shift:1",
+        "distribution_shift:2",
+        "distribution_shift:3",
+        "domain_balanced:0",
+        "domain_balanced:1",
+        "domain_balanced:2"
+      ]
+    }
+  },
+  "data_safety": {
+    "completed_artifacts_are_in_gcs": true,
+    "training_receipts_are_local_and_committed": true,
+    "guest_instances_have_self_shutdown_traps": true,
+    "instances_have_max_run_duration": "4h for evaluation, 2h for merge"
+  },
+  "recovery": [
+    "Refresh local gcloud CLI authentication.",
+    "Audit exact EXP005-labelled instances and GCS terminal markers.",
+    "Resume campaigns from existing terminal markers; do not rerun completed shards.",
+    "Finish and archive the seed53 receipt first, then continue seed59 and seed61."
+  ],
+  "preventive_change": "Evaluation merge VM creation now uses bounded asynchronous operation polling and exact-instance reconciliation, matching evaluation shards."
+}

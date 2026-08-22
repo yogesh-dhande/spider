@@ -791,6 +791,11 @@ def create_evaluation_merge(
         boot_disk_size="100GB",
         boot_disk_type="pd-standard",
         gpu=False,
+        # Merge guests are short-lived enough to finish before a synchronous
+        # `gcloud instances create` client returns in some regions.  Use the
+        # same bounded operation polling and exact-instance reconciliation as
+        # evaluation shards so a completed merge cannot strand its controller.
+        bounded_async_create=True,
     )
 
 

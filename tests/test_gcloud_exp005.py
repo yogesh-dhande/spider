@@ -587,6 +587,7 @@ def test_evaluation_merge_uses_standard_disk(monkeypatch) -> None:
     MODULE.create_evaluation_merge("run-a", "us-west1-b", "abc123", "base", "iid", 4, "2h")
     assert received["gpu"] is False
     assert received["boot_disk_type"] == "pd-standard"
+    assert received["bounded_async_create"] is True
 
 
 def test_monitor_retries_transient_inventory_failure_without_stopping(monkeypatch) -> None:
