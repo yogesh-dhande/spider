@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T01:04:35Z
+Last verified: 2026-08-22T01:05:50Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -20,16 +20,17 @@ reported steps had finite gradient norms, both ranks emitted exact complete mark
 adapter contained zero non-finite values. The first long reference attempt
 `small53-s00000-e00500-0822a` was stopped before its first optimizer step after review found that
 the launcher had not carried forward EXP004's validated microbatch-2 L4 setting. No checkpoint or
-stage artifact was produced. A fixed-effective-batch two-node microbatch-2 benchmark is the next
-training gate. Six matched EXP002-control evaluation shards are active under `exp002-all-0822a`.
+stage artifact was produced. Fixed-effective-batch two-node microbatch-2 benchmark
+`smoke20b2-small53-0822a` is active in the two selected northeast regions. Six matched
+EXP002-control evaluation shards are active under `exp002-all-0822a`.
 The remaining six shard identities
 encountered regional L4 stockouts and created no VM; they will be retried after capacity recycles.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-The stopped training run's monitor exited after verifying both nodes terminated. A local monitor
-remains active for `exp002-all-0822a`; do not stop its VMs or switch this worktree's branch. Run the
-microbatch-2 benchmark, then relaunch the exact 0-to-500 stage only if throughput and numerical
-health pass. Retry the uncreated EXP002 shards as regions become available. The verified scaling plan hash is
+Local monitors are active for `smoke20b2-small53-0822a` and `exp002-all-0822a`; do not stop their
+VMs or switch this worktree's branch. Relaunch the exact 0-to-500 stage only if the benchmark's
+throughput and numerical health pass. Retry the uncreated EXP002 shards as regions become
+available. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
 
