@@ -43,6 +43,14 @@ def test_large_jobs_require_explicit_release_after_medium() -> None:
     )
 
 
+def test_seed_jobs_use_independent_training_pairs() -> None:
+    config = load_config()
+    for size in ("small", "medium"):
+        jobs = [item for item in config["jobs"] if f"--{size}--" in item["job_id"]]
+        assert len(jobs) == 3
+        assert len({tuple(item["training_zones"]) for item in jobs}) == 3
+
+
 def test_recovery_keeps_existing_scientific_revision_and_namespace() -> None:
     config = load_config()
     processes = MODULE.load_processes(config)
