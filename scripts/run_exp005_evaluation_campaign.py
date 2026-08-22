@@ -60,6 +60,22 @@ def active_gpu_regions(instances: list[dict[str, Any]]) -> set[str]:
     return regions
 
 
+def prioritize_zones(zones: list[str], instances: list[dict[str, Any]]) -> list[str]:
+    """Prefer exact zones that have previously provisioned an EXP005 GPU."""
+    success_counts: dict[str, int] = {}
+    for instance in instances:
+        machine_type = str(instance.get("machineType", "")).rsplit("/", 1)[-1]
+        if not machine_type.startswith("g2-") and not instance.get("guestAccelerators"):
+            continue
+        zone = zone_name(instance)
+        success_counts[zone] = success_counts.get(zone, 0) + 1
+    order = {zone: index for index, zone in enumerate(zones)}
+    return sorted(
+        zones,
+        key=lambda zone: (-success_counts.get(zone, 0), order[zone]),
+    )
+
+
 def run_json(command: list[str]) -> Any:
     result = subprocess.run(command, check=True, capture_output=True, text=True)
     return json.loads(result.stdout or "[]")
@@ -429,13 +445,18 @@ def main() -> None:
                     shard_index=identity.shard_index,
                     grace_seconds=args.terminal_grace_seconds,
                 )
-            occupied = active_gpu_regions(list_instances())
+            all_instances = list_instances()
+            occupied = active_gpu_regions(all_instances)
             now = time.monotonic()
-            candidates = [
-                zone
-                for zone in zones
-                if region_for_zone(zone) not in occupied and retry_after.get(zone, 0) <= now
-            ]
+            candidates = prioritize_zones(
+                [
+                    zone
+                    for zone in zones
+                    if region_for_zone(zone) not in occupied
+                    and retry_after.get(zone, 0) <= now
+                ],
+                all_instances,
+            )
             def launch(identity: ShardIdentity, zone: str) -> None:
                 cloud.create_evaluation_shard(
                     args.run_id,

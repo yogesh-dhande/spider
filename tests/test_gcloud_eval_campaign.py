@@ -54,6 +54,32 @@ def test_active_gpu_regions_ignores_cpu_and_terminal_instances() -> None:
     assert MODULE.active_gpu_regions(instances) == {"us-east1"}
 
 
+def test_prioritize_zones_prefers_prior_gpu_capacity_stably() -> None:
+    zones = ["asia-east1-c", "us-west1-a", "europe-west4-a"]
+    instances = [
+        {
+            "status": "TERMINATED",
+            "zone": "zones/us-west1-a",
+            "machineType": "machineTypes/g2-standard-8",
+        },
+        {
+            "status": "TERMINATED",
+            "zone": "zones/europe-west4-a",
+            "machineType": "machineTypes/g2-standard-8",
+        },
+        {
+            "status": "TERMINATED",
+            "zone": "zones/us-west1-a",
+            "machineType": "machineTypes/g2-standard-8",
+        },
+    ]
+    assert MODULE.prioritize_zones(zones, instances) == [
+        "us-west1-a",
+        "europe-west4-a",
+        "asia-east1-c",
+    ]
+
+
 def test_validate_shard_terminal_rejects_wrong_identity() -> None:
     identity = MODULE.ShardIdentity("iid", 0)
     terminal = {
