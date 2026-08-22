@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_infrastructure_incident",
+  "incident_id": "seed53-validation-create-client-stall-0822a",
+  "run_id": "sft-small53-r2-0822a",
+  "status": "recovered_no_scientific_loss",
+  "detected_at_utc": "2026-08-22T06:19:00+00:00",
+  "recovered_at_utc": "2026-08-22T06:22:56+00:00",
+  "summary": "A synchronous gcloud create client remained blocked for roughly 41 minutes after its underlying GCE insert operation had already failed. The exact absent resource and terminal operation were verified before the blocked local client was terminated.",
+  "affected_attempt": {
+    "suite": "iid",
+    "shard_index": 0,
+    "zone": "asia-northeast1-a",
+    "instance_name": "spider-exp005-eval-sft-iid-00-sft-small53-r2-0822a",
+    "operation": "operation-1787377128354-6599c2ad0b24a-feeea0e1-80bcebb5",
+    "operation_insert_time": "2026-08-22T05:38:49.004+00:00",
+    "operation_end_time": "2026-08-22T05:38:55.469+00:00",
+    "operation_status": "DONE",
+    "operation_error": "ZONE_RESOURCE_POOL_EXHAUSTED",
+    "instance_existed_at_recovery": false,
+    "client_exit_code": -15,
+    "controller_retry_recorded_at_utc": "2026-08-22T06:19:56+00:00"
+  },
+  "recovery_boundary": {
+    "completed_shards_before_recovery": 8,
+    "completed_shards_repeated": 0,
+    "active_shards_lost": 0,
+    "adapter_changed": false,
+    "evaluation_examples_changed": false,
+    "prompts_changed": false,
+    "metrics_registered_during_stall": false
+  },
+  "mitigations": [
+    {
+      "commit": "d5320f5",
+      "change": "Bound the number of capacity attempts before refreshing terminal and occupancy state."
+    },
+    {
+      "commit": "183ecc7",
+      "change": "Remove every remaining zone in a region immediately after a successful launch."
+    },
+    {
+      "commit": "32cd175",
+      "change": "Submit future evaluation creates asynchronously, wait with a hard bound, and fail closed unless an exact labeled instance can be reconciled."
+    }
+  ],
+  "scientific_disposition": "No scientific receipt was changed or created by this incident. The campaign resumed from exact immutable shard terminals and launched only the four previously missing IID shards."
+}

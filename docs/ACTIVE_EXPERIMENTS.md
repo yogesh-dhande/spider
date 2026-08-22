@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T05:07:00Z
+Last verified: 2026-08-22T06:25:00Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -52,9 +52,12 @@ waste. Incident receipt `artifacts/sft_step500_validation_incident_v1.json` pres
 failed terminal and response. Replacement `sft-small53-r2-0822a` is active with the same adapter,
 frozen suites, and prompts using the approved warm image. Its controller will archive the
 validation receipt and predictions and require the evaluated adapter hash to match the trained
-checkpoint. Five exact shards are currently running; four have emitted regular inference progress,
-and the fifth is in warm-image setup. The recovered audit event for the distribution-shift shard-0
-VM is committed in the resource registry. Do not stop its evaluation VMs or switch this worktree's
+checkpoint. Eight exact shards have completed, and all four remaining IID shards are active on
+separate regions. The recovered audit event for the distribution-shift shard-0 VM is committed in
+the resource registry. A synchronous GCloud client later remained blocked after its insert operation
+had already failed; the exact absent resource was verified before terminating only that local client.
+`artifacts/evaluation_controller_stall_incident_v1.json` records the zero-scientific-loss recovery
+and the three committed orchestration mitigations. Do not stop its evaluation VMs or switch this worktree's
 branch. The completed
 control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
