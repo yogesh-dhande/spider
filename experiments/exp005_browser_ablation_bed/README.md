@@ -135,6 +135,14 @@ The seed-59 stage found capacity on an alternate two-region pair without changin
 microbatch, accumulation, or effective batch. Seed 61 will use a new attempt-specific run ID after
 its one-rank stockout attempt was stopped with no ready marker or stage object.
 
+Protocol amendment 005 pre-registers the checkpoint continuation gate before the first SFT metrics
+exist. Relative to the prior valid checkpoint (the EXP002 starting adapter for step 500), a hard
+perception regression means either the mean of two QA-exact and three grounding-click deltas is
+below -3 percentage points or any one delta is below -7.5 points. Individual drops beyond 3 points
+are warnings. Action-name, exact-action, and click-in-bounds recovery are reported separately and
+cannot hide a hard perception regression. Training continues on warnings and stops only on a hard
+regression, as implemented in `src/spider/scaling_gate.py`.
+
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16
 (16, 8, or 4 accumulation steps respectively). A job cannot change its GPU world size between

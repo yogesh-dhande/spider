@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "amendment": 5,
+  "registered_utc": "2026-08-22T03:46:10Z",
+  "title": "Pre-register checkpoint regression gate",
+  "status": "adopted_before_first_sft_validation",
+  "reference_for_first_checkpoint": "exp002-all-0822a",
+  "perception_metrics": [
+    "iid/qa/answer_accuracy",
+    "domain_balanced/qa/answer_accuracy",
+    "iid/grounding/click_accuracy",
+    "domain_balanced/grounding/click_accuracy",
+    "distribution_shift/grounding/click_accuracy"
+  ],
+  "hard_regression": {
+    "mean_delta_below": -0.03,
+    "any_single_delta_below": -0.075
+  },
+  "warning_only": {
+    "any_single_delta_below": -0.03
+  },
+  "action_policy": "Report action-name, exact-action, and click-in-bounds deltas separately across all suites. Action improvement is expected but is not allowed to conceal a hard perception regression.",
+  "decision_policy": "Stop before the next stage only on hard regression. Otherwise continue and preserve metric-level warnings, matching the user's instruction to continue unless regression occurs.",
+  "implementation": "src/spider/scaling_gate.py",
+  "anti_post_hoc_note": "This amendment was committed while the first SFT checkpoint was still training and before any SFT evaluation receipt existed."
+}

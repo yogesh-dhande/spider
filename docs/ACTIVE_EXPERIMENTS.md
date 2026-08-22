@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:45:20Z
+Last verified: 2026-08-22T03:46:10Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -92,6 +92,11 @@ Seed-61 replacement controller is waiting for the current small/seed-53 training
 active states, then will launch `t-s61-527140-01b-v2` on the same registered nearby regions at
 revision `b8ffcd604c0c09cd9b2eab1f5299a5c269915826`. It will not touch the active seed-53
 workers and will use its own warm validation and shutdown sweep.
+Protocol amendment 005 pre-registers the first checkpoint gate before any SFT evaluation exists:
+stop only if mean QA/grounding retention versus the prior checkpoint falls below -3 points or any
+single retained metric falls below -7.5 points; preserve individual -3-point warnings and report
+action recovery separately. Use `spider-scaling-gate` on every completed checkpoint receipt before
+advancing that job.
 
 Protected EXP005 scope:
 
