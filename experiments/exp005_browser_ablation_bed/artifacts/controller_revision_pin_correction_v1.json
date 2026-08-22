@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_orchestration_incident",
+  "incident_id": "controller-revision-pin-correction-0822a",
+  "recorded_at_utc": "2026-08-22T14:20:00+00:00",
+  "scope": "spider-exp005-controller-v1 initial bootstrap",
+  "summary": "The first controller create command received a manually expanded commit hash that did not match the local commit. The controller was stopped before repository checkout or any experiment process, its metadata was replaced with the locally resolved exact commit, and the same CPU VM was restarted.",
+  "incorrect_revision": "ec336d3a8a5f650fe75cfb25dc5ded8a2d929eb9",
+  "correct_revision": "ec336d3afdaffa9d283b87cdeda3450f29dd3be2",
+  "boundary": {
+    "controller_created_at": "2026-08-22T14:13:06+00:00",
+    "controller_stopped_at": "2026-08-22T14:14:40+00:00",
+    "controller_restarted_at": "2026-08-22T14:14:52+00:00",
+    "repository_checkout_reached_before_stop": false,
+    "experiment_processes_started_before_stop": 0,
+    "exp005_gpu_instances_active_before_stop": 0,
+    "scientific_artifacts_changed": false,
+    "gpu_compute_consumed": false
+  },
+  "correction": {
+    "provisioner_now_resolves_git_revisions": true,
+    "provisioner_rejects_non_commit_output": true,
+    "controller_metadata_revision_verified": "ec336d3afdaffa9d283b87cdeda3450f29dd3be2",
+    "controller_service_account_verified": "spider-exp005-controller@keptune.iam.gserviceaccount.com"
+  },
+  "status": "corrected_before_scientific_execution"
+}

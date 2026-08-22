@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import re
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -20,9 +22,26 @@ ZONE = "us-central1-b"
 STATE_URI = f"{BUCKET}/exp005/controller/v1"
 
 
-def run(command: list[str], *, capture: bool = False, check: bool = True) -> str:
-    result = subprocess.run(command, check=check, capture_output=capture, text=True)
+def run(
+    command: list[str],
+    *,
+    capture: bool = False,
+    check: bool = True,
+    env: dict[str, str] | None = None,
+) -> str:
+    result = subprocess.run(
+        command, check=check, capture_output=capture, text=True, env=env
+    )
     return result.stdout.strip() if capture else ""
+
+
+def resolve_revision(revision: str) -> str:
+    resolved = run(
+        ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"], capture=True
+    )
+    if not re.fullmatch(r"[0-9a-f]{40,64}", resolved):
+        raise ValueError(f"Git returned a non-commit revision: {resolved!r}")
+    return resolved
 
 
 def ensure_service_account(email: str, display_name: str) -> None:
@@ -96,7 +115,12 @@ def snapshot(config_path: Path) -> None:
     with tempfile.TemporaryDirectory(prefix="spider-controller-seed-") as temporary:
         archive = Path(temporary) / "latest.tar.gz"
         paths = [Path(raw) for raw in config["state_paths"] if Path(raw).exists()]
-        run(["tar", "-czf", str(archive), *[str(path) for path in paths]])
+        archive_env = dict(os.environ)
+        archive_env["COPYFILE_DISABLE"] = "1"
+        run(
+            ["tar", "-czf", str(archive), *[str(path) for path in paths]],
+            env=archive_env,
+        )
         digest = hashlib.sha256(archive.read_bytes()).hexdigest()
         run(["gcloud", "storage", "cp", str(archive), f"{STATE_URI}/latest.tar.gz"])
         manifest = Path(temporary) / "seed-manifest.json"
@@ -149,6 +173,7 @@ python3 scripts/run_exp005_cloud_controller.py --config {config_path}
 
 
 def create(revision: str, config_path: Path) -> None:
+    revision = resolve_revision(revision)
     existing = subprocess.run(
         [
             "gcloud",
@@ -194,6 +219,27 @@ def create(revision: str, config_path: Path) -> None:
         )
 
 
+def update_startup(revision: str, config_path: Path) -> None:
+    revision = resolve_revision(revision)
+    with tempfile.NamedTemporaryFile("w", suffix=".sh") as startup:
+        startup.write(startup_script(revision, config_path))
+        startup.flush()
+        run(
+            [
+                "gcloud",
+                "compute",
+                "instances",
+                "add-metadata",
+                INSTANCE,
+                f"--project={PROJECT}",
+                f"--zone={ZONE}",
+                f"--metadata=spider-repo-revision={revision},spider-state-uri={STATE_URI}",
+                f"--metadata-from-file=startup-script={startup.name}",
+                "--quiet",
+            ]
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -203,13 +249,18 @@ def main() -> None:
     create_parser = subparsers.add_parser("create")
     create_parser.add_argument("--revision", required=True)
     create_parser.add_argument("--config", type=Path, required=True)
+    update_parser = subparsers.add_parser("update-startup")
+    update_parser.add_argument("--revision", required=True)
+    update_parser.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "iam":
         provision_iam()
     elif args.command == "snapshot":
         snapshot(args.config)
-    else:
+    elif args.command == "create":
         create(args.revision, args.config)
+    else:
+        update_startup(args.revision, args.config)
 
 
 if __name__ == "__main__":

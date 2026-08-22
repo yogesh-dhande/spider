@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T06:25:00Z
+Last verified: 2026-08-22T14:20:00Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -125,6 +125,21 @@ registry and refreshes the website/category explorer plus baseline-vs-latest pre
 new highest-scale checkpoint. It verifies payload metrics against both immutable receipts,
 materializes only the selected screenshots, and requires the production render test to pass before
 recording its dashboard state.
+
+All eleven scaling and recovery processes are now owned by keyless CPU controller
+`spider-exp005-controller-v1` in `us-central1-b`, pinned to controller revision
+`ec336d3afdaffa9d283b87cdeda3450f29dd3be2`. It uses the attached
+`spider-exp005-controller@keptune.iam.gserviceaccount.com` identity; newly created workers use
+`spider-exp005-worker@keptune.iam.gserviceaccount.com`. Both identities have zero user-managed
+keys. Controller state and sparse process status are uploaded every five minutes under
+`gs://keptune-spider-experiments-1088401257609/exp005/controller/v1/`. The runtime stops itself
+when all registered processes are terminal, and GCE independently stops it after 14 days. The
+duplicate local scaling supervisors and step-500 postprocessors were terminated only after the
+cloud controller authenticated through the metadata server, started all eleven processes with
+file-backed logs, and adopted 9/12 seed-59 plus 6/12 seed-61 validation shards. The local dashboard
+watcher remains active and was not part of the orchestration handoff. Initial metadata pin
+correction `artifacts/controller_revision_pin_correction_v1.json` occurred before checkout or any
+experiment process and consumed no GPU compute.
 
 Protected EXP005 scope:
 
