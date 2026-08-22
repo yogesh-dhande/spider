@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T04:12:00Z
+Last verified: 2026-08-22T05:07:00Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -31,7 +31,8 @@ selected two-node topology using microbatch 2, gradient accumulation 4, and the 
 snapshot. Both ranks emitted exact terminal markers, the adapter passed the non-finite-value health
 gate, and the archived training receipt binds adapter SHA-256
 `144f615b364ec015296479262caa9ef34859c39c61c3166e90784fb0ce36c8ef`. Its full matched
-validation `sft-small53-step0500-0822a` is now active across all three frozen suites.
+validation `sft-small53-step0500-0822a` was rejected for the hardware incident documented below;
+replacement `sft-small53-r2-0822a` is active across all three frozen suites.
 All nine immutable scaling-job configurations are now staged under their content-derived GCS job
 prefixes. The eight newly staged configurations were checked byte-for-byte against the local
 matrix plan, and each parsed configuration matches its registered canonical configuration hash.
@@ -51,7 +52,10 @@ waste. Incident receipt `artifacts/sft_step500_validation_incident_v1.json` pres
 failed terminal and response. Replacement `sft-small53-r2-0822a` is active with the same adapter,
 frozen suites, and prompts using the approved warm image. Its controller will archive the
 validation receipt and predictions and require the evaluated adapter hash to match the trained
-checkpoint. Do not stop its evaluation VMs or switch this worktree's branch. The completed
+checkpoint. Five exact shards are currently running; four have emitted regular inference progress,
+and the fifth is in warm-image setup. The recovered audit event for the distribution-shift shard-0
+VM is committed in the resource registry. Do not stop its evaluation VMs or switch this worktree's
+branch. The completed
 control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
@@ -104,6 +108,13 @@ Job-level supervisor `scripts/run_exp005_scaling_job.py` now adopts the active s
 applies the immutable gate/registry/report transaction, and advances later stages against the
 immediately preceding valid checkpoint. It serializes contenders for the same registered training
 pair and rechecks live GPU-region occupancy before launch.
+All three small supervisors are active; the three medium supervisors wait for all small job
+receipts, and the three large supervisors wait for all medium job receipts. They fail closed on a
+prerequisite regression. `scripts/watch_exp005_dashboard.py` watches the validated candidate
+registry and refreshes the website/category explorer plus baseline-vs-latest predictions after each
+new highest-scale checkpoint. It verifies payload metrics against both immutable receipts,
+materializes only the selected screenshots, and requires the production render test to pass before
+recording its dashboard state.
 
 Protected EXP005 scope:
 
