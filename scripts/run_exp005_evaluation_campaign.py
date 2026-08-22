@@ -8,9 +8,10 @@ import json
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gcloud_exp005 as cloud
@@ -83,7 +84,10 @@ def list_instances(run_id: str | None = None) -> list[dict[str, Any]]:
 
 def storage_json(uri: str) -> dict[str, Any] | None:
     result = subprocess.run(
-        ["gcloud", "storage", "cat", uri], capture_output=True, text=True
+        ["gcloud", "storage", "cat", uri],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     if result.returncode:
         return None
