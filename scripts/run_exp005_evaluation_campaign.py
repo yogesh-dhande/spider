@@ -70,9 +70,25 @@ def prioritize_zones(zones: list[str], instances: list[dict[str, Any]]) -> list[
     )
 
 
-def run_json(command: list[str]) -> Any:
-    result = subprocess.run(command, check=True, capture_output=True, text=True)
-    return json.loads(result.stdout or "[]")
+def run_json(
+    command: list[str], *, max_attempts: int = 3, retry_seconds: float = 2.0
+) -> Any:
+    """Run a read-only gcloud query with bounded transient-failure retries."""
+    if max_attempts <= 0:
+        raise ValueError("max_attempts must be positive")
+    for attempt in range(1, max_attempts + 1):
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
+        if result.returncode == 0:
+            return json.loads(result.stdout or "[]")
+        if attempt == max_attempts:
+            raise subprocess.CalledProcessError(
+                result.returncode,
+                command,
+                output=result.stdout,
+                stderr=result.stderr,
+            )
+        time.sleep(retry_seconds)
+    raise AssertionError("unreachable")
 
 
 def list_instances(run_id: str | None = None) -> list[dict[str, Any]]:

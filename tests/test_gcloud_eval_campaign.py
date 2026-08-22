@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -9,6 +10,42 @@ assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+
+
+def test_run_json_retries_transient_query_failure(monkeypatch) -> None:
+    results = iter(
+        [
+            subprocess.CompletedProcess(["gcloud"], 1, "", "transient"),
+            subprocess.CompletedProcess(["gcloud"], 0, json.dumps([{"ok": True}]), ""),
+        ]
+    )
+    sleeps = []
+    monkeypatch.setattr(MODULE.subprocess, "run", lambda *args, **kwargs: next(results))
+    monkeypatch.setattr(MODULE.time, "sleep", sleeps.append)
+
+    assert MODULE.run_json(["gcloud"], max_attempts=2, retry_seconds=0.5) == [
+        {"ok": True}
+    ]
+    assert sleeps == [0.5]
+
+
+def test_run_json_surfaces_last_failure_after_bounded_retries(monkeypatch) -> None:
+    calls = []
+
+    def fail(*args, **kwargs):
+        calls.append((args, kwargs))
+        return subprocess.CompletedProcess(["gcloud"], 1, "", "reauth required")
+
+    monkeypatch.setattr(MODULE.subprocess, "run", fail)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda _seconds: None)
+
+    try:
+        MODULE.run_json(["gcloud"], max_attempts=3, retry_seconds=0)
+    except subprocess.CalledProcessError as error:
+        assert error.stderr == "reauth required"
+    else:
+        raise AssertionError("persistent query failure was swallowed")
+    assert len(calls) == 3
 
 
 def test_label_is_stable() -> None:
