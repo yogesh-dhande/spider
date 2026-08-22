@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_cloud_cleanup_receipt",
+  "completed_at_utc": "2026-08-22T17:46:00+00:00",
+  "project": "keptune",
+  "selection": {
+    "labels": {
+      "spider-managed": "true",
+      "spider-experiment": "exp005"
+    },
+    "status": "TERMINATED"
+  },
+  "deleted_instances": 146,
+  "deleted_by_role": {
+    "data-shard": 12,
+    "evaluation": 93,
+    "evaluation-merge": 14,
+    "model-cache": 1,
+    "model-files": 1,
+    "qa-inventory": 4,
+    "source-inventory": 2,
+    "training-multinode": 19
+  },
+  "failures": [],
+  "verification": {
+    "terminated_instances_remaining": 0,
+    "running_controller_preserved": true,
+    "running_workers_preserved": true
+  },
+  "reason": "Stopped instances retained attached resources and constrained new evaluation launches. All targets were exact EXP005-managed TERMINATED instances; experiment outputs and receipts are stored in GCS/controller state."
+}
