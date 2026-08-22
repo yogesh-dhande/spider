@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:08:28Z
+Last verified: 2026-08-22T03:23:49Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -57,10 +57,12 @@ Opt-in warm evaluation image `spider-exp005-eval-warm-qwen35-0822a` was created 
 of a successfully completed control shard. The first matched check failed closed before inference
 because its model-file sentinel used the wrong pinned-snapshot filename; incident receipt
 `artifacts/warm_eval_image_attempt_v1.json` records the CPU-only inspection and fix. Replacement
-`warmcheck2-exp002-iid00-0822a` is running the identical EXP002/IID/shard-0 evaluation in
-`us-east1-c`; do not adopt the image until its exact terminal, model/adapter signatures,
-predictions, metrics, and runtime are compared with the frozen control shard. This check is
-separate from the step-500 SFT handoff.
+`warmcheck2-exp002-iid00-0822a` completed and its VM is terminated. All 384 raw predictions, scored
+predictions, metrics, and run metadata are byte-identical to the frozen control shard. Setup fell
+from 1,345 to 182 seconds (7.39×, saving 1,163 seconds per shard), so the image is approved for
+future opt-in EXP005 evaluations subject to the invalidation conditions in
+`artifacts/warm_eval_image_v1.json`. The already-running first step-500 controller remains on its
+registered cold-image path.
 
 Protected EXP005 scope:
 

@@ -197,3 +197,14 @@ repeated anonymous Hub downloads; its file-level hashes and immutable GCS object
 `artifacts/model_cache_v1.json`.
 The identical snapshot is also stored as 13 directly syncable objects so workers can avoid archive
 decompression; its receipt is `artifacts/model_files_v1.json`.
+
+## Warm evaluation image gate
+
+The opt-in image `spider-exp005-eval-warm-qwen35-0822a` caches the pinned model, frozen corpus, and
+exact evaluation environment. It is approved for later EXP005 validations only after a matched
+EXP002/IID/shard-0 rerun produced byte-identical raw predictions, scored predictions, metrics, and
+run metadata for all 384 examples. Evaluation setup fell from 1,345 to 182 seconds (7.39× faster),
+saving 1,163 seconds per shard; inference time remained comparable. The immutable image identity,
+GCS object generations, file hashes, timing, invalidation conditions, and the earlier fail-closed
+sentinel incident are recorded in `artifacts/warm_eval_image_v1.json`,
+`artifacts/warm_eval_image_gate_v1.json`, and `artifacts/warm_eval_image_attempt_v1.json`.

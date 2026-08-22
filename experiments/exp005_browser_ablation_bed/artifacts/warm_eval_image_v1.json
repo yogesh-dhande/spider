@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_warm_evaluation_image_receipt",
+  "image": {
+    "project": "keptune",
+    "name": "spider-exp005-eval-warm-qwen35-0822a",
+    "id": "6884554921759519261",
+    "status": "READY",
+    "creation_timestamp": "2026-08-21T19:44:07.632-07:00",
+    "family": "spider-exp005-eval-warm",
+    "archive_size_bytes": 47292567168,
+    "disk_size_gb": 100,
+    "storage_locations": [
+      "us"
+    ],
+    "source_disk": "projects/keptune/zones/asia-northeast1-c/disks/spider-exp005-eval-exp002-domain-00-exp002-all-0822a",
+    "source_disk_id": "6148217971822379718"
+  },
+  "failed_closed_attempt": "warm_eval_image_attempt_v1.json",
+  "matched_gate": {
+    "reference_run_id": "exp002-all-0822a",
+    "candidate_run_id": "warmcheck2-exp002-iid00-0822a",
+    "control": "exp002",
+    "suite": "iid",
+    "shard_index": 0,
+    "num_shards": 4,
+    "examples": 384,
+    "gate_artifact": "warm_eval_image_gate_v1.json",
+    "gate_artifact_sha256": "011140163bfe918e61ceceba707d5d3848d44174481b0d81503470bd425ed47f",
+    "exact_scientific_match": true,
+    "matched_files": [
+      "predictions.raw.jsonl",
+      "predictions.jsonl",
+      "metrics.json",
+      "run_metadata.json"
+    ],
+    "reference_archive": {
+      "uri": "gs://keptune-spider-experiments-1088401257609/exp005/evaluation/exp002-all-0822a/exp002-iid-shard-00-of-04/evaluation.tar.zst",
+      "generation": "1787365034900647",
+      "size": 8703605,
+      "md5_base64": "8Lz2B3GrCUug/S4sALo5VQ=="
+    },
+    "candidate_archive": {
+      "uri": "gs://keptune-spider-experiments-1088401257609/exp005/evaluation/warmcheck2-exp002-iid00-0822a/exp002-iid-shard-00-of-04/evaluation.tar.zst",
+      "generation": "1787368913515092",
+      "size": 8703601,
+      "md5_base64": "tglLEzrDtQo5nl95m6vPDg=="
+    },
+    "reference_setup_seconds": 1345.0,
+    "candidate_setup_seconds": 182.0,
+    "setup_seconds_saved": 1163.0,
+    "setup_speedup": 7.3901098901098905,
+    "reference_evaluation_seconds": 1312.9,
+    "candidate_evaluation_seconds": 1249.6
+  },
+  "decision": {
+    "status": "approved",
+    "scope": "Future EXP005 evaluation shards may opt in by immutable image name while retaining the same pinned model, corpus, packages, prompts, decoding, and scorer.",
+    "invalidated_by": [
+      "model snapshot change",
+      "corpus or evaluation-manifest change",
+      "Python package change",
+      "evaluation implementation change affecting scientific outputs"
+    ],
+    "current_step_500_validation": "The already-running first checkpoint controller remains on its registered cold-image path."
+  }
+}

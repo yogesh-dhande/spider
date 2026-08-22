@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "kind": "evaluation_reproducibility_gate",
+  "reference": "outputs/experiment5/warm_image_gate/reference_exp002_iid00/benchmark_evaluation/exp002-iid-shard-00-of-04",
+  "candidate": "outputs/experiment5/warm_image_gate/candidate_exp002_iid00/benchmark_evaluation/exp002-iid-shard-00-of-04",
+  "files": {
+    "predictions.raw.jsonl": {
+      "reference_sha256": "6caac79cf0321d0bbbca9fe521b06fd5b3af8e421dd06534db4b031eae1a6236",
+      "candidate_sha256": "6caac79cf0321d0bbbca9fe521b06fd5b3af8e421dd06534db4b031eae1a6236",
+      "exact_match": true,
+      "reference_rows": 384,
+      "candidate_rows": 384
+    },
+    "predictions.jsonl": {
+      "reference_sha256": "ba9268c8efa61c39b4974a5a906441630aaabc87b38f26f4360aa2f0be04dc3d",
+      "candidate_sha256": "ba9268c8efa61c39b4974a5a906441630aaabc87b38f26f4360aa2f0be04dc3d",
+      "exact_match": true,
+      "reference_rows": 384,
+      "candidate_rows": 384
+    },
+    "metrics.json": {
+      "reference_sha256": "084e51a0d32d190ab053afd274dedbaf60397c22eb7c4dc79c11dd2e8b3e890d",
+      "candidate_sha256": "084e51a0d32d190ab053afd274dedbaf60397c22eb7c4dc79c11dd2e8b3e890d",
+      "exact_match": true
+    },
+    "run_metadata.json": {
+      "reference_sha256": "eb9e0ec049fefc157687fbde503e7d9aaaa85e51590a9c672013a2859e9f74d5",
+      "candidate_sha256": "eb9e0ec049fefc157687fbde503e7d9aaaa85e51590a9c672013a2859e9f74d5",
+      "exact_match": true
+    }
+  },
+  "exact_scientific_match": true,
+  "runtime": {
+    "reference": {
+      "vm_created_utc": "2026-08-22T01:32:36Z",
+      "evaluation_started_utc": "2026-08-22T01:55:01+00:00",
+      "evaluation_completed_utc": "2026-08-22T02:16:54+00:00",
+      "setup_seconds": 1345.0,
+      "evaluation_seconds": 1312.9,
+      "wall_seconds_to_evaluation_complete": 2658.0
+    },
+    "candidate": {
+      "vm_created_utc": "2026-08-22T02:57:46Z",
+      "evaluation_started_utc": "2026-08-22T03:00:48+00:00",
+      "evaluation_completed_utc": "2026-08-22T03:21:38+00:00",
+      "setup_seconds": 182.0,
+      "evaluation_seconds": 1249.6,
+      "wall_seconds_to_evaluation_complete": 1432.0
+    },
+    "setup_seconds_saved": 1163.0,
+    "setup_speedup": 7.3901098901098905
+  }
+}
