@@ -102,6 +102,13 @@ resolves a revision once before launching or constructing any downstream command
 Seed-61 replacement `t-s61-527140-01b-v2` is running on the released nearby pair at revision
 `b8ffcd604c0c09cd9b2eab1f5299a5c269915826`. Its controller will use the approved warm image for
 matched validation and perform its own shutdown sweep.
+Seed-59 training completed step 500 with a healthy adapter and immutable receipt. Its first
+evaluation namespace `e-s59-4173bd-01-v2` is rejected: an unsupported asynchronous-operation wait
+subcommand caused duplicate pre-inference submissions. All resulting resources are terminated,
+the namespace contains zero GCS evaluation objects, and no scientific receipt exists. Incident
+receipt `artifacts/seed59_evaluation_async_wait_incident_v1.json` preserves the exact boundary. The
+launcher now polls zonal operation descriptions with a hard bound and was checked against a real
+completed operation before seed-59 evaluation restart.
 Protocol amendment 005 pre-registers the first checkpoint gate before any SFT evaluation exists:
 stop only if mean QA/grounding retention versus the prior checkpoint falls below -3 points or any
 single retained metric falls below -7.5 points; preserve individual -3-point warnings and report

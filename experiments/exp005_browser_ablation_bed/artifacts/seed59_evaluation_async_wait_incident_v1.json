@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_infrastructure_incident",
+  "incident_id": "seed59-unsupported-gcloud-operation-wait-0822a",
+  "training_job": "exp004-reference--small--seed-59--4173bdcbeb",
+  "training_run_id": "t-s59-4173bd-01-v2",
+  "rejected_evaluation_run_id": "e-s59-4173bd-01-v2",
+  "status": "rejected_pre_inference_all_resources_stopped",
+  "detected_at_utc": "2026-08-22T06:31:00+00:00",
+  "cleanup_completed_at_utc": "2026-08-22T06:36:11+00:00",
+  "cause": "The installed GCloud CLI does not implement `gcloud compute operations wait`. After each successful asynchronous insert submission, that unsupported command exited 2; the campaign interpreted it as a capacity failure and submitted the same shard identity in additional zones.",
+  "preserved_training_checkpoint": {
+    "receipt": "artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/training_step_00500.json",
+    "status": "complete_pass",
+    "completed_step": 500,
+    "adapter_sha256": "a1f5fd10d0854a62fd08336ccd22fc22e5fd63a04296ac5dbf5604539f91ab0c",
+    "adapter_health": "healthy"
+  },
+  "submitted_attempts": [
+    {
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "zone": "asia-northeast3-b",
+      "result": "instance_created_then_stopped"
+    },
+    {
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "zone": "asia-southeast1-c",
+      "result": "instance_created_then_stopped"
+    },
+    {
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "zone": "asia-east1-c",
+      "result": "insert_failed_capacity"
+    },
+    {
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "zone": "europe-west1-c",
+      "result": "insert_failed_capacity"
+    },
+    {
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "zone": "europe-west2-b",
+      "result": "insert_failed_or_stopped_during_cleanup"
+    },
+    {
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "zone": "europe-west3-a",
+      "result": "insert_failed_or_stopped_during_cleanup"
+    },
+    {
+      "suite": "distribution_shift",
+      "shard_index": 1,
+      "zone": "asia-south1-b",
+      "result": "instance_created_then_stopped"
+    }
+  ],
+  "created_instances": [
+    {
+      "name": "spider-exp005-eval-sft-distri-00-e-s59-4173bd-01-v2",
+      "zone": "asia-northeast3-b",
+      "creation_timestamp": "2026-08-22T06:29:29.702+00:00",
+      "last_stop_timestamp": "2026-08-22T06:36:09.102+00:00"
+    },
+    {
+      "name": "spider-exp005-eval-sft-distri-00-e-s59-4173bd-01-v2",
+      "zone": "asia-southeast1-c",
+      "creation_timestamp": "2026-08-22T06:29:34.383+00:00",
+      "last_stop_timestamp": "2026-08-22T06:33:24.270+00:00"
+    },
+    {
+      "name": "spider-exp005-eval-sft-distri-01-e-s59-4173bd-01-v2",
+      "zone": "asia-south1-b",
+      "creation_timestamp": "2026-08-22T06:31:59.386+00:00",
+      "last_stop_timestamp": "2026-08-22T06:35:02.681+00:00"
+    }
+  ],
+  "cleanup_verification": {
+    "active_instances_after_cleanup": 0,
+    "gcs_evaluation_objects": 0,
+    "prediction_objects": 0,
+    "complete_terminals": 0,
+    "failed_terminals": 0,
+    "scientific_receipt_created": false
+  },
+  "mitigation": {
+    "commit": "6026301",
+    "change": "Replace the unsupported wait subcommand with bounded polling of `gcloud compute operations describe`, propagating terminal operation errors before another zone can be attempted.",
+    "live_compatibility_check": "A known successful zonal insert operation returned DONE through the new polling function."
+  },
+  "restart_boundary": "Reuse the immutable healthy step-500 training receipt; start a fresh evaluation run ID and do not reuse any artifact from the rejected evaluation namespace."
+}
