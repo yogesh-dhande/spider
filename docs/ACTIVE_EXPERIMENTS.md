@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T02:40:00Z
+Last verified: 2026-08-22T02:49:02Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -48,6 +48,12 @@ control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
+
+Opt-in warm evaluation image `spider-exp005-eval-warm-qwen35-0822a` was created from the boot disk
+of a successfully completed control shard. Matched check `warmcheck-exp002-iid00-0822a` is running
+the identical EXP002/IID/shard-0 evaluation in `us-west1-a`; do not adopt the image until its exact
+terminal, model/adapter signatures, predictions, metrics, and runtime are compared with the frozen
+control shard. This check is separate from the step-500 SFT handoff.
 
 Protected EXP005 scope:
 
