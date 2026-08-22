@@ -143,6 +143,36 @@ def resolve_repo_revision(repo_revision: str) -> str:
     return resolved
 
 
+def wait_for_zone_operation(
+    operation: str, zone: str, *, timeout_seconds: int = 300, poll_seconds: int = 5
+) -> dict[str, Any]:
+    """Poll a zonal GCE operation without relying on an unavailable wait subcommand."""
+    deadline = time.monotonic() + timeout_seconds
+    command = [
+        "gcloud",
+        "compute",
+        "operations",
+        "describe",
+        operation,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--format=json(status,error)",
+    ]
+    while True:
+        payload = json.loads(run(command, timeout_seconds=30))
+        if payload.get("status") == "DONE":
+            if payload.get("error"):
+                raise subprocess.CalledProcessError(
+                    1,
+                    command,
+                    stderr=json.dumps(payload["error"], sort_keys=True),
+                )
+            return payload
+        if time.monotonic() >= deadline:
+            raise subprocess.TimeoutExpired(command, timeout_seconds)
+        time.sleep(poll_seconds)
+
+
 def _create(
     *,
     name: str,
@@ -208,18 +238,8 @@ def _create(
         operation = run(submit_command, timeout_seconds=60)
         if not re.fullmatch(r"operation-[a-zA-Z0-9-]+", operation):
             raise RuntimeError(f"Unexpected GCE operation identity: {operation!r}")
-        wait_command = [
-            "gcloud",
-            "compute",
-            "operations",
-            "wait",
-            operation,
-            f"--project={PROJECT}",
-            f"--zone={zone}",
-            "--quiet",
-        ]
         try:
-            run(wait_command, capture=False, timeout_seconds=300)
+            wait_for_zone_operation(operation, zone, timeout_seconds=300)
         except subprocess.TimeoutExpired as error:
             describe = subprocess.run(
                 [

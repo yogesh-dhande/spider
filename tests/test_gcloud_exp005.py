@@ -52,12 +52,13 @@ def test_bounded_create_submits_async_then_waits(monkeypatch) -> None:
 
     def run(command, capture=True, timeout_seconds=None):
         calls.append((command, capture, timeout_seconds))
-        if "create" in command:
-            return "operation-123-abc"
-        return ""
+        return "operation-123-abc"
 
     monkeypatch.setattr(MODULE, "run", run)
     monkeypatch.setattr(MODULE, "resolve_repo_revision", lambda revision: "a" * 40)
+    monkeypatch.setattr(
+        MODULE, "wait_for_zone_operation", lambda *args, **kwargs: {"status": "DONE"}
+    )
     monkeypatch.setattr(
         MODULE, "append_registry", lambda *args, **kwargs: registry.append((args, kwargs))
     )
@@ -81,10 +82,44 @@ def test_bounded_create_submits_async_then_waits(monkeypatch) -> None:
     assert name == "spider-exp005-eval-base-iid-00-run-a"
     assert calls[0][0][-2:] == ["--async", "--format=value(name)"]
     assert calls[0][2] == 60
-    assert calls[1][0][0:4] == ["gcloud", "compute", "operations", "wait"]
-    assert calls[1][0][4] == "operation-123-abc"
-    assert calls[1][2] == 300
     assert registry[0][0] == ("created",)
+
+
+def test_wait_for_zone_operation_polls_to_success(monkeypatch) -> None:
+    payloads = iter(
+        [
+            '{"status": "RUNNING"}',
+            '{"status": "DONE"}',
+        ]
+    )
+    calls = []
+
+    def run(command, capture=True, timeout_seconds=None):
+        calls.append((command, timeout_seconds))
+        return next(payloads)
+
+    monkeypatch.setattr(MODULE, "run", run)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda _seconds: None)
+    result = MODULE.wait_for_zone_operation("operation-123-abc", "us-east1-b", timeout_seconds=60)
+
+    assert result == {"status": "DONE"}
+    assert len(calls) == 2
+    assert calls[0][0][0:4] == ["gcloud", "compute", "operations", "describe"]
+    assert calls[0][1] == 30
+
+
+def test_wait_for_zone_operation_raises_on_terminal_error(monkeypatch) -> None:
+    monkeypatch.setattr(
+        MODULE,
+        "run",
+        lambda *args, **kwargs: '{"status":"DONE","error":{"errors":[{"code":"STOCKOUT"}]}}',
+    )
+    try:
+        MODULE.wait_for_zone_operation("operation-123-abc", "us-east1-b")
+    except subprocess.CalledProcessError as error:
+        assert "STOCKOUT" in (error.stderr or "")
+    else:
+        raise AssertionError("terminal GCE operation error was accepted")
 
 
 def test_materialization_shard_rejects_invalid_partition() -> None:
