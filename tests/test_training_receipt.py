@@ -2,7 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from spider.evaluate import adapter_sha256
+from spider.artifact_hash import adapter_sha256
 from spider.training_receipt import build_training_receipt
 
 

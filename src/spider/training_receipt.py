@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from spider.evaluate import adapter_sha256
+from spider.artifact_hash import adapter_sha256
 
 
 def _load(path: Path) -> dict[str, Any]:

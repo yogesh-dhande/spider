@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_infrastructure_incident",
+  "incident_id": "controller-receipt-dependency-0822a",
+  "detected_at_utc": "2026-08-22T16:05:47+00:00",
+  "affected_job": "exp004-reference--small--seed-53--50619370ee",
+  "affected_stage": {
+    "start_step": 500,
+    "stop_step": 625,
+    "training_run_id": "t-s53-506193-02-v2",
+    "evaluation_run_id": "e-s53-506193-02-v2"
+  },
+  "scientific_state": {
+    "training_completed": true,
+    "completed_step": 625,
+    "rank_terminals": 2,
+    "adapter_archive_present": true,
+    "output_archive_present": true,
+    "training_repeated": false,
+    "evaluation_started": false
+  },
+  "failure": {
+    "component": "training receipt archiver on the CPU controller",
+    "exception": "ModuleNotFoundError: No module named 'PIL'",
+    "exit_code": 1,
+    "root_cause": "spider.training_receipt imported spider.evaluate only for adapter_sha256, which loaded the optional Pillow evaluation dependency in the controller's minimal Python environment"
+  },
+  "resolution": {
+    "kind": "dependency-boundary correction",
+    "change": "move adapter hashing into dependency-free spider.artifact_hash and import it from both training receipt and evaluation code",
+    "resume_policy": "reuse the complete immutable step-625 GCS stage and rerun receipt archival plus validation only"
+  }
+}

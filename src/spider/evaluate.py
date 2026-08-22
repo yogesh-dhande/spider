@@ -8,6 +8,7 @@ from typing import Any
 
 from PIL import Image
 
+from spider.artifact_hash import adapter_sha256, hash_file
 from spider.config import experiment_path, load_config, runtime_versions
 from spider.metrics import score_records
 from spider.modeling import load_quantized_model
@@ -17,25 +18,6 @@ from spider.prompts import inference_messages
 from spider.reports import create_failure_report
 
 EVALUATION_PROTOCOL_VERSION = "v2-model-and-chat-eos"
-
-
-def _hash_file(path: Path, digest: Any) -> None:
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-
-
-def adapter_sha256(adapter: str | Path) -> str:
-    """Hash the load-bearing adapter files and their names for cross-shard identity checks."""
-    digest = hashlib.sha256()
-    adapter_path = Path(adapter)
-    files = [path for path in sorted(adapter_path.glob("adapter*")) if path.is_file()]
-    if not files:
-        raise FileNotFoundError(f"No adapter files found in {adapter_path}")
-    for path in files:
-        digest.update(path.name.encode())
-        _hash_file(path, digest)
-    return digest.hexdigest()
 
 
 def evaluation_signature(
@@ -61,12 +43,12 @@ def evaluation_signature(
     if selection:
         digest.update(json.dumps(selection, sort_keys=True, separators=(",", ":")).encode())
     for manifest in manifest_paths:
-        _hash_file(manifest, digest)
+        hash_file(manifest, digest)
     if adapter:
         adapter_path = Path(adapter)
         for path in sorted(adapter_path.glob("adapter*")):
             if path.is_file():
-                _hash_file(path, digest)
+                hash_file(path, digest)
         payload["adapter_sha256"] = adapter_sha256(adapter_path)
     signature = digest.hexdigest()
     payload["signature"] = signature
