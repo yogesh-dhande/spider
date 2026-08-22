@@ -15,6 +15,7 @@ from typing import Any
 
 PROJECT = "keptune"
 BUCKET = "gs://keptune-spider-experiments-1088401257609"
+WORKER_SERVICE_ACCOUNT = "spider-exp005-worker@keptune.iam.gserviceaccount.com"
 EXPERIMENT_DIR = Path("experiments/exp005_browser_ablation_bed")
 REGISTRY = EXPERIMENT_DIR / "artifacts/gcloud/vm_registry.jsonl"
 MANAGED_FILTER = "labels.spider-managed=true AND labels.spider-experiment=exp005"
@@ -210,6 +211,7 @@ def _create(
         f"--machine-type={machine_type}",
         f"--boot-disk-size={boot_disk_size}",
         f"--boot-disk-type={boot_disk_type}",
+        f"--service-account={WORKER_SERVICE_ACCOUNT}",
         "--scopes=cloud-platform",
         (
             "--labels=spider-managed=true,spider-experiment=exp005,"

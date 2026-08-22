@@ -81,6 +81,10 @@ def test_bounded_create_submits_async_then_waits(monkeypatch) -> None:
 
     assert name == "spider-exp005-eval-base-iid-00-run-a"
     assert calls[0][0][-2:] == ["--async", "--format=value(name)"]
+    assert (
+        "--service-account=spider-exp005-worker@keptune.iam.gserviceaccount.com"
+        in calls[0][0]
+    )
     assert calls[0][2] == 60
     assert registry[0][0] == ("created",)
 

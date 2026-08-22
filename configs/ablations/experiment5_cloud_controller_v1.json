@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_cloud_controller",
+  "state_uri": "gs://keptune-spider-experiments-1088401257609/exp005/controller/v1",
+  "snapshot_seconds": 300,
+  "poll_seconds": 30,
+  "state_paths": [
+    "experiments/exp005_browser_ablation_bed/artifacts",
+    "experiments/exp005_browser_ablation_bed/control_comparison_manifest_v1.json",
+    "outputs/experiment5/scaling",
+    "outputs/experiment5/cloud-controller"
+  ],
+  "common": {
+    "schedule": "experiments/exp005_browser_ablation_bed/artifacts/scaling_schedule_v2.json",
+    "warm_image": "spider-exp005-eval-warm-qwen35-0822a",
+    "poll_seconds": 60,
+    "stage_timeout_seconds": 43200,
+    "prerequisite_timeout_seconds": 1209600,
+    "evaluation_zones": [
+      "asia-east1-a",
+      "asia-east1-b",
+      "asia-east1-c",
+      "asia-northeast1-a",
+      "asia-northeast1-b",
+      "asia-northeast1-c",
+      "asia-northeast3-a",
+      "asia-northeast3-b",
+      "asia-south1-a",
+      "asia-south1-b",
+      "asia-south1-c",
+      "asia-southeast1-a",
+      "asia-southeast1-b",
+      "asia-southeast1-c",
+      "europe-west1-b",
+      "europe-west1-c",
+      "europe-west2-a",
+      "europe-west2-b",
+      "europe-west3-a",
+      "europe-west3-b",
+      "europe-west4-a",
+      "europe-west4-b",
+      "europe-west4-c",
+      "europe-west6-b",
+      "europe-west6-c",
+      "me-central2-a",
+      "me-central2-c",
+      "northamerica-northeast1-b",
+      "northamerica-northeast1-c",
+      "northamerica-northeast2-a",
+      "northamerica-northeast2-b",
+      "us-central1-a",
+      "us-central1-b",
+      "us-central1-c",
+      "us-east1-b",
+      "us-east1-c",
+      "us-east1-d",
+      "us-east4-a",
+      "us-east4-c",
+      "us-west1-a",
+      "us-west1-b",
+      "us-west1-c",
+      "us-west4-a",
+      "us-west4-c"
+    ],
+    "merge_zones": [
+      "us-central1-b",
+      "us-east4-c",
+      "us-west1-b"
+    ]
+  },
+  "recoveries": [
+    {
+      "name": "recover-small-seed59-step500",
+      "job_id": "exp004-reference--small--seed-59--4173bdcbeb",
+      "training_run_id": "t-s59-4173bd-01-v2",
+      "evaluation_run_id": "e-s59-4173bd-01-r2-v2",
+      "repo_revision": "c1f41fb07bee936a76af2700d5ce8c7400b8f490",
+      "start_step": 0,
+      "stop_step": 500,
+      "training_receipt": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/training_step_00500.json",
+      "evaluation_root": "outputs/experiment5/scaling/exp004-reference--small--seed-59--4173bdcbeb/step_00500/evaluation",
+      "evaluation_receipt": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/evaluation_step_00500.json",
+      "evaluation_markdown": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/evaluation_step_00500.md",
+      "state_log": "outputs/experiment5/scaling/exp004-reference--small--seed-59--4173bdcbeb/step_00500/controller.jsonl",
+      "max_attempts": 24,
+      "retry_seconds": 600
+    },
+    {
+      "name": "recover-small-seed61-step500",
+      "job_id": "exp004-reference--small--seed-61--52714036f6",
+      "training_run_id": "t-s61-527140-01b-v2",
+      "evaluation_run_id": "e-s61-527140-01-v2",
+      "repo_revision": "b8ffcd604c0c09cd9b2eab1f5299a5c269915826",
+      "start_step": 0,
+      "stop_step": 500,
+      "training_receipt": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-61--52714036f6/training_step_00500.json",
+      "evaluation_root": "outputs/experiment5/scaling/exp004-reference--small--seed-61--52714036f6/step_00500/evaluation",
+      "evaluation_receipt": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-61--52714036f6/evaluation_step_00500.json",
+      "evaluation_markdown": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-61--52714036f6/evaluation_step_00500.md",
+      "state_log": "outputs/experiment5/scaling/exp004-reference--small--seed-61--52714036f6/step_00500/controller.jsonl",
+      "max_attempts": 24,
+      "retry_seconds": 600
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "exp004-reference--small--seed-53--50619370ee",
+      "training_zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "fea61924ec28d68afbf095332009bd53319e5f67",
+      "adopt_through_step": 500,
+      "receipt_overrides": [
+        "500=experiments/exp005_browser_ablation_bed/artifacts/sft_small53_step0500_r2_0822a.json"
+      ]
+    },
+    {
+      "job_id": "exp004-reference--small--seed-59--4173bdcbeb",
+      "training_zones": ["asia-south1-b", "asia-southeast1-c"],
+      "repo_revision": "81b90a9301bc0d22c985d945288e02cf0ceae121",
+      "adopt_through_step": 500
+    },
+    {
+      "job_id": "exp004-reference--small--seed-61--52714036f6",
+      "training_zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "b8ffcd604c0c09cd9b2eab1f5299a5c269915826",
+      "adopt_through_step": 500
+    },
+    {
+      "job_id": "exp004-reference--medium--seed-53--faf1ae77cd",
+      "training_zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "62231925ee66287362c4e2522726edab9f6ab8b2",
+      "prerequisites": [
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-53--50619370ee/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-61--52714036f6/job_result.json"
+      ]
+    },
+    {
+      "job_id": "exp004-reference--medium--seed-59--723d8e36b6",
+      "training_zones": ["asia-south1-b", "asia-southeast1-c"],
+      "repo_revision": "62231925ee66287362c4e2522726edab9f6ab8b2",
+      "prerequisites": [
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-53--50619370ee/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-61--52714036f6/job_result.json"
+      ]
+    },
+    {
+      "job_id": "exp004-reference--medium--seed-61--1327172160",
+      "training_zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "62231925ee66287362c4e2522726edab9f6ab8b2",
+      "prerequisites": [
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-53--50619370ee/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-59--4173bdcbeb/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-61--52714036f6/job_result.json"
+      ]
+    },
+    {
+      "job_id": "exp004-reference--large--seed-53--0e406147a0",
+      "training_zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "58666dae515b90ef739962d0cb0e9f59dbc10e91",
+      "prerequisites": [
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-53--faf1ae77cd/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-59--723d8e36b6/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json"
+      ]
+    },
+    {
+      "job_id": "exp004-reference--large--seed-59--24bdb71cb8",
+      "training_zones": ["asia-south1-b", "asia-southeast1-c"],
+      "repo_revision": "58666dae515b90ef739962d0cb0e9f59dbc10e91",
+      "prerequisites": [
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-53--faf1ae77cd/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-59--723d8e36b6/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json"
+      ]
+    },
+    {
+      "job_id": "exp004-reference--large--seed-61--89af7dc2fe",
+      "training_zones": ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+      "repo_revision": "58666dae515b90ef739962d0cb0e9f59dbc10e91",
+      "prerequisites": [
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-53--faf1ae77cd/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-59--723d8e36b6/job_result.json",
+        "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--medium--seed-61--1327172160/job_result.json"
+      ]
+    }
+  ]
+}
