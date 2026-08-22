@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T02:19:29Z
+Last verified: 2026-08-22T02:29:40Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -29,12 +29,11 @@ anonymous Hugging Face downloads.
 The exact 10K/seed-53 stage was relaunched as `small53-s00000-e00500-0822b`, steps 0 through 500,
 on the selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local
 model snapshot.
-All twelve EXP002-control shard identities were launched after the capacity controller placed the
-last distribution-shift shard in `asia-southeast1-c`. Eight shards have exact complete markers and
-the remaining four are actively progressing; the controller will launch three CPU merges after
-full coverage. CPU run `model-files-0822a` completed the same frozen model as 13 directly syncable
-files, with the source manifest hash preserved, to remove archive decompression from later worker
-setup.
+All twelve EXP002-control shards have exact complete markers. The capacity controller launched the
+three guarded suite merges on CPU instances in `us-central1-b`, `us-east4-c`, and `us-west1-b`;
+the controller remains responsible for validating their terminal markers. CPU run
+`model-files-0822a` completed the same frozen model as 13 directly syncable files, with the source
+manifest hash preserved, to remove archive decompression from later worker setup.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
 Local monitors are active for `small53-s00000-e00500-0822b` and `exp002-all-0822a`; do not stop
