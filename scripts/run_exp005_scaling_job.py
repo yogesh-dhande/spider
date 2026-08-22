@@ -149,6 +149,7 @@ def main() -> None:
     parser.add_argument("--warm-image")
     parser.add_argument("--poll-seconds", type=int, default=120)
     parser.add_argument("--timeout-seconds", type=int, default=43200)
+    parser.add_argument("--prerequisite-timeout-seconds", type=int, default=604800)
     parser.add_argument(
         "--artifact-root",
         type=Path,
@@ -224,7 +225,7 @@ def main() -> None:
         return
     prerequisites = wait_for_prerequisites(
         args.prerequisite,
-        timeout_seconds=args.timeout_seconds,
+        timeout_seconds=args.prerequisite_timeout_seconds,
         poll_seconds=args.poll_seconds,
         state_log=state_log,
     )
