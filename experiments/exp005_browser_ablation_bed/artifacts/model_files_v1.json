@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "run_id": "model-files-0822a",
+  "status": "complete",
+  "completed_at_utc": "2026-08-22T01:42:52Z",
+  "repo_revision": "c9bd926e7471b1ece15187816efa43576768df55",
+  "source_cache_id": "qwen35-2b-15852e8c",
+  "cache_id": "qwen35-2b-15852e8c-files",
+  "manifest_sha256": "61381109551478ed2ae12016441aa60c867c34c5206213341a167cba488d12fc",
+  "file_count": 13,
+  "total_size_bytes": 4571274023,
+  "snapshot_prefix": "gs://keptune-spider-experiments-1088401257609/exp005/inputs/models/qwen35-2b-15852e8c-files/snapshot/",
+  "model_weights": {
+    "url": "gs://keptune-spider-experiments-1088401257609/exp005/inputs/models/qwen35-2b-15852e8c-files/snapshot/model.safetensors-00001-of-00001.safetensors#1787362870909858",
+    "size_bytes": 4548221488,
+    "sha256_from_source_manifest": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "crc32c_base64": "+NL5lQ=="
+  },
+  "terminal": {
+    "event": "model_files_terminal",
+    "status": "complete",
+    "exit_code": 0
+  },
+  "use": "Workers recursively sync the immutable files into a local directory and load offline, avoiding anonymous Hub downloads and compressed-archive extraction."
+}

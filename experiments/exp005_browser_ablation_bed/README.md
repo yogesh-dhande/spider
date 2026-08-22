@@ -174,3 +174,5 @@ runtime from 648.2 to 383.4 seconds and ended with finite loss, finite final gra
 complete rank markers, and a healthy adapter. A separately materialized pinned-model cache avoids
 repeated anonymous Hub downloads; its file-level hashes and immutable GCS object identity are in
 `artifacts/model_cache_v1.json`.
+The identical snapshot is also stored as 13 directly syncable objects so workers can avoid archive
+decompression; its receipt is `artifacts/model_files_v1.json`.

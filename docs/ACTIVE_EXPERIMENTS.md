@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T01:41:36Z
+Last verified: 2026-08-22T01:42:52Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -23,25 +23,23 @@ the launcher had not carried forward EXP004's validated microbatch-2 L4 setting.
 stage artifact was produced. Fixed-effective-batch two-node microbatch-2 benchmark
 `smoke20b2-small53-0822a` completed successfully and reduced 20-step runtime from 648.2 to 383.4
 seconds while preserving effective batch size 16 and a healthy adapter. Protocol amendment 004
-adopts microbatch 2 for subsequent two-node stages. Six matched EXP002-control evaluation shards
-are active under `exp002-all-0822a`. CPU run `model-cache-0822a` completed a checksumed copy of the
-pinned base model in EXP005 GCS inputs so later workers avoid repeated anonymous Hugging Face
-downloads.
+adopts microbatch 2 for subsequent two-node stages. CPU run `model-cache-0822a` completed a
+checksumed copy of the pinned base model in EXP005 GCS inputs so later workers avoid repeated
+anonymous Hugging Face downloads.
 The exact 10K/seed-53 stage was relaunched as `small53-s00000-e00500-0822b`, steps 0 through 500,
 on the selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local
 model snapshot.
 Five additional EXP002-control shards were launched in recycled regions, bringing eleven of twelve
 shard identities to completed or active. Only distribution-shift shard 0 remains uncreated after
-repeated regional L4 stockouts. CPU run `model-files-0822a` is publishing the same frozen model as
-directly syncable files to remove archive decompression from later worker setup.
-The remaining six shard identities
-encountered regional L4 stockouts and created no VM; they will be retried after capacity recycles.
+repeated regional L4 stockouts. CPU run `model-files-0822a` completed the same frozen model as 13
+directly syncable files, with the source manifest hash preserved, to remove archive decompression
+from later worker setup.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-Local monitors are active for `small53-s00000-e00500-0822b`, `exp002-all-0822a`, and
-`model-files-0822a`; do not stop their VMs or switch this worktree's branch. Require exact rank
-markers, training state, and adapter health before launching matched step-500 validation. Retry the
-uncreated EXP002 shards as regions become available. The verified scaling plan hash is
+Local monitors are active for `small53-s00000-e00500-0822b` and `exp002-all-0822a`; do not stop
+their VMs or switch this worktree's branch. Require exact rank markers, training state, and adapter
+health before launching matched step-500 validation. Retry the final uncreated EXP002 shard as a
+region becomes available. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
 
