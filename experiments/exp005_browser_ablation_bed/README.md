@@ -156,6 +156,8 @@ The nearby two-node L4 smoke completed at roughly 33 seconds per optimizer step 
 batch size 16. A dispersed four-node run took roughly 63 seconds per step at the same effective
 batch, so the scaling runs use two nodes and resumable stages of at most 500 steps. The initial
 two-step compatibility run produced finite, changed adapter weights, but both steps were still at
-zero learning rate during warmup. A 20-step smoke therefore remains the final numerical-stability
-gate. Every subsequent stage rejects non-finite adapter tensors and publishes an
-`adapter_health.json` receipt before uploading the checkpoint.
+zero learning rate during warmup. The subsequent 20-step smoke recovered from initial dynamic-loss-
+scaling overflows, ended with ten consecutive finite gradient norms, and emitted a healthy adapter;
+its receipt is `artifacts/numerical_smoke_v1.json`. This passes the final numerical-stability gate.
+Every subsequent stage rejects non-finite adapter tensors and publishes an `adapter_health.json`
+receipt before uploading the checkpoint.

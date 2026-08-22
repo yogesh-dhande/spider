@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "run_id": "smoke20-small53-0822a",
+  "job_id": "smoke20-small-seed53-50619370ee",
+  "status": "complete_pass",
+  "verified_utc": "2026-08-22T00:49:25Z",
+  "repo_revision": "51eda4404141f9adcfe4d65d55e9e3056e73125a",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "plan_sha256": "5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6",
+  "training_identity_sha256": "09906e10ed259b2e970e9178372575fcdf7cba76f7abc9678b50b5d2af513520",
+  "zones": [
+    "northamerica-northeast1-b",
+    "northamerica-northeast2-a"
+  ],
+  "world_size": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_batch_size": 16,
+  "start_step": 0,
+  "completed_step": 20,
+  "planned_epoch_steps": 625,
+  "stage_runtime_seconds": 648.2392960409999,
+  "train_loss": 0.9022910296916962,
+  "gradient_health": {
+    "initial_nonfinite_attempts": 6,
+    "first_finite_step": 7,
+    "additional_nonfinite_attempts": [10],
+    "finite_steps_after_last_nonfinite": 10,
+    "final_gradient_norm": 0.8978,
+    "final_learning_rate": 0.00006316,
+    "interpretation": "Dynamic FP16 loss scaling recovered, and the final ten consecutive reported optimizer steps had finite gradient norms."
+  },
+  "adapter_health": {
+    "status": "healthy",
+    "sha256": "cf0a78b8a4da0ef98339f995aaa02f4dc4ad8c271e57372c9cc1e26455cf92fb",
+    "size_bytes": 134609728,
+    "tensor_count": 372,
+    "value_count": 33638400,
+    "nonfinite_count": 0
+  },
+  "terminal_markers": [
+    "nodes/rank_00_of_02/complete.json",
+    "nodes/rank_01_of_02/complete.json"
+  ],
+  "decision": "Pass the numerical gate and authorize the first resumable 500-step reference stage."
+}
