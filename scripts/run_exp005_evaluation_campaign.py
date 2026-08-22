@@ -27,18 +27,12 @@ class ShardIdentity:
 
 
 def label(control: str, identity: ShardIdentity, num_shards: int) -> str:
-    return (
-        f"{control}-{identity.suite}-shard-{identity.shard_index:02d}"
-        f"-of-{num_shards:02d}"
-    )
+    return f"{control}-{identity.suite}-shard-{identity.shard_index:02d}-of-{num_shards:02d}"
 
 
 def metadata_dict(instance: dict[str, Any]) -> dict[str, str]:
     metadata = instance.get("metadata") or {}
-    return {
-        str(item["key"]): str(item.get("value", ""))
-        for item in metadata.get("items", [])
-    }
+    return {str(item["key"]): str(item.get("value", "")) for item in metadata.get("items", [])}
 
 
 def zone_name(instance: dict[str, Any]) -> str:
@@ -172,7 +166,9 @@ def complete_shards(
         failed = storage_json(failure_uri) if objects is None or failure_uri in objects else None
         if failed is not None:
             raise RuntimeError(f"Evaluation shard failed: {failed}")
-        terminal = storage_json(complete_uri) if objects is None or complete_uri in objects else None
+        terminal = (
+            storage_json(complete_uri) if objects is None or complete_uri in objects else None
+        )
         if terminal is None:
             continue
         validate_shard_terminal(
@@ -279,15 +275,27 @@ def launch_available_shards(
     now: float,
     launch: Callable[[ShardIdentity, str], None],
     record: Callable[..., None],
+    max_attempts: int = 6,
 ) -> list[tuple[ShardIdentity, str]]:
-    """Fill slots, falling through to another region immediately on stockout."""
+    """Fill slots without starving terminal/occupancy refreshes during stockout."""
+    if max_attempts <= 0:
+        raise ValueError("max_attempts must be positive")
     launched: list[tuple[ShardIdentity, str]] = []
     remaining_zones = list(candidates)
+    attempts = 0
     for identity in missing:
         if slots == 0:
             break
         while remaining_zones:
+            if attempts >= max_attempts:
+                record(
+                    "evaluation_campaign_launch_budget_exhausted",
+                    attempts=attempts,
+                    remaining_shards=len(missing) - len(launched),
+                )
+                return launched
             zone = remaining_zones.pop(0)
+            attempts += 1
             try:
                 launch(identity, zone)
             except subprocess.CalledProcessError as error:
@@ -326,6 +334,7 @@ def main() -> None:
     parser.add_argument("--max-active", type=int, default=8)
     parser.add_argument("--poll-seconds", type=int, default=120)
     parser.add_argument("--retry-seconds", type=int, default=600)
+    parser.add_argument("--max-launch-attempts-per-iteration", type=int, default=6)
     parser.add_argument("--terminal-grace-seconds", type=int, default=180)
     parser.add_argument("--timeout-seconds", type=int, default=21600)
     parser.add_argument("--state-log", type=Path)
@@ -391,14 +400,10 @@ def main() -> None:
                 if instance.get("status") in ACTIVE_STATES
                 and (instance.get("labels") or {}).get("spider-role") == "evaluation-merge"
             }
-            for suite, zone in zip(
-                SUITES, merge_zones[: len(SUITES)], strict=True
-            ):
+            for suite, zone in zip(SUITES, merge_zones[: len(SUITES)], strict=True):
                 if suite in completed_merges:
                     continue
-                if merge_complete(
-                    args.run_id, args.control, suite, objects=objects
-                ):
+                if merge_complete(args.run_id, args.control, suite, objects=objects):
                     completed_merges.add(suite)
                     continue
                 if suite in active_merge_suites:
@@ -452,11 +457,11 @@ def main() -> None:
                 [
                     zone
                     for zone in zones
-                    if region_for_zone(zone) not in occupied
-                    and retry_after.get(zone, 0) <= now
+                    if region_for_zone(zone) not in occupied and retry_after.get(zone, 0) <= now
                 ],
                 all_instances,
             )
+
             def launch(identity: ShardIdentity, zone: str) -> None:
                 cloud.create_evaluation_shard(
                     args.run_id,
@@ -481,6 +486,7 @@ def main() -> None:
                 now=now,
                 launch=launch,
                 record=record,
+                max_attempts=args.max_launch_attempts_per_iteration,
             )
             occupied.update(region_for_zone(zone) for _, zone in launched)
         time.sleep(args.poll_seconds)

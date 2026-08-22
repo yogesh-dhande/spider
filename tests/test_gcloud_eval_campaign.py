@@ -142,6 +142,41 @@ def test_launch_available_shards_falls_through_stockout_immediately() -> None:
     ]
 
 
+def test_launch_available_shards_yields_after_attempt_budget() -> None:
+    identities = [
+        MODULE.ShardIdentity("domain_balanced", 0),
+        MODULE.ShardIdentity("domain_balanced", 1),
+    ]
+    attempts = []
+    events = []
+
+    def launch(shard, zone):
+        attempts.append((shard, zone))
+        raise subprocess.CalledProcessError(1, ["gcloud", "compute"])
+
+    def record(event, **fields):
+        events.append((event, fields))
+
+    launched = MODULE.launch_available_shards(
+        missing=identities,
+        candidates=["zone-a", "zone-b", "zone-c"],
+        slots=2,
+        retry_after={},
+        retry_seconds=600,
+        now=100.0,
+        launch=launch,
+        record=record,
+        max_attempts=2,
+    )
+
+    assert launched == []
+    assert [zone for _, zone in attempts] == ["zone-a", "zone-b"]
+    assert events[-1] == (
+        "evaluation_campaign_launch_budget_exhausted",
+        {"attempts": 2, "remaining_shards": 2},
+    )
+
+
 def test_complete_shards_checks_only_requested_identities(monkeypatch) -> None:
     requested = MODULE.ShardIdentity("iid", 2)
     seen = []
