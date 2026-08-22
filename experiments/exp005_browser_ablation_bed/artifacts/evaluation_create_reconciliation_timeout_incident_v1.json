@@ -14,6 +14,13 @@
     "exception": "subprocess.TimeoutExpired",
     "description": "The bounded asynchronous VM create timed out, then the one-shot exact-instance reconciliation describe command also timed out. The uncaught second timeout terminated the evaluation campaign."
   },
+  "second_failure": {
+    "detected_at_utc": "2026-08-22T17:50:17+00:00",
+    "operation": "operation-1787420949151-659a65ebcff44-bb31d759-0dbb99a5",
+    "zone": "asia-east1-b",
+    "exception": "RuntimeError",
+    "description": "The first remediation retried exact-instance reconciliation successfully, but a single 30-second timeout while polling the zonal operation was still treated as the full 300-second operation timeout. Reconciliation found no exact instance and failed closed, stopping three partial reruns."
+  },
   "scientific_impact": {
     "training_repeated": false,
     "training_checkpoint_changed": false,
@@ -28,18 +35,30 @@
   "remediation": {
     "capacity_backoff_commit": "4d82272",
     "create_reconciliation_commit": "8ff3581",
+    "operation_poll_retry_commit": "c31d2ca",
     "changes": [
       "Reduced future evaluation capacity retry backoff from 600 seconds to 60 seconds.",
-      "Retry exact-instance reconciliation three times before failing closed when gcloud describe itself times out."
+      "Retry exact-instance reconciliation three times before failing closed when gcloud describe itself times out.",
+      "Retry transient per-call GCE operation polling timeouts within the bounded 300-second operation deadline instead of entering reconciliation after the first slow CLI call."
     ],
     "tests": {
-      "targeted": "62 passed",
-      "full_suite_after_reconciliation_patch": "292 passed, 1 skipped"
+      "operation_poll_targeted": "58 passed",
+      "full_suite_after_final_patch": "293 passed, 1 skipped"
     }
   },
   "recovery": {
-    "started_at_utc": "2026-08-22T17:29:07+00:00",
-    "systemd_unit": "spider-exp005-small53-resume-v2.service",
+    "attempts": [
+      {
+        "started_at_utc": "2026-08-22T17:29:07+00:00",
+        "systemd_unit": "spider-exp005-small53-resume-v2.service",
+        "status": "infrastructure_failure"
+      },
+      {
+        "started_at_utc": "2026-08-22T17:56:49+00:00",
+        "systemd_unit": "spider-exp005-small53-resume-v3.service",
+        "status": "running"
+      }
+    ],
     "training_receipt_reused": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-53--50619370ee/training_step_00625.json",
     "evaluation_retry_seconds": 60,
     "status": "running"
