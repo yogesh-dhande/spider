@@ -1,0 +1,43 @@
+{
+  "id": "exp005-protocol-amendment-004",
+  "timestamp_utc": "2026-08-22T01:22:37Z",
+  "phase": "after_numerical_smoke_before_first_long_sft_stage",
+  "reason": "A matched two-node benchmark found that per-device microbatch 2 substantially improves L4 utilization while preserving the registered effective batch size and optimizer-step schedule.",
+  "acceptance_evidence": {
+    "reference_run_id": "smoke20-small53-0822a",
+    "candidate_run_id": "smoke20b2-small53-0822a",
+    "optimizer_steps": 20,
+    "reference_stage_runtime_seconds": 648.2392960409999,
+    "candidate_stage_runtime_seconds": 383.4161093,
+    "reference_seconds_per_step": 32.41196480205,
+    "candidate_seconds_per_step": 19.170805465,
+    "runtime_reduction_fraction": 0.408527,
+    "throughput_increase_fraction": 0.69069,
+    "candidate_train_loss": 0.9773270606994628,
+    "candidate_final_gradient_norm": 0.8357,
+    "candidate_final_adapter_nonfinite_values": 0,
+    "candidate_adapter_sha256": "271a9d8743590df48f316b3e27b2715ae28caeec160961cb8dececd4e82d5b32",
+    "terminal_markers": 2
+  },
+  "change": {
+    "per_device_train_batch_size": {
+      "from": 1,
+      "to": 2
+    },
+    "gradient_accumulation_steps": {
+      "from": 8,
+      "to": 4
+    }
+  },
+  "unchanged": {
+    "world_size": 2,
+    "effective_batch_size": 16,
+    "precision": "float16",
+    "optimizer": "adamw_8bit",
+    "learning_rate_schedule": "unchanged",
+    "planned_optimizer_steps": "unchanged",
+    "data_seed_and_order": "unchanged",
+    "validation_and_regression_gate": "unchanged"
+  },
+  "scope": "Execution setting for all EXP005 two-node SFT stages. Resumed jobs must preserve microbatch 2 and gradient accumulation 4."
+}

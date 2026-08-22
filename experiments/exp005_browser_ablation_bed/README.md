@@ -167,3 +167,10 @@ found that the multinode launcher had not exposed EXP004's previously validated 
 execution setting. It produced no checkpoint or scientific result. The incident receipt is
 `artifacts/training_launch_incident_v1.json`; a matched two-node benchmark must pass before the
 stage is relaunched.
+
+Protocol amendment 004 adopts per-device microbatch 2 with gradient accumulation 4 for the
+two-node topology, preserving effective batch size 16. Its matched 20-step benchmark reduced stage
+runtime from 648.2 to 383.4 seconds and ended with finite loss, finite final gradient norm, two
+complete rank markers, and a healthy adapter. A separately materialized pinned-model cache avoids
+repeated anonymous Hub downloads; its file-level hashes and immutable GCS object identity are in
+`artifacts/model_cache_v1.json`.

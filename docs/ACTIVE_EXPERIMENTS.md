@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T01:15:38Z
+Last verified: 2026-08-22T01:22:37Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -21,19 +21,20 @@ adapter contained zero non-finite values. The first long reference attempt
 `small53-s00000-e00500-0822a` was stopped before its first optimizer step after review found that
 the launcher had not carried forward EXP004's validated microbatch-2 L4 setting. No checkpoint or
 stage artifact was produced. Fixed-effective-batch two-node microbatch-2 benchmark
-`smoke20b2-small53-0822a` is active in the two selected northeast regions. Six matched
-EXP002-control evaluation shards are active under `exp002-all-0822a`. CPU run
-`model-cache-0822a` is materializing a checksumed copy of the pinned base model into EXP005 GCS
-inputs so later workers avoid repeated anonymous Hugging Face downloads.
+`smoke20b2-small53-0822a` completed successfully and reduced 20-step runtime from 648.2 to 383.4
+seconds while preserving effective batch size 16 and a healthy adapter. Protocol amendment 004
+adopts microbatch 2 for subsequent two-node stages. Six matched EXP002-control evaluation shards
+are active under `exp002-all-0822a`. CPU run `model-cache-0822a` completed a checksumed copy of the
+pinned base model in EXP005 GCS inputs so later workers avoid repeated anonymous Hugging Face
+downloads.
 The remaining six shard identities
 encountered regional L4 stockouts and created no VM; they will be retried after capacity recycles.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-Local monitors are active for `smoke20b2-small53-0822a`, `exp002-all-0822a`, and
-`model-cache-0822a`; do not stop their VMs or switch this worktree's branch. Relaunch the exact
-0-to-500 stage only if the benchmark's throughput and numerical health pass and the cached model
-receipt validates. Retry the uncreated EXP002 shards as regions become available. The verified
-scaling plan hash is
+Only the `exp002-all-0822a` local monitor remains active; do not stop its VMs or switch this
+worktree's branch. The microbatch-2 benchmark and cached model receipts pass, so relaunch the exact
+0-to-500 stage with microbatch 2 and gradient accumulation 4. Retry the uncreated EXP002 shards as
+regions become available. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
 
