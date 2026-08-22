@@ -177,6 +177,31 @@ def test_launch_available_shards_yields_after_attempt_budget() -> None:
     )
 
 
+def test_launch_available_shards_uses_at_most_one_zone_per_region() -> None:
+    identities = [
+        MODULE.ShardIdentity("iid", 0),
+        MODULE.ShardIdentity("iid", 1),
+    ]
+    attempts = []
+
+    def launch(shard, zone):
+        attempts.append((shard, zone))
+
+    launched = MODULE.launch_available_shards(
+        missing=identities,
+        candidates=["us-east1-b", "us-east1-c", "europe-west4-a"],
+        slots=2,
+        retry_after={},
+        retry_seconds=600,
+        now=100.0,
+        launch=launch,
+        record=lambda *args, **kwargs: None,
+    )
+
+    assert [zone for _, zone in attempts] == ["us-east1-b", "europe-west4-a"]
+    assert launched == attempts
+
+
 def test_complete_shards_checks_only_requested_identities(monkeypatch) -> None:
     requested = MODULE.ShardIdentity("iid", 2)
     seen = []

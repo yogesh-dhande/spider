@@ -310,6 +310,12 @@ def launch_available_shards(
                 continue
             slots -= 1
             launched.append((identity, zone))
+            launched_region = region_for_zone(zone)
+            remaining_zones = [
+                candidate
+                for candidate in remaining_zones
+                if region_for_zone(candidate) != launched_region
+            ]
             record(
                 "evaluation_campaign_shard_launched",
                 suite=identity.suite,
