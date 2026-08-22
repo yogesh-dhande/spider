@@ -433,6 +433,7 @@ def test_multinode_training_preserves_effective_batch_and_leader_address(monkeyp
     assert len(names) == len(created) == 4
     assert all(row["machine_type"] == "g2-standard-8" for row in created)
     assert all(row["boot_disk_type"] == "pd-standard" for row in created)
+    assert all(row["bounded_async_create"] is True for row in created)
     assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
     assert all(row["metadata"]["spider-per-device-train-batch-size"] == 1 for row in created)
     assert all(

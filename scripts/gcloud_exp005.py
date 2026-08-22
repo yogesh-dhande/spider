@@ -670,6 +670,7 @@ def create_multinode_training_stage(
                 boot_disk_size="200GB",
                 boot_disk_type="pd-standard",
                 gpu=True,
+                bounded_async_create=True,
             )
             names.append(created)
         append_registry(
