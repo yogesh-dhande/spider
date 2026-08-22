@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T01:22:37Z
+Last verified: 2026-08-22T01:24:47Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -27,14 +27,17 @@ adopts microbatch 2 for subsequent two-node stages. Six matched EXP002-control e
 are active under `exp002-all-0822a`. CPU run `model-cache-0822a` completed a checksumed copy of the
 pinned base model in EXP005 GCS inputs so later workers avoid repeated anonymous Hugging Face
 downloads.
+The exact 10K/seed-53 stage was relaunched as `small53-s00000-e00500-0822b`, steps 0 through 500,
+on the selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local
+model snapshot.
 The remaining six shard identities
 encountered regional L4 stockouts and created no VM; they will be retried after capacity recycles.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-Only the `exp002-all-0822a` local monitor remains active; do not stop its VMs or switch this
-worktree's branch. The microbatch-2 benchmark and cached model receipts pass, so relaunch the exact
-0-to-500 stage with microbatch 2 and gradient accumulation 4. Retry the uncreated EXP002 shards as
-regions become available. The verified scaling plan hash is
+Local monitors are active for `small53-s00000-e00500-0822b` and `exp002-all-0822a`; do not stop
+their VMs or switch this worktree's branch. Require exact rank markers, training state, and adapter
+health before launching matched step-500 validation. Retry the uncreated EXP002 shards as regions
+become available. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
 
