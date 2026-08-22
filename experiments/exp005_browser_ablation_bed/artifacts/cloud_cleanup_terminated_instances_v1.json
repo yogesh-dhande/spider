@@ -37,5 +37,14 @@
     "running_controller_preserved": true,
     "running_workers_preserved": true
   },
+  "automatic_collector": {
+    "started_at_utc": "2026-08-22T18:02:39+00:00",
+    "systemd_unit": "spider-exp005-terminated-gc-v1.service",
+    "interval_seconds": 120,
+    "selection_is_fail_closed": true,
+    "collector_commit": "c3d2a0a",
+    "controller_provisioning_commit": "60b3d1f",
+    "controller_startup_metadata_updated": true
+  },
   "reason": "Stopped instances retained attached resources and constrained new evaluation launches. All targets were exact EXP005-managed TERMINATED instances; experiment outputs and receipts are stored in GCS/controller state."
 }
