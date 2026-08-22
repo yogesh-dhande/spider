@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_warm_evaluation_image_gate_attempt",
+  "status": "failed_closed_before_inference",
+  "image": {
+    "name": "spider-exp005-eval-warm-qwen35-0822a",
+    "id": "6884554921759519261",
+    "status": "READY",
+    "disk_size_gb": 100,
+    "archive_size_bytes": 47292567168,
+    "source_disk_id": "6148217971822379718",
+    "source_instance": "spider-exp005-eval-exp002-domain-00-exp002-all-0822a",
+    "source_zone": "asia-northeast1-c"
+  },
+  "attempt": {
+    "run_id": "warmcheck-exp002-iid00-0822a",
+    "repo_revision": "3e0e555238769c9631fe14155f3f715f4af40e03",
+    "control": "exp002",
+    "suite": "iid",
+    "shard_index": 0,
+    "num_shards": 4,
+    "zone": "us-west1-a",
+    "terminal_generation": "1787367025764582",
+    "terminal": {
+      "status": "failed",
+      "exit_code": 1
+    },
+    "inference_started": false
+  },
+  "root_cause": "The fail-closed warm-image sentinel expected model.safetensors, while the pinned Qwen snapshot correctly stores model.safetensors-00001-of-00001.safetensors plus model.safetensors.index.json.",
+  "inspection": {
+    "run_id": "warm-inspect-0822a",
+    "machine_type": "e2-standard-4",
+    "gpu": false,
+    "status": "terminated",
+    "verified_present": [
+      "/opt/spider-venv/bin/python",
+      "/mnt/spider/data/manifests/eval_iid.jsonl",
+      "/mnt/spider/data/manifests/eval_domain_balanced.jsonl",
+      "/mnt/spider/data/manifests/eval_distribution_shift.jsonl",
+      "/mnt/spider/model/model.safetensors.index.json",
+      "/mnt/spider/model/model.safetensors-00001-of-00001.safetensors"
+    ]
+  },
+  "fix_revision": "8e77c7f1b48cbc2c7e8174b45354a15fa2ca8a46",
+  "replacement_run_id": "warmcheck2-exp002-iid00-0822a",
+  "decision": "Do not adopt the warm image unless the replacement run exactly matches the frozen control shard's identities, predictions, metrics, and scores."
+}
