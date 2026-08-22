@@ -24,6 +24,8 @@ def test_revision_is_resolved_before_controller_creation(monkeypatch, tmp_path) 
 def test_startup_restores_state_and_always_stops() -> None:
     startup = MODULE.startup_script("a" * 40, Path("config.json"))
     assert "trap shutdown_controller EXIT" in startup
+    assert "cleanup_exp005_terminated_instances.py --execute --workers 8" in startup
+    assert "gc_pid=$!" in startup
     assert "latest.tar.gz" in startup
     assert "git -C /opt/spider checkout -q " + "a" * 40 in startup
     assert "run_exp005_cloud_controller.py --config config.json" in startup

@@ -145,7 +145,14 @@ def snapshot(config_path: Path) -> None:
 def startup_script(revision: str, config_path: Path) -> str:
     return f"""#!/usr/bin/env bash
 set -Eeuo pipefail
-shutdown_controller() {{ /sbin/shutdown -h now; }}
+gc_pid=""
+shutdown_controller() {{
+  if [[ -n "$gc_pid" ]]; then
+    kill "$gc_pid" 2>/dev/null || true
+    wait "$gc_pid" 2>/dev/null || true
+  fi
+  /sbin/shutdown -h now
+}}
 trap shutdown_controller EXIT
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
@@ -168,6 +175,13 @@ cd /opt/spider
 if gcloud storage cp {STATE_URI}/latest.tar.gz /tmp/spider-controller-state.tar.gz; then
   tar -xzf /tmp/spider-controller-state.tar.gz -C /opt/spider
 fi
+(
+  while true; do
+    python3 scripts/cleanup_exp005_terminated_instances.py --execute --workers 8 || true
+    sleep 120
+  done
+) &
+gc_pid=$!
 python3 scripts/run_exp005_cloud_controller.py --config {config_path}
 """
 
