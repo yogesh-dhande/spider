@@ -50,7 +50,8 @@ if [[ -n "${WARM_IMAGE_ID}" ]]; then
   test -f "${DATA_ROOT}/manifests/eval_iid.jsonl"
   test -f "${DATA_ROOT}/manifests/eval_domain_balanced.jsonl"
   test -f "${DATA_ROOT}/manifests/eval_distribution_shift.jsonl"
-  test -f "${MODEL_ROOT}/model.safetensors"
+  test -f "${MODEL_ROOT}/model.safetensors.index.json"
+  test -f "${MODEL_ROOT}/model.safetensors-00001-of-00001.safetensors"
   source /opt/spider-venv/bin/activate
   printf '{"event":"warm_evaluation_image_ready","image":"%s"}\n' "${WARM_IMAGE_ID}"
 else

@@ -422,6 +422,7 @@ def test_evaluation_guest_uses_frozen_local_model_snapshot() -> None:
     assert "export HF_HUB_OFFLINE=1" in guest
     assert '"event":"warm_evaluation_image_ready"' in guest
     assert 'test -f "${DATA_ROOT}/manifests/eval_iid.jsonl"' in guest
+    assert 'test -f "${MODEL_ROOT}/model.safetensors.index.json"' in guest
 
 
 def test_inventory_recovery_guest_verifies_completed_cache_before_upload() -> None:
