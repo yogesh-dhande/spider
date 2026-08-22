@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:32:03Z
+Last verified: 2026-08-22T03:41:47Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -75,6 +75,14 @@ Schedule v1 is rejected: GCE refused the first seed-59 and seed-61 rank names be
 resource because launcher prefixes pushed them past the instance-name limit. Incident receipt
 `artifacts/scaling_schedule_launch_incident_v1.json` records the zero-resource boundary. V2 uses
 compact content-derived IDs and validates all derived instance names before launch.
+Small/seed-59/step-500 replication `t-s59-4173bd-01-v2` is running on
+`asia-south1-b` plus `asia-southeast1-c` after four alternative pairs reported L4 stockout. Its
+stage controller will run all frozen suites with the approved warm image and stop both training and
+evaluation resources. The first seed-61 attempt created one US rank before the partner zone reported
+stockout; the fail-safe stopped it with zero ready markers, stage objects, or optimizer steps. Four
+further European pairs reported stockout before creating resources. Retry seed 61 with a new
+attempt-specific run ID after the currently healthy nearby northamerica pair is released. Exact
+capacity history is in `artifacts/scaling_launch_attempts_v1.json`.
 
 Protected EXP005 scope:
 

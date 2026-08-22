@@ -129,6 +129,12 @@ resource creation because the prefixed instance names exceeded 63 characters. Th
 is `artifacts/scaling_schedule_launch_incident_v1.json`; v2 uses compact IDs and validates every
 derived training, evaluation-shard, and evaluation-merge name before it can be written.
 
+Capacity failures are infrastructure attempts, not scientific runs. The first parallel replication
+launches and their zero-step boundaries are preserved in `artifacts/scaling_launch_attempts_v1.json`.
+The seed-59 stage found capacity on an alternate two-region pair without changing world size,
+microbatch, accumulation, or effective batch. Seed 61 will use a new attempt-specific run ID after
+its one-rank stockout attempt was stopped with no ready marker or stage object.
+
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16
 (16, 8, or 4 accumulation steps respectively). A job cannot change its GPU world size between
