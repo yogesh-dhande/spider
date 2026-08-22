@@ -154,6 +154,11 @@ overwriting a comparison.
 idempotent candidate registration, and atomic live-report refresh under one process lock. Every
 stage controller must pass its validated evaluation receipt through this command before that job is
 advanced.
+`scripts/run_exp005_scaling_job.py` is the job-level supervisor: it adopts already-running stages,
+processes every validated receipt, chains each later gate to that job's immediately preceding valid
+checkpoint, and runs the remaining frozen stages only after a continue decision. Pair-specific
+filesystem locks plus live regional GPU checks prevent two local supervisors from racing for the
+same two-region training topology.
 
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16

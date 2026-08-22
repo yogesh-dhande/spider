@@ -97,6 +97,10 @@ stop only if mean QA/grounding retention versus the prior checkpoint falls below
 single retained metric falls below -7.5 points; preserve individual -3-point warnings and report
 action recovery separately. Use `spider-scaling-gate` on every completed checkpoint receipt before
 advancing that job.
+Job-level supervisor `scripts/run_exp005_scaling_job.py` now adopts the active step-500 campaigns,
+applies the immutable gate/registry/report transaction, and advances later stages against the
+immediately preceding valid checkpoint. It serializes contenders for the same registered training
+pair and rechecks live GPU-region occupancy before launch.
 
 Protected EXP005 scope:
 
