@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "exp005_scaling_capacity_attempts",
-  "verified_utc": "2026-08-22T03:41:47Z",
+  "verified_utc": "2026-08-22T03:44:22Z",
   "repo_revision_preflight": {
     "mistyped_revision_attempts": 1,
     "boundary": "Local git revision validation",
@@ -19,6 +19,13 @@
     "successful_pair": ["asia-south1-b", "asia-southeast1-c"],
     "cluster_created_utc": "2026-08-22T03:39:22Z",
     "status": "running",
+    "controller_revision_pin_correction": {
+      "training_repo_revision": "81b90a9301bc0d22c985d945288e02cf0ceae121",
+      "issue": "The first local waiting controller forwarded symbolic HEAD to its future evaluation command.",
+      "correction": "Before any checkpoint or evaluation existed, only the local parent and waiting child were replaced with an identical controller carrying the resolved 40-character revision. GPU workers continued uninterrupted.",
+      "evaluation_repo_revision": "81b90a9301bc0d22c985d945288e02cf0ceae121",
+      "optimizer_interruption": false
+    },
     "scientific_contract": {
       "world_size": 2,
       "per_device_train_batch_size": 2,

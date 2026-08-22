@@ -102,6 +102,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    repo_revision = cloud.resolve_repo_revision(args.repo_revision)
     zones = [item for item in args.training_zones.split(",") if item]
     if len(zones) != 2:
         raise ValueError("The registered topology requires exactly two training zones")
@@ -117,7 +118,7 @@ def main() -> None:
         cloud.create_multinode_training_stage(
             args.training_run_id,
             zones,
-            args.repo_revision,
+            repo_revision,
             args.job_id,
             args.start_step,
             args.stop_step,
@@ -151,7 +152,7 @@ def main() -> None:
         "--evaluation-run-id",
         args.evaluation_run_id,
         "--repo-revision",
-        args.repo_revision,
+        repo_revision,
         "--zones",
         args.evaluation_zones,
         "--merge-zones",

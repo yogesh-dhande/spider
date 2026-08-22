@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:41:47Z
+Last verified: 2026-08-22T03:44:22Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -83,6 +83,11 @@ stockout; the fail-safe stopped it with zero ready markers, stage objects, or op
 further European pairs reported stockout before creating resources. Retry seed 61 with a new
 attempt-specific run ID after the currently healthy nearby northamerica pair is released. Exact
 capacity history is in `artifacts/scaling_launch_attempts_v1.json`.
+The seed-59 training workers are pinned to revision
+`81b90a9301bc0d22c985d945288e02cf0ceae121`. Its initial local waiting controller was replaced
+before any checkpoint or evaluation because it forwarded symbolic `HEAD`; the replacement pins the
+same resolved revision for evaluation and did not interrupt either GPU worker. The stage runner now
+resolves a revision once before launching or constructing any downstream command.
 
 Protected EXP005 scope:
 

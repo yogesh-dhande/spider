@@ -63,3 +63,9 @@ def test_inspect_stage_requires_exact_rank_terminals(monkeypatch) -> None:
         )
         == "complete"
     )
+
+
+def test_stage_runner_resolves_revision_once_before_downstream_commands() -> None:
+    source = MODULE_PATH.read_text(encoding="utf-8")
+    assert "repo_revision = cloud.resolve_repo_revision(args.repo_revision)" in source
+    assert '"--repo-revision",\n        repo_revision,' in source
