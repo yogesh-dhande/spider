@@ -7,7 +7,6 @@ import statistics
 from pathlib import Path
 from typing import Any
 
-
 SUITES = ("iid", "domain_balanced", "distribution_shift")
 PRIMARY_METRICS = {
     "qa": ("answer_accuracy", "mean_token_f1"),
@@ -49,6 +48,21 @@ def _primary(metrics: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _model_identity(
+    metadata: dict[str, Any], source: Path
+) -> tuple[str, str, str | None, str | None]:
+    adapter = metadata.get("adapter")
+    adapter_sha256 = metadata.get("adapter_sha256")
+    if adapter is not None and not adapter_sha256:
+        raise ValueError(f"Adapter hash missing from {source}")
+    return (
+        str(metadata["model"]),
+        str(metadata["model_revision"]),
+        adapter,
+        adapter_sha256,
+    )
+
+
 def _variability(shards: list[dict[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     tasks = sorted({task for shard in shards for task in shard["metrics"]["tasks"]})
@@ -85,7 +99,7 @@ def build_receipt(
     num_shards: int = 4,
 ) -> dict[str, Any]:
     suites: dict[str, Any] = {}
-    model_identities: set[tuple[str, str, str | None]] = set()
+    model_identities: set[tuple[str, str, str | None, str | None]] = set()
     for suite in SUITES:
         merged_path = root / suite / "metrics.json"
         merged_terminal = _load(root / suite / "complete.json")
@@ -114,7 +128,7 @@ def build_receipt(
             assert all(terminal.get(key) == value for key, value in expected_terminal.items())
             metadata = _load(shard_root / "run_metadata.json")
             model_identities.add(
-                (str(metadata["model"]), str(metadata["model_revision"]), metadata.get("adapter"))
+                _model_identity(metadata, shard_root / "run_metadata.json")
             )
             metrics_path = shard_root / "metrics.json"
             shards.append(
@@ -138,13 +152,14 @@ def build_receipt(
         }
 
     assert len(model_identities) == 1, model_identities
-    model, model_revision, adapter = next(iter(model_identities))
+    model, model_revision, adapter, adapter_sha256 = next(iter(model_identities))
     if expected_model is not None:
         assert model == expected_model, (model, expected_model)
     if expected_model_revision is not None:
         assert model_revision == expected_model_revision, (model_revision, expected_model_revision)
     if control == "base":
         assert adapter is None, adapter
+        assert adapter_sha256 is None, adapter_sha256
 
     return {
         "schema_version": 1,
@@ -154,6 +169,7 @@ def build_receipt(
         "model": model,
         "model_revision": model_revision,
         "adapter": adapter,
+        "adapter_sha256": adapter_sha256,
         "num_shards": num_shards,
         "suites": suites,
     }
@@ -180,10 +196,14 @@ def render_markdown(receipt: dict[str, Any]) -> str:
     lines = [
         f"# Evaluation receipt: {receipt['run_id']}",
         "",
-        f"Control: `{receipt['control']}`. Model: `{receipt['model']}` at "
-        f"`{receipt['model_revision']}`.",
+        (
+            f"Control: `{receipt['control']}`. Model: `{receipt['model']}` at "
+            f"`{receipt['model_revision']}`."
+        ),
         "",
     ]
+    if receipt.get("adapter_sha256"):
+        lines.extend([f"Adapter SHA-256: `{receipt['adapter_sha256']}`.", ""])
     for suite in SUITES:
         suite_data = receipt["suites"][suite]
         merged = suite_data["merged"]["tasks"]

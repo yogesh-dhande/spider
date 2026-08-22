@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from spider.eval_receipt import build_receipt, render_markdown
+from spider.eval_receipt import _model_identity, build_receipt, render_markdown
 
 
 def _write(path: Path, payload: dict) -> None:
@@ -74,6 +74,7 @@ def test_build_receipt_validates_and_reports_shard_variability(tmp_path: Path) -
         num_shards=2,
     )
     variability = receipt["suites"]["iid"]["shard_variability"]
+    assert receipt["adapter_sha256"] is None
     assert variability["grounding"]["click_accuracy"]["mean"] == 0.5
     assert variability["grounding"]["click_accuracy"]["min"] == 0.0
     assert variability["grounding"]["click_accuracy"]["max"] == 1.0
@@ -81,3 +82,21 @@ def test_build_receipt_validates_and_reports_shard_variability(tmp_path: Path) -
     assert "Merged (4 examples)" in markdown
     assert "50.00 ± 70.71%" in markdown
     assert "| 0 | 2 |" in markdown
+
+
+def test_build_receipt_requires_adapter_content_identity(tmp_path: Path) -> None:
+    source = tmp_path / "run_metadata.json"
+    try:
+        _model_identity(
+            {
+                "model": "model",
+                "model_revision": "revision",
+                "adapter": "/mnt/adapter",
+                "signature": "signature",
+            },
+            source,
+        )
+    except ValueError as error:
+        assert str(source) in str(error)
+    else:
+        raise AssertionError("adapter receipt without content identity was accepted")
