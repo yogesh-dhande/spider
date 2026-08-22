@@ -55,12 +55,13 @@
       },
       {
         "started_at_utc": "2026-08-22T17:56:49+00:00",
+        "completed_at_utc": "2026-08-22T18:48:23+00:00",
         "systemd_unit": "spider-exp005-small53-resume-v3.service",
-        "status": "running"
+        "status": "complete_pass"
       }
     ],
     "training_receipt_reused": "experiments/exp005_browser_ablation_bed/artifacts/scaling/exp004-reference--small--seed-53--50619370ee/training_step_00625.json",
     "evaluation_retry_seconds": 60,
-    "status": "running"
+    "status": "complete_pass"
   }
 }
