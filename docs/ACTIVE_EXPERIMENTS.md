@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:26:41Z
+Last verified: 2026-08-22T03:29:34Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -67,6 +67,10 @@ Reusable runner `scripts/run_exp005_scaling_stage.py` now packages one exact res
 stage and its full matched validation, refuses ambiguous prior stage state, and guarantees a final
 VM-stop sweep. Use separate invocations for parallel size/seed jobs; do not use it to replace the
 already-running step-500 controller.
+The full registered one-epoch schedule is now frozen as `artifacts/scaling_schedule_v1.json`
+(SHA-256 identity `733ad4db2b4f87e2f7dd800657a7b2a9255ab3c24788a8dd6b573696a6c02a64`): nine jobs,
+57 at-most-500-step training stages, and full validation after every stage. The override file only
+preserves the existing run IDs for the active small/seed-53/step-500 stage.
 
 Protected EXP005 scope:
 
