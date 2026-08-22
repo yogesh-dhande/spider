@@ -65,7 +65,7 @@
     "merge_zones": [
       "us-central1-b",
       "us-east4-c",
-      "us-west1-b"
+      "europe-west4-a"
     ]
   },
   "recoveries": [
