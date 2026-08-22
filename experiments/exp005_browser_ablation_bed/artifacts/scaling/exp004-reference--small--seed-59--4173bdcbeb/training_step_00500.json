@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_training_stage_receipt",
+  "run_id": "t-s59-4173bd-01-v2",
+  "job_id": "exp004-reference--small--seed-59--4173bdcbeb",
+  "status": "complete_pass",
+  "start_step": 0,
+  "completed_step": 500,
+  "num_nodes": 2,
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "completed_at_utc": "2026-08-22T06:27:27+00:00",
+  "planned_epoch_steps": 625,
+  "per_device_train_batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "effective_batch_size": 16,
+  "optimizer": "adamw_8bit",
+  "initial_adapter": "/mnt/spider/exp002",
+  "training_identity_sha256": "eb4f5414a1c6617351e69bb74de574bf6a6e848ea27e8437a92dc8e6038c24e0",
+  "resumed_from": null,
+  "stage_runtime_seconds": 9514.762209012,
+  "metrics": {
+    "train_runtime": 9457.9985,
+    "train_samples_per_second": 1.057,
+    "train_steps_per_second": 0.066,
+    "train_loss": 0.5694031664729118,
+    "epoch": 0.8
+  },
+  "adapter": {
+    "sha256": "a1f5fd10d0854a62fd08336ccd22fc22e5fd63a04296ac5dbf5604539f91ab0c",
+    "model_sha256": "f4f80a4f66a5b080bb7afbb4b054e8fb2136c24a3abc4ab687fbd97529082a03",
+    "health": {
+      "nonfinite_count": 0,
+      "path": "adapter_model.safetensors",
+      "sha256": "f4f80a4f66a5b080bb7afbb4b054e8fb2136c24a3abc4ab687fbd97529082a03",
+      "size_bytes": 134609728,
+      "status": "healthy",
+      "tensor_count": 372,
+      "value_count": 33638400
+    }
+  },
+  "training_state_sha256": "829c663890c032a9686a95cf75c41674d6c2f3445b3cfaf906b5c78a806739e4",
+  "adapter_health_sha256": "06f46102cc8b49258784774f9e57fff3122fe2aa3a0999f841fb0f31900847a1",
+  "terminals": [
+    {
+      "rank": 0,
+      "path": "nodes/rank_00_of_02/complete.json",
+      "sha256": "347f22ba93ea7791108a390733c603c8d6d022295c2c7f28ec566755bd733085"
+    },
+    {
+      "rank": 1,
+      "path": "nodes/rank_01_of_02/complete.json",
+      "sha256": "20eb2f2f96e03044f84987632a44430a5500fb229ef1c893167fdb089169ad2e"
+    }
+  ],
+  "source_root": "gs://keptune-spider-experiments-1088401257609/exp005/training/jobs/exp004-reference--small--seed-59--4173bdcbeb/stages/step_00500"
+}
