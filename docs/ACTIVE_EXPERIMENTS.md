@@ -140,6 +140,10 @@ file-backed logs, and adopted 9/12 seed-59 plus 6/12 seed-61 validation shards. 
 watcher remains active and was not part of the orchestration handoff. Initial metadata pin
 correction `artifacts/controller_revision_pin_correction_v1.json` occurred before checkout or any
 experiment process and consumed no GPU compute.
+The migration audit also found that seed-53's twelve replacement shards had completed but its
+distribution-shift suite merge and publication receipt were still absent. A third idempotent
+step-500 recovery is now registered; it reuses all completed inference shards and only creates the
+missing merge before archiving the receipt expected by the seed-53 supervisor.
 
 Protected EXP005 scope:
 

@@ -21,21 +21,21 @@ def load_config() -> dict:
 def test_controller_manifest_preserves_full_scaling_matrix() -> None:
     config = load_config()
     processes = MODULE.load_processes(config)
-    assert len(processes) == 11
+    assert len(processes) == 12
     assert len(config["jobs"]) == 9
     assert {item["job_id"].split("--")[1] for item in config["jobs"]} == {
         "small",
         "medium",
         "large",
     }
-    assert [item.max_attempts for item in processes[:2]] == [24, 24]
-    assert all(item.max_attempts == 1 for item in processes[2:])
+    assert [item.max_attempts for item in processes[:3]] == [24, 24, 24]
+    assert all(item.max_attempts == 1 for item in processes[3:])
 
 
 def test_recovery_keeps_existing_scientific_revision_and_namespace() -> None:
     config = load_config()
     processes = MODULE.load_processes(config)
-    seed59 = processes[0].command
+    seed59 = processes[1].command
     assert seed59[seed59.index("--evaluation-run-id") + 1] == "e-s59-4173bd-01-r2-v2"
     assert seed59[seed59.index("--repo-revision") + 1] == (
         "c1f41fb07bee936a76af2700d5ce8c7400b8f490"

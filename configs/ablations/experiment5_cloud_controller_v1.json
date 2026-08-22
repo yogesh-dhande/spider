@@ -70,6 +70,22 @@
   },
   "recoveries": [
     {
+      "name": "recover-small-seed53-step500",
+      "job_id": "exp004-reference--small--seed-53--50619370ee",
+      "training_run_id": "small53-s00000-e00500-0822b",
+      "evaluation_run_id": "sft-small53-r2-0822a",
+      "repo_revision": "fea61924ec28d68afbf095332009bd53319e5f67",
+      "start_step": 0,
+      "stop_step": 500,
+      "training_receipt": "experiments/exp005_browser_ablation_bed/artifacts/training_small53_step0500_0822b.json",
+      "evaluation_root": "outputs/experiment5/sft/small53-step0500-r2-0822a",
+      "evaluation_receipt": "experiments/exp005_browser_ablation_bed/artifacts/sft_small53_step0500_r2_0822a.json",
+      "evaluation_markdown": "experiments/exp005_browser_ablation_bed/artifacts/sft_small53_step0500_r2_0822a.md",
+      "state_log": "outputs/experiment5/controllers/sft-small53-r2-0822a.jsonl",
+      "max_attempts": 24,
+      "retry_seconds": 600
+    },
+    {
       "name": "recover-small-seed59-step500",
       "job_id": "exp004-reference--small--seed-59--4173bdcbeb",
       "training_run_id": "t-s59-4173bd-01-v2",
