@@ -151,6 +151,26 @@ preserved in the baseline receipt. Two infrastructure-only launch attempts check
 commit hash and stopped before inference; `artifacts/baseline_launch_incident_v1.json` records the
 incident and the launcher guard added before the successful reruns.
 
+## Matched starting-adapter control
+
+The frozen EXP002 perception adapter was evaluated with the identical model revision, manifests,
+prompts, decoding, and scoring. All twelve shards and three guarded merges completed in
+`exp002-all-0822a`; the content-addressed adapter and all shard variability are preserved in
+`artifacts/exp002_control_all_0822a.json` and `.md`.
+
+| Suite | QA exact | QA token F1 | Grounding click | Ground median | Action name | Exact action |
+|---|---:|---:|---:|---:|---:|---:|
+| IID | 28.12% | 66.46% | 66.21% | 14.5 px | 0.20% | 0.00% |
+| Domain-balanced unseen websites | 31.05% | 66.83% | 78.32% | 4.0 px | 0.00% | 0.00% |
+| Distribution shift | — | — | 71.09% | 11.2 px | 0.00% | 0.00% |
+
+Relative to the untouched model, the perception adapter improves QA exact by 7.03 and 4.10
+percentage points on IID and unseen websites, and grounding click accuracy by 19.53, 16.60, and
+16.99 points across the three suites. It also nearly eliminates valid browser-action generation,
+which is expected for a perception-only adapter but makes this an essential matched starting-point
+control: EXP005 SFT must retain the perception gains while recovering action behavior. The compact
+control comparison is `artifacts/control_comparison_v1.{json,md}`.
+
 ## Multinode training gate
 
 The nearby two-node L4 smoke completed at roughly 33 seconds per optimizer step with effective

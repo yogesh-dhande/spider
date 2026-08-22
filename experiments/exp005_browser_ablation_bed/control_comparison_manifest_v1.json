@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "baseline_receipt": "artifacts/baseline_base_all_0821a.json",
+  "starting_control_receipt": "artifacts/exp002_control_all_0822a.json",
+  "candidates": []
+}

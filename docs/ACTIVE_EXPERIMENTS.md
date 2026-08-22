@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T02:29:40Z
+Last verified: 2026-08-22T02:37:30Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -29,18 +29,17 @@ anonymous Hugging Face downloads.
 The exact 10K/seed-53 stage was relaunched as `small53-s00000-e00500-0822b`, steps 0 through 500,
 on the selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local
 model snapshot.
-All twelve EXP002-control shards have exact complete markers. The capacity controller launched the
-three guarded suite merges on CPU instances in `us-central1-b`, `us-east4-c`, and `us-west1-b`;
-the controller remains responsible for validating their terminal markers. CPU run
+All twelve EXP002-control shards and all three guarded suite merges completed with exact terminal
+markers; every associated VM is terminated. The validated receipt is
+`artifacts/exp002_control_all_0822a.{json,md}` and the baseline/control comparison is
+`artifacts/control_comparison_v1.{json,md}`. CPU run
 `model-files-0822a` completed the same frozen model as 13 directly syncable files, with the source
 manifest hash preserved, to remove archive decompression from later worker setup.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-Local monitors are active for `small53-s00000-e00500-0822b` and `exp002-all-0822a`; do not stop
-their VMs or switch this worktree's branch. Require exact rank markers, training state, and adapter
-health before launching matched step-500 validation. A capacity-aware controller is active for
-`exp002-all-0822a`; it validates exact shard markers, retries the final uncreated shard across free
-regions, and will launch all three guarded merges after full coverage. Its sparse state log is
+The local monitor remains active for `small53-s00000-e00500-0822b`; do not stop its VMs or switch
+this worktree's branch. Require exact rank markers, training state, and adapter health before
+launching matched step-500 validation. The completed control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
