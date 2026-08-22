@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 import subprocess
@@ -53,7 +54,9 @@ def campaign_assets(
     return assets
 
 
-def download(asset: RemoteAsset) -> None:
+def download(asset: RemoteAsset) -> bool:
+    if asset.destination.is_file():
+        return False
     asset.destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = asset.destination.with_suffix(asset.destination.suffix + ".part")
     temporary.unlink(missing_ok=True)
@@ -61,6 +64,35 @@ def download(asset: RemoteAsset) -> None:
         ["gcloud", "storage", "cp", asset.uri, str(temporary)], check=True
     )
     os.replace(temporary, asset.destination)
+    return True
+
+
+def download_assets(assets: list[RemoteAsset], *, workers: int = 8) -> None:
+    downloaded = 0
+    resumed = 0
+    completed = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(download, asset): asset for asset in assets}
+        for future in concurrent.futures.as_completed(futures):
+            if future.result():
+                downloaded += 1
+            else:
+                resumed += 1
+            completed += 1
+            if completed == len(assets) or completed % 12 == 0:
+                print(
+                    json.dumps(
+                        {
+                            "event": "exp005_evaluation_archive_progress",
+                            "completed": completed,
+                            "total": len(assets),
+                            "downloaded": downloaded,
+                            "resumed": resumed,
+                        },
+                        sort_keys=True,
+                    ),
+                    flush=True,
+                )
 
 
 def extract_merged_archives(root: Path) -> None:
@@ -90,10 +122,11 @@ def archive_campaign(
     expected_model_revision: str | None,
     num_shards: int,
 ) -> dict:
-    for asset in campaign_assets(
-        run_id=run_id, control=control, root=root, num_shards=num_shards
-    ):
-        download(asset)
+    download_assets(
+        campaign_assets(
+            run_id=run_id, control=control, root=root, num_shards=num_shards
+        )
+    )
     extract_merged_archives(root)
     receipt = build_receipt(
         root,

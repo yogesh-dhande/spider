@@ -34,3 +34,30 @@ def test_shard_label_zero_pads_identity() -> None:
         MODULE.shard_label("exp002", "domain_balanced", 2, 4)
         == "exp002-domain_balanced-shard-02-of-04"
     )
+
+
+def test_download_reuses_atomically_completed_asset(tmp_path: Path, monkeypatch) -> None:
+    destination = tmp_path / "metrics.json"
+    destination.write_text("complete", encoding="utf-8")
+    asset = MODULE.RemoteAsset("gs://bucket/metrics.json", destination)
+
+    def unexpected_run(*_args, **_kwargs):
+        raise AssertionError("completed asset should not be downloaded again")
+
+    monkeypatch.setattr(MODULE.subprocess, "run", unexpected_run)
+    assert MODULE.download(asset) is False
+    assert destination.read_text(encoding="utf-8") == "complete"
+
+
+def test_download_publishes_fresh_asset_atomically(tmp_path: Path, monkeypatch) -> None:
+    destination = tmp_path / "nested" / "metrics.json"
+    asset = MODULE.RemoteAsset("gs://bucket/metrics.json", destination)
+
+    def fake_run(command, *, check):
+        assert check is True
+        Path(command[-1]).write_text("downloaded", encoding="utf-8")
+
+    monkeypatch.setattr(MODULE.subprocess, "run", fake_run)
+    assert MODULE.download(asset) is True
+    assert destination.read_text(encoding="utf-8") == "downloaded"
+    assert not destination.with_suffix(".json.part").exists()
