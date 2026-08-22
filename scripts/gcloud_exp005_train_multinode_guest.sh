@@ -15,6 +15,7 @@ NUM_NODES="$(metadata spider-num-nodes)"
 MASTER_ADDRESS="$(metadata spider-master-address)"
 MASTER_PORT="$(metadata spider-master-port)"
 GRADIENT_ACCUMULATION="$(metadata spider-gradient-accumulation)"
+PER_DEVICE_BATCH="$(metadata spider-per-device-train-batch-size)"
 BUCKET="$(metadata spider-bucket)"
 STAGE_ROOT="${BUCKET}/exp005/training/jobs/${JOB_ID}/stages/step_$(printf '%05d' "${STOP_STEP}")"
 NODE_LABEL="rank_$(printf '%02d' "${NODE_RANK}")_of_$(printf '%02d' "${NUM_NODES}")"
@@ -83,17 +84,18 @@ else
   test -f "${INITIAL_ADAPTER}/adapter_config.json"
   test -f "${INITIAL_ADAPTER}/trainer_state.json"
   python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" \
-    "${NUM_NODES}" "${GRADIENT_ACCUMULATION}" <<'PY'
+    "${NUM_NODES}" "${GRADIENT_ACCUMULATION}" "${PER_DEVICE_BATCH}" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 state = json.loads(Path(sys.argv[1]).read_text())
-start, world_size, accumulation = map(int, sys.argv[2:])
+start, world_size, accumulation, per_device_batch = map(int, sys.argv[2:])
 assert state["status"] == "complete", state
 assert state["completed_step"] == start, state
 assert state["world_size"] == world_size, state
 assert state["gradient_accumulation_steps"] == accumulation, state
+assert state["per_device_train_batch_size"] == per_device_batch, state
 assert state["effective_batch_size"] == 16, state
 PY
 fi
@@ -131,23 +133,25 @@ python -m torch.distributed.run \
   --module spider.train \
   --config "${CONFIG_PATH}" --resume auto \
   --additional-steps "${ADDITIONAL_STEPS}" \
+  --per-device-train-batch-size "${PER_DEVICE_BATCH}" \
   --gradient-accumulation-steps "${GRADIENT_ACCUMULATION}"
 
 if [[ "${NODE_RANK}" -eq 0 ]]; then
   python - "${OUTPUT_ROOT}/training_state.json" "${START_STEP}" "${STOP_STEP}" \
-    "${NUM_NODES}" "${GRADIENT_ACCUMULATION}" <<'PY'
+    "${NUM_NODES}" "${GRADIENT_ACCUMULATION}" "${PER_DEVICE_BATCH}" <<'PY'
 import json
 import math
 import sys
 from pathlib import Path
 
 state = json.loads(Path(sys.argv[1]).read_text())
-start, stop, world_size, accumulation = map(int, sys.argv[2:])
+start, stop, world_size, accumulation, per_device_batch = map(int, sys.argv[2:])
 assert state["status"] == "complete", state
 assert state["start_step"] == start, state
 assert state["completed_step"] == stop, state
 assert state["world_size"] == world_size, state
 assert state["gradient_accumulation_steps"] == accumulation, state
+assert state["per_device_train_batch_size"] == per_device_batch, state
 assert state["effective_batch_size"] == 16, state
 assert math.isfinite(float(state["metrics"]["train_loss"])), state
 PY

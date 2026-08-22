@@ -161,3 +161,9 @@ scaling overflows, ended with ten consecutive finite gradient norms, and emitted
 its receipt is `artifacts/numerical_smoke_v1.json`. This passes the final numerical-stability gate.
 Every subsequent stage rejects non-finite adapter tensors and publishes an `adapter_health.json`
 receipt before uploading the checkpoint.
+
+The first 500-step launch was intentionally stopped before its first optimizer step when review
+found that the multinode launcher had not exposed EXP004's previously validated L4 microbatch-2
+execution setting. It produced no checkpoint or scientific result. The incident receipt is
+`artifacts/training_launch_incident_v1.json`; a matched two-node benchmark must pass before the
+stage is relaunched.

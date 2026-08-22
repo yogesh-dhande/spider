@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "run_id": "small53-s00000-e00500-0822a",
+  "status": "stopped_before_optimizer_step",
+  "detected_utc": "2026-08-22T01:00:00Z",
+  "stopped_utc": "2026-08-22T01:04:35Z",
+  "job_id": "exp004-reference--small--seed-53--50619370ee",
+  "requested_stage": {
+    "start_step": 0,
+    "stop_step": 500,
+    "world_size": 2,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "effective_batch_size": 16
+  },
+  "reason": "The launch review found that EXP004 protocol amendment 004 had already validated per-device microbatch 2 on L4 as 43.92% faster at fixed effective batch size 16. The EXP005 multinode launcher had not exposed that execution setting and was still using microbatch 1.",
+  "evidence": {
+    "last_training_event": "training_stage_plan",
+    "optimizer_steps_completed": 0,
+    "checkpoint_or_adapter_uploaded": false,
+    "gcs_stage_prefix_empty": true
+  },
+  "impact": "No scientific training result was produced. About nine minutes of setup elapsed before both nodes were explicitly stopped.",
+  "resolution": "Add a tested per-device microbatch execution override that preserves effective batch size, benchmark microbatch 2 on the selected two-node topology, and relaunch the exact stage only if the benchmark passes."
+}

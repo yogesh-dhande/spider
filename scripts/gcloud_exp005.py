@@ -487,6 +487,7 @@ def create_multinode_training_stage(
     start_step: int,
     stop_step: int,
     max_run: str,
+    per_device_train_batch_size: int = 1,
 ) -> list[str]:
     num_nodes = len(zones)
     if not SAFE_ID.fullmatch(job_id):
@@ -495,10 +496,15 @@ def create_multinode_training_stage(
         raise ValueError("training stage bounds must be non-negative and increasing")
     if num_nodes not in MULTINODE_TRAINING_SIZES:
         raise ValueError("multinode training requires 2, 4, 8, or 16 zones")
+    if per_device_train_batch_size not in {1, 2}:
+        raise ValueError("per_device_train_batch_size must be 1 or 2")
+    batch_denominator = num_nodes * per_device_train_batch_size
+    if 16 % batch_denominator:
+        raise ValueError("world size times microbatch must divide effective batch size 16")
     regions = [zone.rsplit("-", 1)[0] for zone in zones]
     if len(set(regions)) != num_nodes:
         raise ValueError("multinode zones must use distinct regions under the current L4 quota")
-    accumulation = 16 // num_nodes
+    accumulation = 16 // batch_denominator
     names: list[str] = []
     leader_name = f"spider-exp005-train-mn-r00-{stop_step:05d}-{run_id}"
     master_address = f"{leader_name}.{zones[0]}.c.{PROJECT}.internal"
@@ -514,6 +520,7 @@ def create_multinode_training_stage(
                 "spider-master-address": master_address,
                 "spider-master-port": 29500,
                 "spider-gradient-accumulation": accumulation,
+                "spider-per-device-train-batch-size": per_device_train_batch_size,
             }
             created = _create(
                 name=name,
@@ -540,6 +547,7 @@ def create_multinode_training_stage(
             names=names,
             world_size=num_nodes,
             gradient_accumulation_steps=accumulation,
+            per_device_train_batch_size=per_device_train_batch_size,
             effective_batch_size=16,
             master_address=master_address,
         )
@@ -743,6 +751,9 @@ def main() -> None:
     multinode_training.add_argument("--start-step", type=int, required=True)
     multinode_training.add_argument("--stop-step", type=int, required=True)
     multinode_training.add_argument("--max-run", default="6h")
+    multinode_training.add_argument(
+        "--per-device-train-batch-size", type=int, choices=(1, 2), default=1
+    )
     evaluation = subparsers.add_parser("evaluation-shard")
     evaluation.add_argument("--run-id", required=True)
     evaluation.add_argument("--zone", required=True)
@@ -853,6 +864,7 @@ def main() -> None:
                 args.start_step,
                 args.stop_step,
                 args.max_run,
+                args.per_device_train_batch_size,
             )
         }
     elif args.command == "evaluation-shard":

@@ -320,9 +320,38 @@ def test_multinode_training_preserves_effective_batch_and_leader_address(monkeyp
     assert all(row["boot_disk_type"] == "pd-standard" for row in created)
     assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
     assert all(
+        row["metadata"]["spider-per-device-train-batch-size"] == 1 for row in created
+    )
+    assert all(
         row["metadata"]["spider-master-address"]
         == "spider-exp005-train-mn-r00-00125-run-a.us-west1-b.c.keptune.internal"
         for row in created
+    )
+
+
+def test_multinode_training_supports_microbatch_two_at_fixed_effective_batch(monkeypatch) -> None:
+    created: list[dict] = []
+    monkeypatch.setattr(
+        MODULE, "_create", lambda **kwargs: created.append(kwargs) or kwargs["name"]
+    )
+    monkeypatch.setattr(MODULE, "append_registry", lambda *args, **kwargs: None)
+    monkeypatch.setattr(MODULE, "emit", lambda *args, **kwargs: None)
+
+    MODULE.create_multinode_training_stage(
+        "run-a",
+        ["northamerica-northeast1-b", "northamerica-northeast2-a"],
+        "abc123",
+        "small-seed53",
+        0,
+        20,
+        "2h",
+        per_device_train_batch_size=2,
+    )
+
+    assert len(created) == 2
+    assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
+    assert all(
+        row["metadata"]["spider-per-device-train-batch-size"] == 2 for row in created
     )
 
 
@@ -335,6 +364,8 @@ def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> Non
     assert 'ready_count=' in guest
     assert 'if [[ "${NODE_RANK}" -eq 0 ]]; then' in guest
     assert 'assert state["world_size"] == world_size, state' in guest
+    assert '--per-device-train-batch-size "${PER_DEVICE_BATCH}"' in guest
+    assert 'assert state["per_device_train_batch_size"] == per_device_batch, state' in guest
     assert 'python -m spider.safetensor_health' in guest
     assert '"${STAGE_ROOT}/adapter_health.json"' in guest
 
