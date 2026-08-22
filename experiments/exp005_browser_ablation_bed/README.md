@@ -9,8 +9,9 @@ eight shards with zero missing screenshots and passed the guarded merge; its rec
 all twelve shards and three guarded merges. Its machine-readable receipt and shard tables are
 `artifacts/baseline_base_all_0821a.json` and `artifacts/baseline_base_all_0821a.md`. Multinode
 compatibility testing selected two nearby single-L4 nodes over a geographically dispersed
-four-node cluster; the immutable receipt is `artifacts/multinode_smoke_v1.json`. No long EXP005
-training stage has started.
+four-node cluster; the immutable receipt is `artifacts/multinode_smoke_v1.json`. The first exact
+10K/seed-53 reference stage is now running to step 500 on the selected topology, while the matched
+EXP002 starting-adapter control is completing all frozen evaluation suites.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
