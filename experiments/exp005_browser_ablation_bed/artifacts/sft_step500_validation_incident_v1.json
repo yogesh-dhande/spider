@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_evaluation_infrastructure_incident",
+  "training_job": "exp004-reference--small--seed-53--50619370ee",
+  "training_step": 500,
+  "adapter_sha256": "144f615b364ec015296479262caa9ef34859c39c61c3166e90784fb0ce36c8ef",
+  "failed_run_id": "sft-small53-step0500-0822a",
+  "failed_shard": {
+    "suite": "distribution_shift",
+    "shard_index": 0,
+    "num_shards": 4,
+    "zone": "asia-northeast3-a",
+    "terminal_uri": "gs://keptune-spider-experiments-1088401257609/exp005/evaluation/sft-small53-step0500-0822a/sft-distribution_shift-shard-00-of-04/failed.json",
+    "terminal": {
+      "event": "evaluation_terminal",
+      "run_id": "sft-small53-step0500-0822a",
+      "control": "sft",
+      "suite": "distribution_shift",
+      "shard_index": 0,
+      "num_shards": 4,
+      "status": "failed",
+      "exit_code": 1
+    },
+    "hardware_signature": [
+      "NVRM: gpuHandleSanityCheckRegReadError_GM107",
+      "NVRM: rm_init_adapter failed"
+    ]
+  },
+  "scientific_status": "rejected_no_receipt",
+  "response": {
+    "detected_at_utc": "2026-08-22T04:33:00+00:00",
+    "remaining_run_workers_stop_requested_at_utc": "2026-08-22T04:34:01+00:00",
+    "replacement_run_id": "sft-small53-r2-0822a",
+    "replacement_started_at_utc": "2026-08-22T04:35:00+00:00",
+    "replacement_uses_approved_warm_image": "spider-exp005-eval-warm-qwen35-0822a",
+    "replacement_receipt": "sft_small53_step0500_r2_0822a.json"
+  },
+  "training_redone": false,
+  "notes": "The content-addressed training checkpoint remains valid. The failed validation run cannot be merged or registered because its run prefix contains an exact failed terminal. The replacement reruns all frozen validation shards under a new run identity."
+}

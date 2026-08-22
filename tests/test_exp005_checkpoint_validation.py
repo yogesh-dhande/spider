@@ -61,3 +61,37 @@ def test_checkpoint_validation_cli_exposes_opt_in_warm_image() -> None:
     source = MODULE_PATH.read_text(encoding="utf-8")
     assert 'parser.add_argument("--warm-image")' in source
     assert 'evaluation_command.extend(["--warm-image", args.warm_image])' in source
+
+
+def test_validate_training_receipt_allows_exact_healthy_reuse(tmp_path: Path) -> None:
+    path = tmp_path / "training.json"
+    receipt = {
+        "kind": "exp005_training_stage_receipt",
+        "run_id": "run",
+        "job_id": "job",
+        "status": "complete_pass",
+        "start_step": 0,
+        "completed_step": 500,
+        "num_nodes": 2,
+        "adapter": {"sha256": "hash", "health": {"status": "healthy"}},
+    }
+    path.write_text(json.dumps(receipt), encoding="utf-8")
+    assert MODULE.validate_training_receipt(
+        path,
+        run_id="run",
+        job_id="job",
+        start_step=0,
+        stop_step=500,
+        num_nodes=2,
+    ) == receipt
+    receipt["adapter"]["health"]["status"] = "failed"
+    path.write_text(json.dumps(receipt), encoding="utf-8")
+    with pytest.raises(ValueError, match="healthy adapter"):
+        MODULE.validate_training_receipt(
+            path,
+            run_id="run",
+            job_id="job",
+            start_step=0,
+            stop_step=500,
+            num_nodes=2,
+        )

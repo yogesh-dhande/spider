@@ -125,6 +125,39 @@ def verify_adapter_identity(training_receipt: Path, evaluation_receipt: Path) ->
         )
 
 
+def validate_training_receipt(
+    path: Path,
+    *,
+    run_id: str,
+    job_id: str,
+    start_step: int,
+    stop_step: int,
+    num_nodes: int,
+) -> dict[str, Any]:
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    expected = {
+        "kind": "exp005_training_stage_receipt",
+        "run_id": run_id,
+        "job_id": job_id,
+        "status": "complete_pass",
+        "start_step": start_step,
+        "completed_step": stop_step,
+        "num_nodes": num_nodes,
+    }
+    mismatches = {
+        key: {"expected": value, "actual": receipt.get(key)}
+        for key, value in expected.items()
+        if receipt.get(key) != value
+    }
+    if mismatches:
+        raise ValueError(f"Existing training receipt mismatch: {mismatches}")
+    if receipt.get("adapter", {}).get("health", {}).get("status") != "healthy":
+        raise ValueError("Existing training receipt does not bind a healthy adapter")
+    if not receipt.get("adapter", {}).get("sha256"):
+        raise ValueError("Existing training receipt lacks the adapter content hash")
+    return receipt
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--training-run-id", required=True)
@@ -156,24 +189,44 @@ def main() -> None:
         poll_seconds=args.poll_seconds,
         timeout_seconds=args.training_timeout_seconds,
     )
-    run(
-        [
-            sys.executable,
-            "scripts/archive_exp005_training_stage.py",
-            "--run-id",
-            args.training_run_id,
-            "--job-id",
-            args.training_job,
-            "--start-step",
-            str(args.start_step),
-            "--stop-step",
-            str(args.stop_step),
-            "--num-nodes",
-            str(args.num_nodes),
-            "--output",
-            str(args.training_receipt),
-        ]
-    )
+    if args.training_receipt.is_file():
+        validate_training_receipt(
+            args.training_receipt,
+            run_id=args.training_run_id,
+            job_id=args.training_job,
+            start_step=args.start_step,
+            stop_step=args.stop_step,
+            num_nodes=args.num_nodes,
+        )
+        print(
+            json.dumps(
+                {
+                    "event": "checkpoint_validation_training_receipt_reused",
+                    "path": str(args.training_receipt),
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+    else:
+        run(
+            [
+                sys.executable,
+                "scripts/archive_exp005_training_stage.py",
+                "--run-id",
+                args.training_run_id,
+                "--job-id",
+                args.training_job,
+                "--start-step",
+                str(args.start_step),
+                "--stop-step",
+                str(args.stop_step),
+                "--num-nodes",
+                str(args.num_nodes),
+                "--output",
+                str(args.training_receipt),
+            ]
+        )
     evaluation_command = [
             sys.executable,
             "scripts/run_exp005_evaluation_campaign.py",

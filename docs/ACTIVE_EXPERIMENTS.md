@@ -45,10 +45,13 @@ manifest hash preserved, to remove archive decompression from later worker setup
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
 The checkpoint handoff controller for `small53-s00000-e00500-0822b` archived the exact training
-receipt and launched `sft-small53-step0500-0822a`. It will archive the validation receipt and
-predictions and require the evaluated adapter hash to match the trained checkpoint. It does not
-authorize or launch the next training stage. Do not stop its evaluation VMs or switch this
-worktree's branch. The completed
+receipt. Its first validation run `sft-small53-step0500-0822a` was rejected without a scientific
+receipt after one L4 emitted `rm_init_adapter failed`; the remaining workers were stopped to avoid
+waste. Incident receipt `artifacts/sft_step500_validation_incident_v1.json` preserves the exact
+failed terminal and response. Replacement `sft-small53-r2-0822a` is active with the same adapter,
+frozen suites, and prompts using the approved warm image. Its controller will archive the
+validation receipt and predictions and require the evaluated adapter hash to match the trained
+checkpoint. Do not stop its evaluation VMs or switch this worktree's branch. The completed
 control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across

@@ -250,6 +250,14 @@ repeated anonymous Hub downloads; its file-level hashes and immutable GCS object
 The identical snapshot is also stored as 13 directly syncable objects so workers can avoid archive
 decompression; its receipt is `artifacts/model_files_v1.json`.
 
+The first seed-53 step-500 validation attempt is an infrastructure-only rejected run. Its
+distribution-shift shard 0 encountered an L4 register-read failure followed by
+`rm_init_adapter failed`, wrote an exact failed terminal, and therefore produced no evaluation
+receipt. Remaining workers were stopped and the same healthy, content-addressed training adapter
+was relaunched across all frozen suites as `sft-small53-r2-0822a` using the approved warm image.
+The immutable incident boundary is `artifacts/sft_step500_validation_incident_v1.json`; no training
+was repeated and no prediction from the failed run can enter a comparison.
+
 ## Warm evaluation image gate
 
 The opt-in image `spider-exp005-eval-warm-qwen35-0822a` caches the pinned model, frozen corpus, and
