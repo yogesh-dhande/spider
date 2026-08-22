@@ -174,6 +174,45 @@ def wait_for_zone_operation(
         time.sleep(poll_seconds)
 
 
+def describe_created_instance(
+    name: str,
+    zone: str,
+    *,
+    attempts: int = 3,
+    timeout_seconds: int = 30,
+    retry_seconds: int = 2,
+) -> subprocess.CompletedProcess[str]:
+    """Reconcile an indeterminate async create despite transient gcloud timeouts."""
+    if attempts <= 0:
+        raise ValueError("attempts must be positive")
+    command = [
+        "gcloud",
+        "compute",
+        "instances",
+        "describe",
+        name,
+        f"--project={PROJECT}",
+        f"--zone={zone}",
+        "--format=json(name,status,labels)",
+    ]
+    last_error: subprocess.TimeoutExpired | None = None
+    for attempt in range(attempts):
+        try:
+            return subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as error:
+            last_error = error
+            if attempt + 1 < attempts:
+                time.sleep(retry_seconds)
+    assert last_error is not None
+    raise last_error
+
+
 def _create(
     *,
     name: str,
@@ -243,22 +282,13 @@ def _create(
         try:
             wait_for_zone_operation(operation, zone, timeout_seconds=300)
         except subprocess.TimeoutExpired as error:
-            describe = subprocess.run(
-                [
-                    "gcloud",
-                    "compute",
-                    "instances",
-                    "describe",
-                    name,
-                    f"--project={PROJECT}",
-                    f"--zone={zone}",
-                    "--format=json(name,status,labels)",
-                ],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+            try:
+                describe = describe_created_instance(name, zone)
+            except subprocess.TimeoutExpired as describe_error:
+                raise RuntimeError(
+                    f"Timed out reconciling unresolved GCE create operation {operation}; "
+                    "campaign must fail closed"
+                ) from describe_error
             if describe.returncode:
                 raise RuntimeError(
                     f"Timed out waiting for unresolved GCE create operation {operation}; "

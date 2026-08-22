@@ -1,6 +1,7 @@
 import importlib.util
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 
 MODULE_PATH = Path(__file__).parents[1] / "scripts" / "gcloud_exp005.py"
 SPEC = importlib.util.spec_from_file_location("gcloud_exp005", MODULE_PATH)
@@ -124,6 +125,25 @@ def test_wait_for_zone_operation_raises_on_terminal_error(monkeypatch) -> None:
         assert "STOCKOUT" in (error.stderr or "")
     else:
         raise AssertionError("terminal GCE operation error was accepted")
+
+
+def test_describe_created_instance_retries_transient_cli_timeout(monkeypatch) -> None:
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        if len(calls) < 3:
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+        return SimpleNamespace(returncode=0, stdout='{"name":"worker"}')
+
+    monkeypatch.setattr(MODULE.subprocess, "run", run)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda _seconds: None)
+
+    result = MODULE.describe_created_instance("worker", "us-east4-c")
+
+    assert result.returncode == 0
+    assert len(calls) == 3
+    assert calls[0][1]["timeout"] == 30
 
 
 def test_materialization_shard_rejects_invalid_partition() -> None:
