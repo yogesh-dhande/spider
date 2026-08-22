@@ -55,6 +55,7 @@ spider-build-data-ladder = "spider.data_ladder:main"
 spider-inventory-sources = "spider.source_inventory:main"
 spider-materialize-corpus = "spider.corpus_materializer:main"
 spider-benchmark-eval = "spider.benchmark_eval:main"
+spider-compare-eval-shards = "spider.eval_reproducibility:main"
 spider-ablation-matrix = "spider.ablation_matrix:main"
 spider-build-dataset-dashboard = "spider.dataset_dashboard:main"
 
