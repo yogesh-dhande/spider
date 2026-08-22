@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T00:23:31Z
+Last verified: 2026-08-22T00:25:24Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -15,14 +15,18 @@ The untouched `Qwen/Qwen3.5-2B` baseline `base-all-0821a` completed all twelve e
 and three guarded suite merges. Two- and four-node compatibility tests completed; the nearby
 two-node topology was selected because the dispersed four-node topology was slower. All associated
 VMs are terminated and deleted. No long EXP005 training stage has started. The final gate before
-the first 500-step stage is a registered 20-step, two-node smoke that must show finite post-warmup
-gradient norms, loss, checkpoint state, and adapter tensors. The authoritative research status and
-receipts are under `experiments/exp005_browser_ablation_bed/`.
+the first 500-step stage is the active registered 20-step smoke `smoke20-small53-0822a`, using job
+`smoke20-small-seed53-50619370ee` in `northamerica-northeast1-b` and
+`northamerica-northeast2-a`. It must show finite post-warmup gradient norms, loss, checkpoint state,
+and adapter tensors. The authoritative research status and receipts are under
+`experiments/exp005_browser_ablation_bed/`.
 
-There is no expected local EXP005 monitor at this handoff. Before starting SFT, verify the scaling
-plan hash `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`,
-run the 20-step numerical smoke, and inspect its sparse progress plus `adapter_health.json` receipt.
-Preserve world size across any resumed training stages.
+A local monitor is active for `smoke20-small53-0822a`. Do not stop its two VMs or switch this
+worktree's branch. When both VMs terminate, require exact complete markers from both ranks, inspect
+the sparse progress and `adapter_health.json`, and only then launch the first 500-step stage.
+The verified scaling plan hash is
+`5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
+any resumed training stages.
 
 Protected EXP005 scope:
 
