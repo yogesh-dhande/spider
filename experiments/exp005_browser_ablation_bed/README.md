@@ -150,6 +150,10 @@ idempotent `spider-register-candidate` command. It rejects duplicate scaling ide
 adapter hashes, then the scaling report regenerates baseline, starting-adapter, per-checkpoint, and
 across-seed tables from the registry. This lets parallel jobs finish in any order without silently
 overwriting a comparison.
+`spider-process-checkpoint` performs the registered regression gate, immutable gate write,
+idempotent candidate registration, and atomic live-report refresh under one process lock. Every
+stage controller must pass its validated evaluation receipt through this command before that job is
+advanced.
 
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16

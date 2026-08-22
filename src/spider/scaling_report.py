@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -210,14 +212,13 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Build a baseline/control/SFT scaling report")
-    parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--output-json", type=Path, required=True)
-    parser.add_argument("--output-markdown", type=Path, required=True)
-    args = parser.parse_args()
-    manifest = _load(args.manifest)
-    parent = args.manifest.resolve().parent
+def write_scaling_report(
+    manifest_path: Path,
+    output_json: Path,
+    output_markdown: Path,
+) -> dict[str, Any]:
+    manifest = _load(manifest_path)
+    parent = manifest_path.resolve().parent
 
     def receipt(relative: str) -> dict[str, Any]:
         path = Path(relative)
@@ -232,10 +233,28 @@ def main() -> None:
         receipt(manifest["starting_control_receipt"]),
         candidates,
     )
-    args.output_json.parent.mkdir(parents=True, exist_ok=True)
-    args.output_markdown.parent.mkdir(parents=True, exist_ok=True)
-    args.output_json.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    args.output_markdown.write_text(render_markdown(report), encoding="utf-8")
+    output_json.parent.mkdir(parents=True, exist_ok=True)
+    output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    for path, content in (
+        (output_json, json.dumps(report, indent=2) + "\n"),
+        (output_markdown, render_markdown(report)),
+    ):
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=path.parent, delete=False
+        ) as temporary:
+            temporary.write(content)
+            temporary_path = Path(temporary.name)
+        os.replace(temporary_path, path)
+    return report
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build a baseline/control/SFT scaling report")
+    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--output-json", type=Path, required=True)
+    parser.add_argument("--output-markdown", type=Path, required=True)
+    args = parser.parse_args()
+    write_scaling_report(args.manifest, args.output_json, args.output_markdown)
 
 
 if __name__ == "__main__":
