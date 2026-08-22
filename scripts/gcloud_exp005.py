@@ -160,7 +160,19 @@ def wait_for_zone_operation(
         "--format=json(status,error)",
     ]
     while True:
-        payload = json.loads(run(command, timeout_seconds=30))
+        try:
+            raw = run(command, timeout_seconds=30)
+        except subprocess.TimeoutExpired:
+            if time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(command, timeout_seconds)
+            emit(
+                "gcloud_operation_poll_timeout_retry",
+                operation=operation,
+                zone=zone,
+            )
+            time.sleep(poll_seconds)
+            continue
+        payload = json.loads(raw)
         if payload.get("status") == "DONE":
             if payload.get("error"):
                 raise subprocess.CalledProcessError(

@@ -113,6 +113,32 @@ def test_wait_for_zone_operation_polls_to_success(monkeypatch) -> None:
     assert calls[0][1] == 30
 
 
+def test_wait_for_zone_operation_retries_transient_cli_timeout(monkeypatch) -> None:
+    calls = []
+
+    def run(command, capture=True, timeout_seconds=None):
+        calls.append((command, timeout_seconds))
+        if len(calls) == 1:
+            raise subprocess.TimeoutExpired(command, timeout_seconds)
+        return '{"status":"DONE"}'
+
+    events = []
+    monkeypatch.setattr(MODULE, "run", run)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(MODULE, "emit", lambda event, **fields: events.append((event, fields)))
+
+    result = MODULE.wait_for_zone_operation("operation-123-abc", "asia-east1-b")
+
+    assert result == {"status": "DONE"}
+    assert len(calls) == 2
+    assert events == [
+        (
+            "gcloud_operation_poll_timeout_retry",
+            {"operation": "operation-123-abc", "zone": "asia-east1-b"},
+        )
+    ]
+
+
 def test_wait_for_zone_operation_raises_on_terminal_error(monkeypatch) -> None:
     monkeypatch.setattr(
         MODULE,
