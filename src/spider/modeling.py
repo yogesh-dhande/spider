@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 SUPPORTED_MODEL_LOADERS = {"qwen3_vl", "auto_multimodal"}
+
+
+def pretrained_source(experiment: dict[str, Any]) -> tuple[str, str | None]:
+    """Resolve an optional immutable local snapshot without changing model identity."""
+    local_snapshot = os.environ.get("SPIDER_MODEL_DIR")
+    if local_snapshot:
+        return local_snapshot, None
+    return experiment["model_name"], experiment.get("model_revision")
 
 
 def cuda_supports_native_bf16(torch: Any) -> bool:
@@ -65,14 +74,13 @@ def load_quantized_model(
         bnb_4bit_use_double_quant=True,
         bnb_4bit_compute_dtype=compute_dtype,
     )
+    source, revision = pretrained_source(experiment)
     model = model_class.from_pretrained(
-        experiment["model_name"],
-        revision=experiment.get("model_revision"),
+        source,
+        revision=revision,
         dtype=compute_dtype,
         quantization_config=quantization,
         device_map=device_map,
     )
-    processor = AutoProcessor.from_pretrained(
-        experiment["model_name"], revision=experiment.get("model_revision")
-    )
+    processor = AutoProcessor.from_pretrained(source, revision=revision)
     return model, processor, compute_dtype

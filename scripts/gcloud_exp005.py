@@ -35,6 +35,9 @@ TRAINING_MACHINE_TYPES = {
     4: "g2-standard-48",
 }
 MULTINODE_TRAINING_SIZES = {2, 4, 8, 16}
+MODEL_ID = "Qwen/Qwen3.5-2B"
+MODEL_REVISION = "15852e8c16360a2fea060d615a32b45270f8a8fc"
+MODEL_CACHE_ID = "qwen35-2b-15852e8c"
 
 
 def utc_now() -> str:
@@ -225,6 +228,27 @@ def create_materialization_shard(
         max_run=max_run,
         machine_type="n2-standard-8",
         boot_disk_size="150GB",
+        gpu=False,
+        boot_disk_type="pd-standard",
+    )
+
+
+def create_model_cache(run_id: str, zone: str, repo_revision: str, max_run: str) -> str:
+    return _create(
+        name=f"spider-exp005-model-cache-{run_id}",
+        run_id=run_id,
+        role="model-cache",
+        zone=zone,
+        repo_revision=repo_revision,
+        guest_script="scripts/gcloud_exp005_model_cache_guest.sh",
+        metadata={
+            "spider-model-id": MODEL_ID,
+            "spider-model-revision": MODEL_REVISION,
+            "spider-model-cache-id": MODEL_CACHE_ID,
+        },
+        max_run=max_run,
+        machine_type="n2-standard-8",
+        boot_disk_size="100GB",
         gpu=False,
         boot_disk_type="pd-standard",
     )
@@ -704,6 +728,11 @@ def main() -> None:
     data.add_argument("--shard-index", type=int, required=True)
     data.add_argument("--num-shards", type=int, required=True)
     data.add_argument("--max-run", default="6h")
+    model_cache = subparsers.add_parser("model-cache")
+    model_cache.add_argument("--run-id", required=True)
+    model_cache.add_argument("--zone", required=True)
+    model_cache.add_argument("--repo-revision", required=True)
+    model_cache.add_argument("--max-run", default="2h")
     qa_inventory = subparsers.add_parser("qa-inventory-shard")
     qa_inventory.add_argument("--run-id", required=True)
     qa_inventory.add_argument("--zone", required=True)
@@ -796,6 +825,12 @@ def main() -> None:
                 args.shard_index,
                 args.num_shards,
                 args.max_run,
+            )
+        }
+    elif args.command == "model-cache":
+        payload = {
+            "name": create_model_cache(
+                args.run_id, args.zone, args.repo_revision, args.max_run
             )
         }
     elif args.command == "qa-inventory-shard":

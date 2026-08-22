@@ -69,6 +69,24 @@ def test_materialization_shard_uses_large_standard_disk(monkeypatch) -> None:
     assert received["boot_disk_type"] == "pd-standard"
 
 
+def test_model_cache_uses_pinned_model_and_cpu_worker(monkeypatch) -> None:
+    received = {}
+    monkeypatch.setattr(
+        MODULE, "_create", lambda **kwargs: received.update(kwargs) or kwargs["name"]
+    )
+
+    MODULE.create_model_cache("cache-a", "us-central1-a", "abc123", "2h")
+
+    assert received["gpu"] is False
+    assert received["machine_type"] == "n2-standard-8"
+    assert received["boot_disk_type"] == "pd-standard"
+    assert received["metadata"] == {
+        "spider-model-id": "Qwen/Qwen3.5-2B",
+        "spider-model-revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "spider-model-cache-id": "qwen35-2b-15852e8c",
+    }
+
+
 def test_qa_inventory_shard_uses_cpu_and_rejects_invalid_partition(monkeypatch) -> None:
     try:
         MODULE.create_qa_inventory_shard("run", "zone", "revision", 5, 5, "5h")
@@ -368,6 +386,8 @@ def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> Non
     assert 'assert state["per_device_train_batch_size"] == per_device_batch, state' in guest
     assert 'python -m spider.safetensor_health' in guest
     assert '"${STAGE_ROOT}/adapter_health.json"' in guest
+    assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
+    assert "qwen35-2b-15852e8c/model.tar.zst" in guest
 
 
 def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages() -> None:
@@ -376,6 +396,15 @@ def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages()
     assert '--nproc_per_node="${GPU_COUNT}"' in guest
     assert 'assert state["world_size"] == gpu_count, state' in guest
     assert 'assert state["gradient_accumulation_steps"] == accumulation, state' in guest
+    assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
+
+
+def test_evaluation_guest_uses_frozen_local_model_snapshot() -> None:
+    guest = (MODULE_PATH.parent / "gcloud_exp005_eval_guest.sh").read_text()
+
+    assert "qwen35-2b-15852e8c/model.tar.zst" in guest
+    assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
+    assert "export HF_HUB_OFFLINE=1" in guest
 
 
 def test_inventory_recovery_guest_verifies_completed_cache_before_upload() -> None:

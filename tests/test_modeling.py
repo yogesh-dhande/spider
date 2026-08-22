@@ -5,6 +5,7 @@ import pytest
 from spider.config import load_config
 from spider.modeling import (
     cuda_supports_native_bf16,
+    pretrained_source,
     resolve_compute_dtype,
     validate_model_config,
 )
@@ -67,3 +68,19 @@ def test_auto_uses_native_bf16() -> None:
 def test_explicit_bf16_rejects_unsupported_device() -> None:
     with pytest.raises(RuntimeError, match="not supported"):
         resolve_compute_dtype(_FakeTorch([(7, 5)], bf16=False), "bfloat16")
+
+
+def test_pretrained_source_uses_pinned_remote_by_default(monkeypatch) -> None:
+    monkeypatch.delenv("SPIDER_MODEL_DIR", raising=False)
+    assert pretrained_source({"model_name": "model", "model_revision": "revision"}) == (
+        "model",
+        "revision",
+    )
+
+
+def test_pretrained_source_uses_local_snapshot_without_revision(monkeypatch) -> None:
+    monkeypatch.setenv("SPIDER_MODEL_DIR", "/mnt/spider-model")
+    assert pretrained_source({"model_name": "model", "model_revision": "revision"}) == (
+        "/mnt/spider-model",
+        None,
+    )

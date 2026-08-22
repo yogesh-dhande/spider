@@ -47,9 +47,14 @@ WORK_ROOT=/mnt/spider
 DATA_ROOT="${WORK_ROOT}/data"
 OUTPUT_ROOT="${WORK_ROOT}/outputs"
 ADAPTER_ROOT="${WORK_ROOT}/exp002"
-mkdir -p "${DATA_ROOT}" "${OUTPUT_ROOT}" "${ADAPTER_ROOT}"
+MODEL_ROOT="${WORK_ROOT}/model"
+mkdir -p "${DATA_ROOT}" "${OUTPUT_ROOT}" "${ADAPTER_ROOT}" "${MODEL_ROOT}"
 gcloud storage cp "${BUCKET}/exp005/data/corpus.tar.zst" /tmp/corpus.tar.zst
 tar --use-compress-program=unzstd -xf /tmp/corpus.tar.zst -C "${DATA_ROOT}"
+gcloud storage cp \
+  "${BUCKET}/exp005/inputs/models/qwen35-2b-15852e8c/model.tar.zst" \
+  /tmp/model.tar.zst
+tar --use-compress-program=unzstd -xf /tmp/model.tar.zst -C "${MODEL_ROOT}"
 
 adapter_args=()
 if [[ "${CONTROL}" == exp002 ]]; then
@@ -72,8 +77,10 @@ export PYTHONPATH=/opt/spider/src
 export HF_HUB_DOWNLOAD_TIMEOUT=300
 export HF_HUB_ETAG_TIMEOUT=60
 export HF_HUB_DISABLE_PROGRESS_BARS=1
+export HF_HUB_OFFLINE=1
 export SPIDER_DATA_DIR="${DATA_ROOT}"
 export SPIDER_OUTPUT_DIR="${OUTPUT_ROOT}"
+export SPIDER_MODEL_DIR="${MODEL_ROOT}"
 python -m spider.benchmark_eval run \
   --config /opt/spider/configs/experiment5.yaml \
   --label "${LABEL}" \
