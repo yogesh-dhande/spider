@@ -118,12 +118,16 @@ receipts, and stops any remaining training or evaluation VMs in a `finally` path
 one stage only so metrics can be reviewed for regression before the next registered stage begins;
 independent size/seed jobs may use separate invocations in parallel.
 
-The exact one-epoch schedule is frozen in `artifacts/scaling_schedule_v1.json` with schedule hash
-`733ad4db2b4f87e2f7dd800657a7b2a9255ab3c24788a8dd6b573696a6c02a64`. At effective batch 16,
+The exact one-epoch schedule is frozen in `artifacts/scaling_schedule_v2.json` with schedule hash
+`eec4b382e410c9cfc6b20e8c51b298d71f83dfd85bc046811eae55ef3f2c1679`. At effective batch 16,
 the 10K, 30K, and 100K tiers require 625, 1,875, and 6,250 optimizer steps per seed. Stages are at
 most 500 steps and every stage receives all three frozen validation suites, yielding 57 training
 stages and 57 full validation campaigns across nine jobs. The single override file preserves the
 run IDs of the already-running first stage instead of relabelling that scientific attempt.
+Schedule v1 is retained but rejected: its first two replication launches were refused by GCE before
+resource creation because the prefixed instance names exceeded 63 characters. The incident receipt
+is `artifacts/scaling_schedule_launch_incident_v1.json`; v2 uses compact IDs and validates every
+derived training, evaluation-shard, and evaluation-merge name before it can be written.
 
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16

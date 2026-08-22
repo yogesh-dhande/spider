@@ -1,0 +1,569 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_scaling_execution_schedule",
+  "schedule_version": "v2",
+  "plan_sha256": "5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6",
+  "dataset_identity_sha256": "1e3c06eca32f4a01240e08b8c0a7debcd11bd3f105c8c6f718aaf410d8dff9c0",
+  "effective_batch_size": 16,
+  "epochs": 1,
+  "max_stage_optimizer_steps": 500,
+  "validation_policy": "all_frozen_suites_after_every_stage",
+  "run_id_overrides": {
+    "exp004-reference--small--seed-53--50619370ee@500": {
+      "training_run_id": "small53-s00000-e00500-0822b",
+      "evaluation_run_id": "sft-small53-step0500-0822a"
+    }
+  },
+  "jobs": [
+    {
+      "job_id": "exp004-reference--small--seed-53--50619370ee",
+      "identity_sha256": "50619370ee057dc2d640c11e31c0691b0c304d912440fc23b8c94b05e98ce873",
+      "dataset_size": "small",
+      "seed": 53,
+      "examples": 10000,
+      "total_optimizer_steps": 625,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "small53-s00000-e00500-0822b",
+          "evaluation_run_id": "sft-small53-step0500-0822a",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 625,
+          "optimizer_steps": 125,
+          "training_run_id": "t-s53-506193-02-v2",
+          "evaluation_run_id": "e-s53-506193-02-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--small--seed-59--4173bdcbeb",
+      "identity_sha256": "4173bdcbeb070965a591171b5f154444250f9a38f08cfc26cdf0856165029054",
+      "dataset_size": "small",
+      "seed": 59,
+      "examples": 10000,
+      "total_optimizer_steps": 625,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-4173bd-01-v2",
+          "evaluation_run_id": "e-s59-4173bd-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 625,
+          "optimizer_steps": 125,
+          "training_run_id": "t-s59-4173bd-02-v2",
+          "evaluation_run_id": "e-s59-4173bd-02-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--small--seed-61--52714036f6",
+      "identity_sha256": "52714036f6681adbbbded8643bdb937081449073102c2012bd375adbcdddfd4e",
+      "dataset_size": "small",
+      "seed": 61,
+      "examples": 10000,
+      "total_optimizer_steps": 625,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-527140-01-v2",
+          "evaluation_run_id": "e-s61-527140-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 625,
+          "optimizer_steps": 125,
+          "training_run_id": "t-s61-527140-02-v2",
+          "evaluation_run_id": "e-s61-527140-02-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--medium--seed-53--faf1ae77cd",
+      "identity_sha256": "faf1ae77cdfbcf4fe8a53733ff91f832dcdbc189142ce8c537c0a12dd3d5397a",
+      "dataset_size": "medium",
+      "seed": 53,
+      "examples": 30000,
+      "total_optimizer_steps": 1875,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-faf1ae-01-v2",
+          "evaluation_run_id": "e-s53-faf1ae-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 1000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-faf1ae-02-v2",
+          "evaluation_run_id": "e-s53-faf1ae-02-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1000,
+          "stop_step": 1500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-faf1ae-03-v2",
+          "evaluation_run_id": "e-s53-faf1ae-03-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1500,
+          "stop_step": 1875,
+          "optimizer_steps": 375,
+          "training_run_id": "t-s53-faf1ae-04-v2",
+          "evaluation_run_id": "e-s53-faf1ae-04-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--medium--seed-59--723d8e36b6",
+      "identity_sha256": "723d8e36b63a2cb0cc99d2af33122a632672f31c3fc28c54bf17e24bf459c852",
+      "dataset_size": "medium",
+      "seed": 59,
+      "examples": 30000,
+      "total_optimizer_steps": 1875,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-723d8e-01-v2",
+          "evaluation_run_id": "e-s59-723d8e-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 1000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-723d8e-02-v2",
+          "evaluation_run_id": "e-s59-723d8e-02-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1000,
+          "stop_step": 1500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-723d8e-03-v2",
+          "evaluation_run_id": "e-s59-723d8e-03-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1500,
+          "stop_step": 1875,
+          "optimizer_steps": 375,
+          "training_run_id": "t-s59-723d8e-04-v2",
+          "evaluation_run_id": "e-s59-723d8e-04-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--medium--seed-61--1327172160",
+      "identity_sha256": "1327172160eca2db1023b7aebade24f170c44316eb69828651b1952ff18d964b",
+      "dataset_size": "medium",
+      "seed": 61,
+      "examples": 30000,
+      "total_optimizer_steps": 1875,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-132717-01-v2",
+          "evaluation_run_id": "e-s61-132717-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 1000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-132717-02-v2",
+          "evaluation_run_id": "e-s61-132717-02-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1000,
+          "stop_step": 1500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-132717-03-v2",
+          "evaluation_run_id": "e-s61-132717-03-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1500,
+          "stop_step": 1875,
+          "optimizer_steps": 375,
+          "training_run_id": "t-s61-132717-04-v2",
+          "evaluation_run_id": "e-s61-132717-04-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--large--seed-53--0e406147a0",
+      "identity_sha256": "0e406147a0d35a0580b5abddca91cbf370f4872a16211218634d669dd4e924d8",
+      "dataset_size": "large",
+      "seed": 53,
+      "examples": 100000,
+      "total_optimizer_steps": 6250,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-01-v2",
+          "evaluation_run_id": "e-s53-0e4061-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 1000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-02-v2",
+          "evaluation_run_id": "e-s53-0e4061-02-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1000,
+          "stop_step": 1500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-03-v2",
+          "evaluation_run_id": "e-s53-0e4061-03-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1500,
+          "stop_step": 2000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-04-v2",
+          "evaluation_run_id": "e-s53-0e4061-04-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 2000,
+          "stop_step": 2500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-05-v2",
+          "evaluation_run_id": "e-s53-0e4061-05-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 2500,
+          "stop_step": 3000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-06-v2",
+          "evaluation_run_id": "e-s53-0e4061-06-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 3000,
+          "stop_step": 3500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-07-v2",
+          "evaluation_run_id": "e-s53-0e4061-07-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 3500,
+          "stop_step": 4000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-08-v2",
+          "evaluation_run_id": "e-s53-0e4061-08-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 4000,
+          "stop_step": 4500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-09-v2",
+          "evaluation_run_id": "e-s53-0e4061-09-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 4500,
+          "stop_step": 5000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-10-v2",
+          "evaluation_run_id": "e-s53-0e4061-10-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 5000,
+          "stop_step": 5500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-11-v2",
+          "evaluation_run_id": "e-s53-0e4061-11-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 5500,
+          "stop_step": 6000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s53-0e4061-12-v2",
+          "evaluation_run_id": "e-s53-0e4061-12-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 6000,
+          "stop_step": 6250,
+          "optimizer_steps": 250,
+          "training_run_id": "t-s53-0e4061-13-v2",
+          "evaluation_run_id": "e-s53-0e4061-13-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--large--seed-59--24bdb71cb8",
+      "identity_sha256": "24bdb71cb8c4e1346afeed5dccbf1773f13cccb17d686d731efa015dd1ed6e37",
+      "dataset_size": "large",
+      "seed": 59,
+      "examples": 100000,
+      "total_optimizer_steps": 6250,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-01-v2",
+          "evaluation_run_id": "e-s59-24bdb7-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 1000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-02-v2",
+          "evaluation_run_id": "e-s59-24bdb7-02-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1000,
+          "stop_step": 1500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-03-v2",
+          "evaluation_run_id": "e-s59-24bdb7-03-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1500,
+          "stop_step": 2000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-04-v2",
+          "evaluation_run_id": "e-s59-24bdb7-04-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 2000,
+          "stop_step": 2500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-05-v2",
+          "evaluation_run_id": "e-s59-24bdb7-05-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 2500,
+          "stop_step": 3000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-06-v2",
+          "evaluation_run_id": "e-s59-24bdb7-06-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 3000,
+          "stop_step": 3500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-07-v2",
+          "evaluation_run_id": "e-s59-24bdb7-07-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 3500,
+          "stop_step": 4000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-08-v2",
+          "evaluation_run_id": "e-s59-24bdb7-08-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 4000,
+          "stop_step": 4500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-09-v2",
+          "evaluation_run_id": "e-s59-24bdb7-09-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 4500,
+          "stop_step": 5000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-10-v2",
+          "evaluation_run_id": "e-s59-24bdb7-10-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 5000,
+          "stop_step": 5500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-11-v2",
+          "evaluation_run_id": "e-s59-24bdb7-11-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 5500,
+          "stop_step": 6000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s59-24bdb7-12-v2",
+          "evaluation_run_id": "e-s59-24bdb7-12-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 6000,
+          "stop_step": 6250,
+          "optimizer_steps": 250,
+          "training_run_id": "t-s59-24bdb7-13-v2",
+          "evaluation_run_id": "e-s59-24bdb7-13-v2",
+          "full_validation_required": true
+        }
+      ]
+    },
+    {
+      "job_id": "exp004-reference--large--seed-61--89af7dc2fe",
+      "identity_sha256": "89af7dc2fe3369fbeabf904b33df3da510cbdeb6d216b4e30979fb7997513f06",
+      "dataset_size": "large",
+      "seed": 61,
+      "examples": 100000,
+      "total_optimizer_steps": 6250,
+      "stages": [
+        {
+          "start_step": 0,
+          "stop_step": 500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-01-v2",
+          "evaluation_run_id": "e-s61-89af7d-01-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 500,
+          "stop_step": 1000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-02-v2",
+          "evaluation_run_id": "e-s61-89af7d-02-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1000,
+          "stop_step": 1500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-03-v2",
+          "evaluation_run_id": "e-s61-89af7d-03-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 1500,
+          "stop_step": 2000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-04-v2",
+          "evaluation_run_id": "e-s61-89af7d-04-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 2000,
+          "stop_step": 2500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-05-v2",
+          "evaluation_run_id": "e-s61-89af7d-05-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 2500,
+          "stop_step": 3000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-06-v2",
+          "evaluation_run_id": "e-s61-89af7d-06-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 3000,
+          "stop_step": 3500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-07-v2",
+          "evaluation_run_id": "e-s61-89af7d-07-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 3500,
+          "stop_step": 4000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-08-v2",
+          "evaluation_run_id": "e-s61-89af7d-08-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 4000,
+          "stop_step": 4500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-09-v2",
+          "evaluation_run_id": "e-s61-89af7d-09-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 4500,
+          "stop_step": 5000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-10-v2",
+          "evaluation_run_id": "e-s61-89af7d-10-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 5000,
+          "stop_step": 5500,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-11-v2",
+          "evaluation_run_id": "e-s61-89af7d-11-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 5500,
+          "stop_step": 6000,
+          "optimizer_steps": 500,
+          "training_run_id": "t-s61-89af7d-12-v2",
+          "evaluation_run_id": "e-s61-89af7d-12-v2",
+          "full_validation_required": true
+        },
+        {
+          "start_step": 6000,
+          "stop_step": 6250,
+          "optimizer_steps": 250,
+          "training_run_id": "t-s61-89af7d-13-v2",
+          "evaluation_run_id": "e-s61-89af7d-13-v2",
+          "full_validation_required": true
+        }
+      ]
+    }
+  ],
+  "job_count": 9,
+  "training_stage_count": 57,
+  "full_validation_campaign_count": 57,
+  "schedule_sha256": "eec4b382e410c9cfc6b20e8c51b298d71f83dfd85bc046811eae55ef3f2c1679"
+}

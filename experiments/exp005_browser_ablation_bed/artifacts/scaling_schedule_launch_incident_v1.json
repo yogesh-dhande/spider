@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "kind": "exp005_scaling_schedule_launch_incident",
+  "timestamp_utc": "2026-08-22T03:32:03Z",
+  "rejected_schedule": "scaling_schedule_v1.json",
+  "affected_stages": [
+    {
+      "job_id": "exp004-reference--small--seed-59--4173bdcbeb",
+      "training_run_id": "tr-s59-4173bdcbeb-00000-00500-v1"
+    },
+    {
+      "job_id": "exp004-reference--small--seed-61--52714036f6",
+      "training_run_id": "tr-s61-52714036f6-00000-00500-v1"
+    }
+  ],
+  "failure_boundary": "GCE rejected each first rank instance name before resource creation.",
+  "billable_resources_created": 0,
+  "scientific_outputs_created": 0,
+  "root_cause": "The schedule validated the 63-character run-ID limit but did not validate the derived instance name after the launcher added its role, rank, and step prefix.",
+  "correction": "Schedule v2 uses compact content-derived stage IDs and validates the longest derived training, evaluation-shard, and evaluation-merge names before writing a schedule.",
+  "decision": "Schedule v1 is rejected and must never be launched. Existing active stage IDs are preserved through the v2 override."
+}

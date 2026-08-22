@@ -1,3 +1,5 @@
+import pytest
+
 from spider.scaling_schedule import build_schedule
 
 
@@ -57,3 +59,35 @@ def test_build_schedule_preserves_every_stage_validation_and_unique_run_ids(tmp_
     }
     assert len(run_ids) == 30
     assert all(row["full_validation_required"] for job in result["jobs"] for row in job["stages"])
+
+
+def test_build_schedule_rejects_override_that_breaks_derived_instance_name(tmp_path) -> None:
+    plan = {
+        "plan_sha256": "plan",
+        "dataset_ladder_sha256": "ladder-file",
+        "jobs": [
+            {
+                "job_id": "small-53",
+                "dataset_size": "small",
+                "seed": 53,
+                "identity_sha256": "a" * 64,
+                "train_manifest_sha256": "small-manifest",
+            }
+        ],
+    }
+    ladder = {
+        "identity_sha256": "dataset",
+        "_file_sha256": "ladder-file",
+        "tiers": {"small": {"examples": 10_000, "sha256": "small-manifest"}},
+    }
+    with pytest.raises(ValueError, match="derived GCE instance"):
+        build_schedule(
+            plan,
+            ladder,
+            overrides={
+                "small-53@500": {
+                    "training_run_id": "x" * 40,
+                    "evaluation_run_id": "y" * 40,
+                }
+            },
+        )

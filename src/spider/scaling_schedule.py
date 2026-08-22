@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 SAFE_RUN_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+SAFE_INSTANCE_NAME = re.compile(r"^[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?$")
 
 
 def _canonical_hash(payload: Any) -> str:
@@ -26,6 +27,15 @@ def _stage_bounds(total_steps: int, stage_steps: int) -> list[tuple[int, int]]:
         result.append((start, stop))
         start = stop
     return result
+
+
+def _derived_instance_names(run_id: str, stop_step: int, *, evaluation: bool) -> list[str]:
+    if evaluation:
+        return [
+            f"spider-exp005-eval-sft-distri-00-{run_id}",
+            f"spider-exp005-eval-merge-sft-distri-{run_id}",
+        ]
+    return [f"spider-exp005-train-mn-r00-{stop_step:05d}-{run_id}"]
 
 
 def build_schedule(
@@ -54,8 +64,10 @@ def build_schedule(
         examples = int(tier["examples"])
         total_steps = math.ceil(examples / effective_batch_size) * epochs
         stages = []
-        for start, stop in _stage_bounds(total_steps, stage_steps):
-            stem = f"{size[0]}{job['seed']}-{job['identity_sha256'][:10]}-{start:05d}-{stop:05d}"
+        for stage_index, (start, stop) in enumerate(
+            _stage_bounds(total_steps, stage_steps), start=1
+        ):
+            stem = f"s{job['seed']}-{job['identity_sha256'][:6]}-{stage_index:02d}"
             key = f"{job['job_id']}@{stop}"
             override = overrides.get(key, {})
             if override:
@@ -66,10 +78,10 @@ def build_schedule(
                     "stop_step": stop,
                     "optimizer_steps": stop - start,
                     "training_run_id": override.get(
-                        "training_run_id", f"tr-{stem}-{schedule_version}"
+                        "training_run_id", f"t-{stem}-{schedule_version}"
                     ),
                     "evaluation_run_id": override.get(
-                        "evaluation_run_id", f"ev-{stem}-{schedule_version}"
+                        "evaluation_run_id", f"e-{stem}-{schedule_version}"
                     ),
                     "full_validation_required": True,
                 }
@@ -100,6 +112,22 @@ def build_schedule(
         raise ValueError(f"Invalid cloud run IDs: {invalid_run_ids}")
     if len(run_ids) != len(set(run_ids)):
         raise ValueError("Scaling schedule contains duplicate cloud run IDs")
+    invalid_instance_names = []
+    for job in jobs:
+        for stage in job["stages"]:
+            names = _derived_instance_names(
+                stage["training_run_id"], stage["stop_step"], evaluation=False
+            )
+            names.extend(
+                _derived_instance_names(
+                    stage["evaluation_run_id"], stage["stop_step"], evaluation=True
+                )
+            )
+            invalid_instance_names.extend(
+                name for name in names if not SAFE_INSTANCE_NAME.fullmatch(name)
+            )
+    if invalid_instance_names:
+        raise ValueError(f"Invalid derived GCE instance names: {invalid_instance_names}")
     receipt: dict[str, Any] = {
         "schema_version": 1,
         "kind": "exp005_scaling_execution_schedule",

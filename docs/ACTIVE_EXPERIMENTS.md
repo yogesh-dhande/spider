@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:29:34Z
+Last verified: 2026-08-22T03:32:03Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -67,10 +67,14 @@ Reusable runner `scripts/run_exp005_scaling_stage.py` now packages one exact res
 stage and its full matched validation, refuses ambiguous prior stage state, and guarantees a final
 VM-stop sweep. Use separate invocations for parallel size/seed jobs; do not use it to replace the
 already-running step-500 controller.
-The full registered one-epoch schedule is now frozen as `artifacts/scaling_schedule_v1.json`
-(SHA-256 identity `733ad4db2b4f87e2f7dd800657a7b2a9255ab3c24788a8dd6b573696a6c02a64`): nine jobs,
+The full registered one-epoch schedule is now frozen as `artifacts/scaling_schedule_v2.json`
+(SHA-256 identity `eec4b382e410c9cfc6b20e8c51b298d71f83dfd85bc046811eae55ef3f2c1679`): nine jobs,
 57 at-most-500-step training stages, and full validation after every stage. The override file only
 preserves the existing run IDs for the active small/seed-53/step-500 stage.
+Schedule v1 is rejected: GCE refused the first seed-59 and seed-61 rank names before creating any
+resource because launcher prefixes pushed them past the instance-name limit. Incident receipt
+`artifacts/scaling_schedule_launch_incident_v1.json` records the zero-resource boundary. V2 uses
+compact content-derived IDs and validates all derived instance names before launch.
 
 Protected EXP005 scope:
 
