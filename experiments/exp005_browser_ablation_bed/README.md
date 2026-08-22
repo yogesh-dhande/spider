@@ -10,8 +10,9 @@ all twelve shards and three guarded merges. Its machine-readable receipt and sha
 `artifacts/baseline_base_all_0821a.json` and `artifacts/baseline_base_all_0821a.md`. Multinode
 compatibility testing selected two nearby single-L4 nodes over a geographically dispersed
 four-node cluster; the immutable receipt is `artifacts/multinode_smoke_v1.json`. The first exact
-10K/seed-53 reference stage is now running to step 500 on the selected topology, while the matched
-EXP002 starting-adapter control is completing all frozen evaluation suites.
+10K/seed-53 reference stage completed step 500 on the selected topology with exact two-rank
+terminal markers and a healthy adapter. Its matched validation is now running across all three
+frozen suites. The matched EXP002 starting-adapter control is complete.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
@@ -132,8 +133,9 @@ derived training, evaluation-shard, and evaluation-merge name before it can be w
 Capacity failures are infrastructure attempts, not scientific runs. The first parallel replication
 launches and their zero-step boundaries are preserved in `artifacts/scaling_launch_attempts_v1.json`.
 The seed-59 stage found capacity on an alternate two-region pair without changing world size,
-microbatch, accumulation, or effective batch. Seed 61 will use a new attempt-specific run ID after
-its one-rank stockout attempt was stopped with no ready marker or stage object.
+microbatch, accumulation, or effective batch. Seed 61 is now running as
+`t-s61-527140-01b-v2` on the released nearby pair after its one-rank stockout attempt was stopped
+with no ready marker or stage object.
 
 Protocol amendment 005 pre-registers the checkpoint continuation gate before the first SFT metrics
 exist. Relative to the prior valid checkpoint (the EXP002 starting adapter for step 500), a hard

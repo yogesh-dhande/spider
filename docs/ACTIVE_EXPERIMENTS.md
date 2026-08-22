@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T03:46:10Z
+Last verified: 2026-08-22T04:12:00Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -26,9 +26,12 @@ seconds while preserving effective batch size 16 and a healthy adapter. Protocol
 adopts microbatch 2 for subsequent two-node stages. CPU run `model-cache-0822a` completed a
 checksumed copy of the pinned base model in EXP005 GCS inputs so later workers avoid repeated
 anonymous Hugging Face downloads.
-The exact 10K/seed-53 stage was relaunched as `small53-s00000-e00500-0822b`, steps 0 through 500,
-on the selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local
-model snapshot.
+The exact 10K/seed-53 stage `small53-s00000-e00500-0822b` completed steps 0 through 500 on the
+selected two-node topology using microbatch 2, gradient accumulation 4, and the pinned local model
+snapshot. Both ranks emitted exact terminal markers, the adapter passed the non-finite-value health
+gate, and the archived training receipt binds adapter SHA-256
+`144f615b364ec015296479262caa9ef34859c39c61c3166e90784fb0ce36c8ef`. Its full matched
+validation `sft-small53-step0500-0822a` is now active across all three frozen suites.
 All nine immutable scaling-job configurations are now staged under their content-derived GCS job
 prefixes. The eight newly staged configurations were checked byte-for-byte against the local
 matrix plan, and each parsed configuration matches its registered canonical configuration hash.
@@ -41,13 +44,11 @@ markers; every associated VM is terminated. The validated receipt is
 manifest hash preserved, to remove archive decompression from later worker setup.
 The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-The local monitor remains active for `small53-s00000-e00500-0822b`; do not stop its VMs or switch
-this worktree's branch. Require exact rank markers, training state, and adapter health before
-launching matched step-500 validation. Checkpoint handoff controller
-`run_exp005_checkpoint_validation.py` is also active for this stage: after both exact rank markers
-arrive it will archive the training receipt, launch `sft-small53-step0500-0822a` across all three
-frozen suites, archive its receipt and predictions, and require the evaluated adapter hash to match
-the trained checkpoint. It does not authorize or launch the next training stage. The completed
+The checkpoint handoff controller for `small53-s00000-e00500-0822b` archived the exact training
+receipt and launched `sft-small53-step0500-0822a`. It will archive the validation receipt and
+predictions and require the evaluated adapter hash to match the trained checkpoint. It does not
+authorize or launch the next training stage. Do not stop its evaluation VMs or switch this
+worktree's branch. The completed
 control campaign's sparse state log is
 `outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
@@ -88,10 +89,9 @@ The seed-59 training workers are pinned to revision
 before any checkpoint or evaluation because it forwarded symbolic `HEAD`; the replacement pins the
 same resolved revision for evaluation and did not interrupt either GPU worker. The stage runner now
 resolves a revision once before launching or constructing any downstream command.
-Seed-61 replacement controller is waiting for the current small/seed-53 training pair to leave all
-active states, then will launch `t-s61-527140-01b-v2` on the same registered nearby regions at
-revision `b8ffcd604c0c09cd9b2eab1f5299a5c269915826`. It will not touch the active seed-53
-workers and will use its own warm validation and shutdown sweep.
+Seed-61 replacement `t-s61-527140-01b-v2` is running on the released nearby pair at revision
+`b8ffcd604c0c09cd9b2eab1f5299a5c269915826`. Its controller will use the approved warm image for
+matched validation and perform its own shutdown sweep.
 Protocol amendment 005 pre-registers the first checkpoint gate before any SFT evaluation exists:
 stop only if mean QA/grounding retention versus the prior checkpoint falls below -3 points or any
 single retained metric falls below -7.5 points; preserve individual -3-point warnings and report
