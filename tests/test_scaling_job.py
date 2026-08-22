@@ -7,6 +7,7 @@ from spider.scaling_job import (
     active_gpu_regions,
     load_scaling_job,
     parse_receipt_overrides,
+    prerequisite_outcome,
     size_label,
 )
 
@@ -76,3 +77,21 @@ def test_active_gpu_regions_filters_terminal_and_cpu_instances() -> None:
         },
     ]
     assert active_gpu_regions(instances) == {"us-east1"}
+
+
+def test_prerequisite_outcome_waits_then_validates_receipts(tmp_path: Path) -> None:
+    first = tmp_path / "first.json"
+    second = tmp_path / "second.json"
+    assert prerequisite_outcome([first, second]) == (False, [])
+    payload = {
+        "kind": "exp005_scaling_job_receipt",
+        "job_id": "small-53",
+        "status": "complete_pass",
+    }
+    first.write_text(json.dumps(payload), encoding="utf-8")
+    second.write_text(
+        json.dumps({**payload, "job_id": "small-59"}), encoding="utf-8"
+    )
+    ready, receipts = prerequisite_outcome([first, second])
+    assert ready is True
+    assert [item["job_id"] for item in receipts] == ["small-53", "small-59"]

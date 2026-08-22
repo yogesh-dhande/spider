@@ -7,8 +7,10 @@ import argparse
 import fcntl
 import hashlib
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -23,6 +25,7 @@ from spider.scaling_job import (
     active_gpu_regions,
     load_scaling_job,
     parse_receipt_overrides,
+    prerequisite_outcome,
     size_label,
 )
 
@@ -93,12 +96,52 @@ def wait_for_receipt(
         time.sleep(poll_seconds)
 
 
+def write_job_receipt(path: Path, payload: dict[str, Any]) -> None:
+    content = json.dumps(payload, indent=2) + "\n"
+    if path.exists():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        if (
+            existing.get("kind") != "exp005_scaling_job_receipt"
+            or existing.get("job_id") != payload.get("job_id")
+        ):
+            raise ValueError(f"Conflicting scaling-job receipt: {path}")
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False
+    ) as temporary:
+        temporary.write(content)
+        temporary_path = Path(temporary.name)
+    os.replace(temporary_path, path)
+
+
+def wait_for_prerequisites(
+    paths: list[Path], *, timeout_seconds: int, poll_seconds: int, state_log: Path
+) -> list[dict[str, Any]]:
+    if not paths:
+        return []
+    emit(
+        "scaling_job_waiting_for_prerequisites",
+        state_log,
+        prerequisites=[str(path) for path in paths],
+    )
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        ready, receipts = prerequisite_outcome(paths)
+        if ready:
+            return receipts
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Timed out waiting for scaling-job prerequisites")
+        time.sleep(poll_seconds)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--schedule", type=Path, required=True)
     parser.add_argument("--job-id", required=True)
     parser.add_argument("--adopt-through-step", type=int, default=0)
     parser.add_argument("--receipt-override", action="append", default=[])
+    parser.add_argument("--prerequisite", action="append", type=Path, default=[])
     parser.add_argument("--training-zones", required=True)
     parser.add_argument("--evaluation-zones", required=True)
     parser.add_argument("--merge-zones", required=True)
@@ -167,7 +210,49 @@ def main() -> None:
         raise ValueError("Require exactly two registered training zones")
     artifact_root = args.artifact_root / job.job_id
     state_log = args.output_root / job.job_id / "job_controller.jsonl"
+    job_receipt_path = artifact_root / "job_result.json"
+    if job_receipt_path.is_file():
+        existing = json.loads(job_receipt_path.read_text(encoding="utf-8"))
+        if existing.get("job_id") != job.job_id:
+            raise ValueError(f"Conflicting existing job receipt: {job_receipt_path}")
+        emit(
+            "scaling_job_already_terminal",
+            state_log,
+            status=existing.get("status"),
+            receipt=str(job_receipt_path),
+        )
+        return
+    prerequisites = wait_for_prerequisites(
+        args.prerequisite,
+        timeout_seconds=args.timeout_seconds,
+        poll_seconds=args.poll_seconds,
+        state_log=state_log,
+    )
+    failed_prerequisites = [
+        item for item in prerequisites if item.get("status") != "complete_pass"
+    ]
+    if failed_prerequisites:
+        write_job_receipt(
+            job_receipt_path,
+            {
+                "schema_version": 1,
+                "kind": "exp005_scaling_job_receipt",
+                "job_id": job.job_id,
+                "size": job.size,
+                "seed": job.seed,
+                "status": "not_run_prerequisite_gate",
+                "completed_at_utc": cloud.utc_now(),
+                "prerequisites": prerequisites,
+            },
+        )
+        emit(
+            "scaling_job_not_run_prerequisite_gate",
+            state_log,
+            failed_prerequisites=failed_prerequisites,
+        )
+        return
     reference_path = args.starting_control
+    processed_gates: list[str] = []
 
     for stage in job.stages:
         receipt_path = overrides.get(
@@ -245,7 +330,24 @@ def main() -> None:
             step=stage.stop_step,
         )
         emit("scaling_job_checkpoint_processed", state_log, result=result)
+        processed_gates.append(str(gate_path))
         if result["decision"] == "stop_regression":
+            write_job_receipt(
+                job_receipt_path,
+                {
+                    "schema_version": 1,
+                    "kind": "exp005_scaling_job_receipt",
+                    "job_id": job.job_id,
+                    "size": job.size,
+                    "seed": job.seed,
+                    "status": "stopped_regression",
+                    "completed_at_utc": cloud.utc_now(),
+                    "final_step": stage.stop_step,
+                    "final_evaluation_receipt": str(receipt_path),
+                    "gates": processed_gates,
+                    "repo_revision": repo_revision,
+                },
+            )
             emit(
                 "scaling_job_stopped_by_gate",
                 state_log,
@@ -253,6 +355,23 @@ def main() -> None:
             )
             return
         reference_path = receipt_path
+    write_job_receipt(
+        job_receipt_path,
+        {
+            "schema_version": 1,
+            "kind": "exp005_scaling_job_receipt",
+            "job_id": job.job_id,
+            "size": job.size,
+            "seed": job.seed,
+            "status": "complete_pass",
+            "completed_at_utc": cloud.utc_now(),
+            "final_step": job.total_optimizer_steps,
+            "final_evaluation_receipt": str(reference_path),
+            "gates": processed_gates,
+            "repo_revision": repo_revision,
+            "prerequisites": [item["job_id"] for item in prerequisites],
+        },
+    )
     emit(
         "scaling_job_complete",
         state_log,

@@ -91,3 +91,15 @@ def size_label(size: str) -> str:
         return labels[size]
     except KeyError as error:
         raise ValueError(f"Unknown scaling size: {size}") from error
+
+
+def prerequisite_outcome(paths: list[Path]) -> tuple[bool, list[dict[str, Any]]]:
+    receipts: list[dict[str, Any]] = []
+    for path in paths:
+        if not path.is_file():
+            return False, []
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+        if receipt.get("kind") != "exp005_scaling_job_receipt":
+            raise ValueError(f"Invalid scaling-job prerequisite receipt: {path}")
+        receipts.append(receipt)
+    return True, receipts

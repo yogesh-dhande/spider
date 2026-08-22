@@ -158,7 +158,9 @@ advanced.
 processes every validated receipt, chains each later gate to that job's immediately preceding valid
 checkpoint, and runs the remaining frozen stages only after a continue decision. Pair-specific
 filesystem locks plus live regional GPU checks prevent two local supervisors from racing for the
-same two-region training topology.
+same two-region training topology. Every job writes a terminal `job_result.json`; later size tiers
+can depend on those receipts and remain unlaunched if any prerequisite seed stops at its registered
+gate.
 
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16
