@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T00:54:22Z
+Last verified: 2026-08-22T00:56:38Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -19,10 +19,10 @@ VMs are terminated and deleted. The registered 20-step numerical smoke
 reported steps had finite gradient norms, both ranks emitted exact complete markers, and the final
 adapter contained zero non-finite values. The first long reference stage
 `small53-s00000-e00500-0822a` is active on two nearby L4 nodes for job
-`exp004-reference--small--seed-53--50619370ee`, steps 0 through 500. Four matched EXP002-control
-evaluation shards are also active under `exp002-all-0822a`; four other launch attempts encountered
-capacity and created no VM, and will be retried after capacity recycles. The authoritative research
-status and receipts are under `experiments/exp005_browser_ablation_bed/`.
+`exp004-reference--small--seed-53--50619370ee`, steps 0 through 500. Six matched EXP002-control
+evaluation shards are also active under `exp002-all-0822a`. The remaining six shard identities
+encountered regional L4 stockouts and created no VM; they will be retried after capacity recycles.
+The authoritative research status and receipts are under `experiments/exp005_browser_ablation_bed/`.
 
 Local monitors are active for `small53-s00000-e00500-0822a` and `exp002-all-0822a`. Do not stop
 their VMs or switch this worktree's branch. Require exact complete markers and finite adapter health
