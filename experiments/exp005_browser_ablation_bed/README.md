@@ -143,6 +143,12 @@ are warnings. Action-name, exact-action, and click-in-bounds recovery are report
 cannot hide a hard perception regression. Training continues on warnings and stops only on a hard
 regression, as implemented in `src/spider/scaling_gate.py`.
 
+Validated SFT receipts enter `control_comparison_manifest_v1.json` through the lock-protected,
+idempotent `spider-register-candidate` command. It rejects duplicate scaling identities and reused
+adapter hashes, then the scaling report regenerates baseline, starting-adapter, per-checkpoint, and
+across-seed tables from the registry. This lets parallel jobs finish in any order without silently
+overwriting a comparison.
+
 Cloud training stages support one, two, or four L4 GPUs (`g2-standard-8`, `g2-standard-24`, and
 `g2-standard-48`). Gradient accumulation is adjusted to keep the effective batch size fixed at 16
 (16, 8, or 4 accumulation steps respectively). A job cannot change its GPU world size between
