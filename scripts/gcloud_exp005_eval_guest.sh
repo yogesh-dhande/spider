@@ -6,12 +6,18 @@ metadata() {
     "http://metadata.google.internal/computeMetadata/v1/instance/attributes/$1"
 }
 
+optional_metadata() {
+  curl -fsS -H 'Metadata-Flavor: Google' \
+    "http://metadata.google.internal/computeMetadata/v1/instance/attributes/$1" 2>/dev/null || true
+}
+
 RUN_ID="$(metadata spider-run-id)"
 CONTROL="$(metadata spider-control)"
 SUITE="$(metadata spider-eval-suite)"
 SHARD_INDEX="$(metadata spider-shard-index)"
 NUM_SHARDS="$(metadata spider-num-shards)"
 BUCKET="$(metadata spider-bucket)"
+WARM_IMAGE_ID="$(optional_metadata spider-warm-image-id)"
 LABEL="${CONTROL}-${SUITE}-shard-$(printf '%02d' "${SHARD_INDEX}")-of-$(printf '%02d' "${NUM_SHARDS}")"
 DESTINATION="${BUCKET}/exp005/evaluation/${RUN_ID}/${LABEL}"
 LOG_PATH="/var/log/spider-exp005-eval-${RUN_ID}-${LABEL}.log"
@@ -34,26 +40,37 @@ trap finish EXIT
 systemd-run --unit="spider-exp005-guard-${RUN_ID}-${SHARD_INDEX}-$(date -u +%s)" \
   --on-active=3h50m /usr/sbin/shutdown -h now
 
-apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-venv zstd
-python3 -m venv /opt/spider-venv
-source /opt/spider-venv/bin/activate
-python -m pip install -q --progress-bar off --upgrade pip
-python -m pip install -q --progress-bar off \
-  torch==2.10.0 torchvision --index-url https://download.pytorch.org/whl/cu128
-python -m pip install -q --progress-bar off -r /opt/spider/requirements/experiment2-kaggle.txt
-
 WORK_ROOT=/mnt/spider
 DATA_ROOT="${WORK_ROOT}/data"
 OUTPUT_ROOT="${WORK_ROOT}/outputs"
 ADAPTER_ROOT="${WORK_ROOT}/exp002"
 MODEL_ROOT="${WORK_ROOT}/model"
-mkdir -p "${DATA_ROOT}" "${OUTPUT_ROOT}" "${ADAPTER_ROOT}" "${MODEL_ROOT}"
-gcloud storage cp "${BUCKET}/exp005/data/corpus.tar.zst" /tmp/corpus.tar.zst
-tar --use-compress-program=unzstd -xf /tmp/corpus.tar.zst -C "${DATA_ROOT}"
-gcloud storage rsync --recursive \
-  "${BUCKET}/exp005/inputs/models/qwen35-2b-15852e8c-files/snapshot" \
-  "${MODEL_ROOT}"
+if [[ -n "${WARM_IMAGE_ID}" ]]; then
+  test -x /opt/spider-venv/bin/python
+  test -f "${DATA_ROOT}/manifests/eval_iid.jsonl"
+  test -f "${DATA_ROOT}/manifests/eval_domain_balanced.jsonl"
+  test -f "${DATA_ROOT}/manifests/eval_distribution_shift.jsonl"
+  test -f "${MODEL_ROOT}/model.safetensors"
+  source /opt/spider-venv/bin/activate
+  printf '{"event":"warm_evaluation_image_ready","image":"%s"}\n' "${WARM_IMAGE_ID}"
+else
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-venv zstd
+  python3 -m venv /opt/spider-venv
+  source /opt/spider-venv/bin/activate
+  python -m pip install -q --progress-bar off --upgrade pip
+  python -m pip install -q --progress-bar off \
+    torch==2.10.0 torchvision --index-url https://download.pytorch.org/whl/cu128
+  python -m pip install -q --progress-bar off -r /opt/spider/requirements/experiment2-kaggle.txt
+  mkdir -p "${DATA_ROOT}" "${OUTPUT_ROOT}" "${MODEL_ROOT}"
+  gcloud storage cp "${BUCKET}/exp005/data/corpus.tar.zst" /tmp/corpus.tar.zst
+  tar --use-compress-program=unzstd -xf /tmp/corpus.tar.zst -C "${DATA_ROOT}"
+  gcloud storage rsync --recursive \
+    "${BUCKET}/exp005/inputs/models/qwen35-2b-15852e8c-files/snapshot" \
+    "${MODEL_ROOT}"
+fi
+rm -rf "${OUTPUT_ROOT}/benchmark_evaluation" "${ADAPTER_ROOT}"
+mkdir -p "${OUTPUT_ROOT}" "${ADAPTER_ROOT}"
 
 adapter_args=()
 if [[ "${CONTROL}" == exp002 ]]; then

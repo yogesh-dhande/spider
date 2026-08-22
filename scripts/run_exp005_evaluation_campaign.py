@@ -285,6 +285,7 @@ def main() -> None:
     parser.add_argument("--merge-zones", required=True)
     parser.add_argument("--training-job")
     parser.add_argument("--training-step", type=int)
+    parser.add_argument("--warm-image")
     parser.add_argument("--num-shards", type=int, default=4)
     parser.add_argument("--max-active", type=int, default=8)
     parser.add_argument("--poll-seconds", type=int, default=120)
@@ -422,6 +423,7 @@ def main() -> None:
                     "4h",
                     args.training_job,
                     args.training_step,
+                    args.warm_image,
                 )
 
             launched = launch_available_shards(

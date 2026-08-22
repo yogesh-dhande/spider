@@ -148,6 +148,7 @@ def _create(
     boot_disk_size: str,
     gpu: bool,
     boot_disk_type: str = "pd-balanced",
+    gpu_image: str | None = None,
 ) -> str:
     repo_revision = resolve_repo_revision(repo_revision)
     startup = Path("/tmp") / f"{name}-startup.sh"
@@ -181,10 +182,12 @@ def _create(
         "--quiet",
     ]
     if gpu:
+        image = gpu_image or "common-cu129-ubuntu-2404-nvidia-580-v20260819"
+        image_project = PROJECT if gpu_image else "deeplearning-platform-release"
         command.extend(
             [
-                "--image=common-cu129-ubuntu-2404-nvidia-580-v20260819",
-                "--image-project=deeplearning-platform-release",
+                f"--image={image}",
+                f"--image-project={image_project}",
                 "--maintenance-policy=TERMINATE",
             ]
         )
@@ -202,6 +205,7 @@ def _create(
         repo_revision=repo_revision,
         max_run=max_run,
         machine_type=machine_type,
+        gpu_image=gpu_image,
         metadata=metadata,
     )
     emit("gcloud_vm_created", name=name, zone=zone, run_id=run_id, role=role)
@@ -620,6 +624,7 @@ def create_evaluation_shard(
     max_run: str,
     training_job: str | None = None,
     training_step: int | None = None,
+    warm_image: str | None = None,
 ) -> str:
     if control not in {"base", "exp002", "sft"}:
         raise ValueError("control must be base, exp002, or sft")
@@ -634,6 +639,8 @@ def create_evaluation_shard(
         or training_step <= 0
     ):
         raise ValueError("sft evaluation requires a safe training_job and positive training_step")
+    if warm_image is not None and not SAFE_ID.fullmatch(warm_image):
+        raise ValueError("warm_image must be a safe project-local image name")
     metadata: dict[str, str | int] = {
         "spider-control": control,
         "spider-eval-suite": suite,
@@ -645,6 +652,8 @@ def create_evaluation_shard(
         metadata.update(
             {"spider-training-job": training_job, "spider-training-step": training_step}
         )
+    if warm_image:
+        metadata["spider-warm-image-id"] = warm_image
     return _create(
         name=f"spider-exp005-eval-{control}-{suite[:6]}-{shard_index:02d}-{run_id}",
         run_id=run_id,
@@ -661,6 +670,7 @@ def create_evaluation_shard(
         # scarce per-region SSD quota needed by unrelated training jobs.
         boot_disk_type="pd-standard",
         gpu=True,
+        gpu_image=warm_image,
     )
 
 
@@ -821,6 +831,7 @@ def main() -> None:
     evaluation.add_argument("--num-shards", type=int, required=True)
     evaluation.add_argument("--training-job")
     evaluation.add_argument("--training-step", type=int)
+    evaluation.add_argument("--warm-image")
     evaluation.add_argument("--max-run", default="4h")
     evaluation_merge = subparsers.add_parser("evaluation-merge")
     evaluation_merge.add_argument("--run-id", required=True)
@@ -947,6 +958,7 @@ def main() -> None:
                 args.max_run,
                 args.training_job,
                 args.training_step,
+                args.warm_image,
             )
         }
     else:

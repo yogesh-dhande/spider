@@ -420,6 +420,8 @@ def test_evaluation_guest_uses_frozen_local_model_snapshot() -> None:
     assert "qwen35-2b-15852e8c-files/snapshot" in guest
     assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
     assert "export HF_HUB_OFFLINE=1" in guest
+    assert '"event":"warm_evaluation_image_ready"' in guest
+    assert 'test -f "${DATA_ROOT}/manifests/eval_iid.jsonl"' in guest
 
 
 def test_inventory_recovery_guest_verifies_completed_cache_before_upload() -> None:
@@ -587,6 +589,30 @@ def test_create_evaluation_uses_gpu_and_scoped_metadata(monkeypatch) -> None:
         "spider-shard-index": 1,
         "spider-num-shards": 4,
     }
+
+
+def test_create_evaluation_can_use_opt_in_warm_image(monkeypatch) -> None:
+    received = {}
+    monkeypatch.setattr(
+        MODULE, "_create", lambda **kwargs: received.update(kwargs) or kwargs["name"]
+    )
+
+    MODULE.create_evaluation_shard(
+        "run-a",
+        "us-west1-b",
+        "abc123",
+        "base",
+        "iid",
+        0,
+        4,
+        "4h",
+        warm_image="spider-exp005-eval-warm-0822a",
+    )
+
+    assert received["gpu_image"] == "spider-exp005-eval-warm-0822a"
+    assert received["metadata"]["spider-warm-image-id"] == (
+        "spider-exp005-eval-warm-0822a"
+    )
 
 
 def test_evaluation_guest_publishes_shard_metrics_separately() -> None:
