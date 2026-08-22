@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-22T01:42:52Z
+Last verified: 2026-08-22T01:47:00Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -38,8 +38,10 @@ The authoritative research status and receipts are under `experiments/exp005_bro
 
 Local monitors are active for `small53-s00000-e00500-0822b` and `exp002-all-0822a`; do not stop
 their VMs or switch this worktree's branch. Require exact rank markers, training state, and adapter
-health before launching matched step-500 validation. Retry the final uncreated EXP002 shard as a
-region becomes available. The verified scaling plan hash is
+health before launching matched step-500 validation. A capacity-aware controller is active for
+`exp002-all-0822a`; it validates exact shard markers, retries the final uncreated shard across free
+regions, and will launch all three guarded merges after full coverage. Its sparse state log is
+`outputs/experiment5/controllers/exp002-all-0822a.jsonl`. The verified scaling plan hash is
 `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`. Preserve world size across
 any resumed training stages.
 
