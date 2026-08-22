@@ -55,3 +55,9 @@ def test_verify_adapter_identity_binds_evaluation_to_checkpoint(tmp_path: Path) 
     evaluation.write_text(json.dumps({"adapter_sha256": "other"}))
     with pytest.raises(ValueError, match="differs from checkpoint"):
         MODULE.verify_adapter_identity(training, evaluation)
+
+
+def test_checkpoint_validation_cli_exposes_opt_in_warm_image() -> None:
+    source = MODULE_PATH.read_text(encoding="utf-8")
+    assert 'parser.add_argument("--warm-image")' in source
+    assert 'evaluation_command.extend(["--warm-image", args.warm_image])' in source

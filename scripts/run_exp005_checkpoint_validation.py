@@ -136,6 +136,7 @@ def main() -> None:
     parser.add_argument("--repo-revision", required=True)
     parser.add_argument("--zones", required=True)
     parser.add_argument("--merge-zones", required=True)
+    parser.add_argument("--warm-image")
     parser.add_argument("--training-receipt", type=Path, required=True)
     parser.add_argument("--evaluation-root", type=Path, required=True)
     parser.add_argument("--evaluation-receipt", type=Path, required=True)
@@ -173,8 +174,7 @@ def main() -> None:
             str(args.training_receipt),
         ]
     )
-    run(
-        [
+    evaluation_command = [
             sys.executable,
             "scripts/run_exp005_evaluation_campaign.py",
             "--run-id",
@@ -206,7 +206,9 @@ def main() -> None:
             "--state-log",
             str(args.state_log),
         ]
-    )
+    if args.warm_image:
+        evaluation_command.extend(["--warm-image", args.warm_image])
+    run(evaluation_command)
     run(
         [
             sys.executable,
