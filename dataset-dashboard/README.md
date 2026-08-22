@@ -80,10 +80,24 @@ the first recovered seed-53 checkpoint needs the explicit historical source mapp
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/watch_exp005_dashboard.py \
+  --controller-state-uri \
+  gs://keptune-spider-experiments-1088401257609/exp005/controller/v1/latest.tar.gz \
+  --controller-mirror outputs/experiment5/controller_mirror \
+  --candidate-repo-root outputs/experiment5/controller_mirror \
+  --manifest \
+  outputs/experiment5/controller_mirror/experiments/exp005_browser_ablation_bed/control_comparison_manifest_v1.json \
+  --output-root outputs/experiment5/controller_mirror/outputs/experiment5/scaling \
   --source-override \
-  experiments/exp005_browser_ablation_bed/artifacts/sft_small53_step0500_r2_0822a.json=outputs/experiment5/sft/small53-step0500-r2-0822a
+  outputs/experiment5/controller_mirror/experiments/exp005_browser_ablation_bed/artifacts/sft_small53_step0500_r2_0822a.json=outputs/experiment5/sft/small53-step0500-r2-0822a
 ```
 
-The watcher updates only after candidate registration, re-verifies dashboard metrics against both
-receipts, materializes only selected screenshots, and requires the production build/render test to
-pass before recording the dashboard checkpoint as current.
+The watcher mirrors only the registry, receipts, and evaluation outputs from the keyless cloud
+controller. It updates only after candidate registration, re-verifies dashboard metrics against
+both receipts, materializes only selected screenshots, and requires the production build/render
+test to pass before recording the dashboard checkpoint as current.
+
+Run the dashboard on any available local port, for example:
+
+```bash
+npm --prefix dataset-dashboard run dev -- --port 4174
+```

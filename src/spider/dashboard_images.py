@@ -9,7 +9,7 @@ from typing import Any
 
 def required_images(payload: dict[str, Any]) -> list[str]:
     paths = {
-        str(record["image"])
+        str(record.get("source_image", record["image"])).removeprefix("/")
         for task in ("qa", "grounding", "action")
         for record in payload.get(task, {}).get("records", [])
     }
