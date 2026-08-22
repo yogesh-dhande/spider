@@ -61,7 +61,10 @@ def download(asset: RemoteAsset) -> bool:
     temporary = asset.destination.with_suffix(asset.destination.suffix + ".part")
     temporary.unlink(missing_ok=True)
     subprocess.run(
-        ["gcloud", "storage", "cp", asset.uri, str(temporary)], check=True
+        ["gcloud", "storage", "cp", asset.uri, str(temporary)],
+        check=True,
+        capture_output=True,
+        text=True,
     )
     os.replace(temporary, asset.destination)
     return True

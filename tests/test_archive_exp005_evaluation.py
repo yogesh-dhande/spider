@@ -53,8 +53,10 @@ def test_download_publishes_fresh_asset_atomically(tmp_path: Path, monkeypatch) 
     destination = tmp_path / "nested" / "metrics.json"
     asset = MODULE.RemoteAsset("gs://bucket/metrics.json", destination)
 
-    def fake_run(command, *, check):
+    def fake_run(command, *, check, capture_output, text):
         assert check is True
+        assert capture_output is True
+        assert text is True
         Path(command[-1]).write_text("downloaded", encoding="utf-8")
 
     monkeypatch.setattr(MODULE.subprocess, "run", fake_run)
