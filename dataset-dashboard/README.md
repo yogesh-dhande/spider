@@ -73,3 +73,17 @@ PYTHONPATH=src .venv/bin/python -m spider.dashboard_images \
   --archive outputs/experiment5/dashboard_corpus.tar.zst \
   --destination outputs/experiment5/dashboard_corpus_subset
 ```
+
+During a scaling campaign, a quiet watcher can keep the checked-in payload on the highest-scale,
+latest-step registered checkpoint. Standard scaling receipt paths are resolved automatically;
+the first recovered seed-53 checkpoint needs the explicit historical source mapping shown here:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/watch_exp005_dashboard.py \
+  --source-override \
+  experiments/exp005_browser_ablation_bed/artifacts/sft_small53_step0500_r2_0822a.json=outputs/experiment5/sft/small53-step0500-r2-0822a
+```
+
+The watcher updates only after candidate registration, re-verifies dashboard metrics against both
+receipts, materializes only selected screenshots, and requires the production build/render test to
+pass before recording the dashboard checkpoint as current.
