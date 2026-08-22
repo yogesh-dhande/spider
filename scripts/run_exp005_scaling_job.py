@@ -19,6 +19,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gcloud_exp005 as cloud
+import run_exp005_scaling_stage as scaling_stage
 
 from spider.checkpoint_postprocess import process_checkpoint
 from spider.scaling_job import (
@@ -57,7 +58,12 @@ def list_instances() -> list[dict[str, Any]]:
 
 @contextmanager
 def training_pair_slot(
-    zones: list[str], lock_root: Path, poll_seconds: int, state_log: Path
+    zones: list[str],
+    lock_root: Path,
+    poll_seconds: int,
+    state_log: Path,
+    *,
+    require_empty_regions: bool = True,
 ) -> Iterator[None]:
     regions = {zone.rsplit("-", 1)[0] for zone in zones}
     identity = hashlib.sha256("\n".join(sorted(regions)).encode()).hexdigest()[:12]
@@ -67,12 +73,13 @@ def training_pair_slot(
         with lock_path.open("w", encoding="utf-8") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             occupied = active_gpu_regions(list_instances())
-            if not regions.intersection(occupied):
+            if not require_empty_regions or not regions.intersection(occupied):
                 emit(
                     "scaling_job_training_pair_acquired",
                     state_log,
                     zones=zones,
                     regions=sorted(regions),
+                    required_empty_regions=require_empty_regions,
                 )
                 yield
                 return
@@ -83,6 +90,11 @@ def training_pair_slot(
             occupied_regions=sorted(regions.intersection(occupied)),
         )
         time.sleep(poll_seconds)
+
+
+def training_regions_must_be_empty(stage_state: str) -> bool:
+    """Only a missing stage can allocate new training GPUs."""
+    return stage_state == "missing"
 
 
 def wait_for_receipt(
@@ -269,8 +281,26 @@ def main() -> None:
                     state_log=state_log,
                 )
             else:
+                stage_state = scaling_stage.inspect_stage(
+                    run_id=stage.training_run_id,
+                    job_id=job.job_id,
+                    start_step=stage.start_step,
+                    stop_step=stage.stop_step,
+                    num_nodes=2,
+                )
+                emit(
+                    "scaling_job_stage_preflight",
+                    state_log,
+                    start_step=stage.start_step,
+                    stop_step=stage.stop_step,
+                    state=stage_state,
+                )
                 with training_pair_slot(
-                    training_zones, args.lock_root, args.poll_seconds, state_log
+                    training_zones,
+                    args.lock_root,
+                    args.poll_seconds,
+                    state_log,
+                    require_empty_regions=training_regions_must_be_empty(stage_state),
                 ):
                     command = [
                         sys.executable,
