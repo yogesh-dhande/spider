@@ -45,13 +45,22 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def run(command: list[str], capture: bool = True) -> str:
-    result = subprocess.run(command, check=True, capture_output=capture, text=True)
+def run(command: list[str], capture: bool = True, timeout_seconds: int | None = None) -> str:
+    result = subprocess.run(
+        command,
+        check=True,
+        capture_output=capture,
+        text=True,
+        timeout=timeout_seconds,
+    )
     return result.stdout.strip() if capture else ""
 
 
 def emit(event: str, **fields: Any) -> None:
-    print(json.dumps({"timestamp_utc": utc_now(), "event": event, **fields}, sort_keys=True), flush=True)
+    print(
+        json.dumps({"timestamp_utc": utc_now(), "event": event, **fields}, sort_keys=True),
+        flush=True,
+    )
 
 
 def append_registry(event: str, **fields: Any) -> None:
@@ -149,6 +158,7 @@ def _create(
     gpu: bool,
     boot_disk_type: str = "pd-balanced",
     gpu_image: str | None = None,
+    bounded_async_create: bool = False,
 ) -> str:
     repo_revision = resolve_repo_revision(repo_revision)
     startup = Path("/tmp") / f"{name}-startup.sh"
@@ -192,10 +202,66 @@ def _create(
             ]
         )
     else:
-        command.extend(
-            ["--image-family=ubuntu-2404-lts-amd64", "--image-project=ubuntu-os-cloud"]
-        )
-    run(command, capture=False)
+        command.extend(["--image-family=ubuntu-2404-lts-amd64", "--image-project=ubuntu-os-cloud"])
+    if bounded_async_create:
+        submit_command = [*command, "--async", "--format=value(name)"]
+        operation = run(submit_command, timeout_seconds=60)
+        if not re.fullmatch(r"operation-[a-zA-Z0-9-]+", operation):
+            raise RuntimeError(f"Unexpected GCE operation identity: {operation!r}")
+        wait_command = [
+            "gcloud",
+            "compute",
+            "operations",
+            "wait",
+            operation,
+            f"--project={PROJECT}",
+            f"--zone={zone}",
+            "--quiet",
+        ]
+        try:
+            run(wait_command, capture=False, timeout_seconds=300)
+        except subprocess.TimeoutExpired as error:
+            describe = subprocess.run(
+                [
+                    "gcloud",
+                    "compute",
+                    "instances",
+                    "describe",
+                    name,
+                    f"--project={PROJECT}",
+                    f"--zone={zone}",
+                    "--format=json(name,status,labels)",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if describe.returncode:
+                raise RuntimeError(
+                    f"Timed out waiting for unresolved GCE create operation {operation}; "
+                    "no exact instance exists, so the campaign must fail closed"
+                ) from error
+            instance = json.loads(describe.stdout)
+            labels = instance.get("labels") or {}
+            if (
+                instance.get("name") != name
+                or labels.get("spider-experiment") != "exp005"
+                or labels.get("spider-run") != run_id
+            ):
+                raise RuntimeError(
+                    f"Create-timeout reconciliation found a conflicting instance: {instance}"
+                ) from error
+            emit(
+                "gcloud_vm_create_wait_reconciled",
+                name=name,
+                zone=zone,
+                run_id=run_id,
+                operation=operation,
+                status=instance.get("status"),
+            )
+    else:
+        run(command, capture=False)
     append_registry(
         "created",
         name=name,
@@ -432,9 +498,7 @@ def sync_inventory_artifacts(
             if layout == "legacy-qa":
                 remote_root = f"{BUCKET}/exp005/qa-inventory/{run_id}/{label}"
             else:
-                remote_root = (
-                    f"{BUCKET}/exp005/source-inventory/{run_id}/{source_id}/{label}"
-                )
+                remote_root = f"{BUCKET}/exp005/source-inventory/{run_id}/{source_id}/{label}"
             terminal = temporary_root / f"{label}.complete.json"
             run(
                 ["gcloud", "storage", "cp", f"{remote_root}/complete.json", str(terminal)],
@@ -671,6 +735,7 @@ def create_evaluation_shard(
         boot_disk_type="pd-standard",
         gpu=True,
         gpu_image=warm_image,
+        bounded_async_create=True,
     )
 
 
@@ -715,9 +780,7 @@ def monitor(run_id: str, poll_seconds: int, timeout_seconds: int) -> None:
     failures = 0
     while time.monotonic() - started < timeout_seconds:
         try:
-            states = {
-                str(item["name"]): str(item["status"]) for item in managed_instances(run_id)
-            }
+            states = {str(item["name"]): str(item["status"]) for item in managed_instances(run_id)}
             failures = 0
         except subprocess.CalledProcessError as error:
             failures += 1
@@ -806,7 +869,9 @@ def main() -> None:
     training.add_argument("--job-id", required=True)
     training.add_argument("--start-step", type=int, required=True)
     training.add_argument("--stop-step", type=int, required=True)
-    training.add_argument("--gpu-count", type=int, choices=sorted(TRAINING_MACHINE_TYPES), default=1)
+    training.add_argument(
+        "--gpu-count", type=int, choices=sorted(TRAINING_MACHINE_TYPES), default=1
+    )
     training.add_argument("--max-run", default="4h")
     multinode_training = subparsers.add_parser("multinode-training-stage")
     multinode_training.add_argument("--run-id", required=True)
@@ -837,9 +902,7 @@ def main() -> None:
     evaluation_merge.add_argument("--run-id", required=True)
     evaluation_merge.add_argument("--zone", required=True)
     evaluation_merge.add_argument("--repo-revision", required=True)
-    evaluation_merge.add_argument(
-        "--control", choices=("base", "exp002", "sft"), required=True
-    )
+    evaluation_merge.add_argument("--control", choices=("base", "exp002", "sft"), required=True)
     evaluation_merge.add_argument(
         "--suite", choices=("iid", "domain_balanced", "distribution_shift"), required=True
     )
@@ -866,15 +929,11 @@ def main() -> None:
         }
     elif args.command == "model-cache":
         payload = {
-            "name": create_model_cache(
-                args.run_id, args.zone, args.repo_revision, args.max_run
-            )
+            "name": create_model_cache(args.run_id, args.zone, args.repo_revision, args.max_run)
         }
     elif args.command == "model-files":
         payload = {
-            "name": create_model_files(
-                args.run_id, args.zone, args.repo_revision, args.max_run
-            )
+            "name": create_model_files(args.run_id, args.zone, args.repo_revision, args.max_run)
         }
     elif args.command == "qa-inventory-shard":
         payload = {

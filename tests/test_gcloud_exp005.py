@@ -46,6 +46,47 @@ def test_repo_revision_rejects_non_commit_output(monkeypatch) -> None:
         raise AssertionError("invalid resolved revision was accepted")
 
 
+def test_bounded_create_submits_async_then_waits(monkeypatch) -> None:
+    calls = []
+    registry = []
+
+    def run(command, capture=True, timeout_seconds=None):
+        calls.append((command, capture, timeout_seconds))
+        if "create" in command:
+            return "operation-123-abc"
+        return ""
+
+    monkeypatch.setattr(MODULE, "run", run)
+    monkeypatch.setattr(MODULE, "resolve_repo_revision", lambda revision: "a" * 40)
+    monkeypatch.setattr(
+        MODULE, "append_registry", lambda *args, **kwargs: registry.append((args, kwargs))
+    )
+    monkeypatch.setattr(MODULE, "emit", lambda *args, **kwargs: None)
+
+    name = MODULE._create(
+        name="spider-exp005-eval-base-iid-00-run-a",
+        run_id="run-a",
+        role="evaluation",
+        zone="us-east1-b",
+        repo_revision="revision",
+        guest_script="scripts/gcloud_exp005_eval_guest.sh",
+        metadata={"spider-control": "base"},
+        max_run="4h",
+        machine_type="g2-standard-8",
+        boot_disk_size="100GB",
+        gpu=True,
+        bounded_async_create=True,
+    )
+
+    assert name == "spider-exp005-eval-base-iid-00-run-a"
+    assert calls[0][0][-2:] == ["--async", "--format=value(name)"]
+    assert calls[0][2] == 60
+    assert calls[1][0][0:4] == ["gcloud", "compute", "operations", "wait"]
+    assert calls[1][0][4] == "operation-123-abc"
+    assert calls[1][2] == 300
+    assert registry[0][0] == ("created",)
+
+
 def test_materialization_shard_rejects_invalid_partition() -> None:
     try:
         MODULE.create_materialization_shard("run", "zone", "revision", 4, 4, "6h")
@@ -276,9 +317,7 @@ def test_training_stage_uses_two_l4_shape_and_preserves_effective_batch(monkeypa
         return kwargs["name"]
 
     monkeypatch.setattr(MODULE, "_create", create)
-    MODULE.create_training_stage(
-        "run-a", "us-west1-b", "abc123", "small-seed53", 125, 250, "4h", 2
-    )
+    MODULE.create_training_stage("run-a", "us-west1-b", "abc123", "small-seed53", 125, 250, "4h", 2)
 
     assert received["machine_type"] == "g2-standard-24"
     assert received["metadata"]["spider-gpu-count"] == 2
@@ -287,11 +326,11 @@ def test_training_stage_uses_two_l4_shape_and_preserves_effective_batch(monkeypa
 
 def test_training_stage_uses_four_l4_shape(monkeypatch) -> None:
     received = {}
-    monkeypatch.setattr(MODULE, "_create", lambda **kwargs: received.update(kwargs) or kwargs["name"])
-
-    MODULE.create_training_stage(
-        "run-a", "us-west1-b", "abc123", "large-seed53", 0, 125, "4h", 4
+    monkeypatch.setattr(
+        MODULE, "_create", lambda **kwargs: received.update(kwargs) or kwargs["name"]
     )
+
+    MODULE.create_training_stage("run-a", "us-west1-b", "abc123", "large-seed53", 0, 125, "4h", 4)
 
     assert received["machine_type"] == "g2-standard-48"
     assert received["metadata"]["spider-gradient-accumulation"] == 4
@@ -299,9 +338,7 @@ def test_training_stage_uses_four_l4_shape(monkeypatch) -> None:
 
 def test_training_stage_rejects_unsupported_gpu_count() -> None:
     try:
-        MODULE.create_training_stage(
-            "run-a", "zone", "revision", "small-seed53", 0, 125, "4h", 3
-        )
+        MODULE.create_training_stage("run-a", "zone", "revision", "small-seed53", 0, 125, "4h", 3)
     except ValueError as error:
         assert "gpu_count" in str(error)
     else:
@@ -320,7 +357,13 @@ def test_multinode_training_requires_supported_size_and_distinct_regions() -> No
 
     try:
         MODULE.create_multinode_training_stage(
-            "run-a", ["us-west1-a", "us-west2-a", "us-west3-a"], "revision", "small-seed53", 0, 125, "6h"
+            "run-a",
+            ["us-west1-a", "us-west2-a", "us-west3-a"],
+            "revision",
+            "small-seed53",
+            0,
+            125,
+            "6h",
         )
     except ValueError as error:
         assert "2, 4, 8, or 16" in str(error)
@@ -352,9 +395,7 @@ def test_multinode_training_preserves_effective_batch_and_leader_address(monkeyp
     assert all(row["machine_type"] == "g2-standard-8" for row in created)
     assert all(row["boot_disk_type"] == "pd-standard" for row in created)
     assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
-    assert all(
-        row["metadata"]["spider-per-device-train-batch-size"] == 1 for row in created
-    )
+    assert all(row["metadata"]["spider-per-device-train-batch-size"] == 1 for row in created)
     assert all(
         row["metadata"]["spider-master-address"]
         == "spider-exp005-train-mn-r00-00125-run-a.us-west1-b.c.keptune.internal"
@@ -383,9 +424,7 @@ def test_multinode_training_supports_microbatch_two_at_fixed_effective_batch(mon
 
     assert len(created) == 2
     assert all(row["metadata"]["spider-gradient-accumulation"] == 4 for row in created)
-    assert all(
-        row["metadata"]["spider-per-device-train-batch-size"] == 2 for row in created
-    )
+    assert all(row["metadata"]["spider-per-device-train-batch-size"] == 2 for row in created)
 
 
 def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> None:
@@ -394,12 +433,12 @@ def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> Non
     assert '--nnodes="${NUM_NODES}"' in guest
     assert '--node_rank="${NODE_RANK}"' in guest
     assert '--master_addr="${MASTER_ADDRESS}"' in guest
-    assert 'ready_count=' in guest
+    assert "ready_count=" in guest
     assert 'if [[ "${NODE_RANK}" -eq 0 ]]; then' in guest
     assert 'assert state["world_size"] == world_size, state' in guest
     assert '--per-device-train-batch-size "${PER_DEVICE_BATCH}"' in guest
     assert 'assert state["per_device_train_batch_size"] == per_device_batch, state' in guest
-    assert 'python -m spider.safetensor_health' in guest
+    assert "python -m spider.safetensor_health" in guest
     assert '"${STAGE_ROOT}/adapter_health.json"' in guest
     assert 'export SPIDER_MODEL_DIR="${MODEL_ROOT}"' in guest
     assert "qwen35-2b-15852e8c-files/snapshot" in guest
@@ -435,9 +474,7 @@ def test_inventory_recovery_guest_verifies_completed_cache_before_upload() -> No
 
 def test_evaluation_rejects_unknown_control() -> None:
     try:
-        MODULE.create_evaluation_shard(
-            "run", "zone", "revision", "other", "iid", 0, 4, "4h"
-        )
+        MODULE.create_evaluation_shard("run", "zone", "revision", "other", "iid", 0, 4, "4h")
     except ValueError as error:
         assert "base, exp002, or sft" in str(error)
     else:
@@ -446,9 +483,7 @@ def test_evaluation_rejects_unknown_control() -> None:
 
 def test_evaluation_rejects_unknown_suite() -> None:
     try:
-        MODULE.create_evaluation_shard(
-            "run", "zone", "revision", "base", "other", 0, 4, "4h"
-        )
+        MODULE.create_evaluation_shard("run", "zone", "revision", "base", "other", 0, 4, "4h")
     except ValueError as error:
         assert "suite" in str(error)
     else:
@@ -457,9 +492,7 @@ def test_evaluation_rejects_unknown_suite() -> None:
 
 def test_evaluation_rejects_invalid_partition() -> None:
     try:
-        MODULE.create_evaluation_shard(
-            "run", "zone", "revision", "base", "iid", -1, 4, "4h"
-        )
+        MODULE.create_evaluation_shard("run", "zone", "revision", "base", "iid", -1, 4, "4h")
     except ValueError as error:
         assert "shard_index" in str(error)
     else:
@@ -468,9 +501,7 @@ def test_evaluation_rejects_invalid_partition() -> None:
 
 def test_sft_evaluation_requires_checkpoint_identity() -> None:
     try:
-        MODULE.create_evaluation_shard(
-            "run", "zone", "revision", "sft", "iid", 0, 4, "4h"
-        )
+        MODULE.create_evaluation_shard("run", "zone", "revision", "sft", "iid", 0, 4, "4h")
     except ValueError as error:
         assert "training_job" in str(error)
     else:
@@ -503,9 +534,7 @@ def test_sft_evaluation_passes_checkpoint_identity(monkeypatch) -> None:
 
 def test_evaluation_merge_rejects_non_positive_shards() -> None:
     try:
-        MODULE.create_evaluation_merge(
-            "run", "zone", "revision", "base", "iid", 0, "2h"
-        )
+        MODULE.create_evaluation_merge("run", "zone", "revision", "base", "iid", 0, "2h")
     except ValueError as error:
         assert "positive" in str(error)
     else:
@@ -520,9 +549,7 @@ def test_evaluation_merge_uses_standard_disk(monkeypatch) -> None:
         return kwargs["name"]
 
     monkeypatch.setattr(MODULE, "_create", create)
-    MODULE.create_evaluation_merge(
-        "run-a", "us-west1-b", "abc123", "base", "iid", 4, "2h"
-    )
+    MODULE.create_evaluation_merge("run-a", "us-west1-b", "abc123", "base", "iid", 4, "2h")
     assert received["gpu"] is False
     assert received["boot_disk_type"] == "pd-standard"
 
@@ -583,6 +610,7 @@ def test_create_evaluation_uses_gpu_and_scoped_metadata(monkeypatch) -> None:
 
     assert name == "spider-exp005-eval-base-domain-01-run-a"
     assert received["gpu"] is True
+    assert received["bounded_async_create"] is True
     assert received["boot_disk_type"] == "pd-standard"
     assert received["metadata"] == {
         "spider-control": "base",
@@ -611,9 +639,7 @@ def test_create_evaluation_can_use_opt_in_warm_image(monkeypatch) -> None:
     )
 
     assert received["gpu_image"] == "spider-exp005-eval-warm-0822a"
-    assert received["metadata"]["spider-warm-image-id"] == (
-        "spider-exp005-eval-warm-0822a"
-    )
+    assert received["metadata"]["spider-warm-image-id"] == ("spider-exp005-eval-warm-0822a")
 
 
 def test_evaluation_guest_publishes_shard_metrics_separately() -> None:
