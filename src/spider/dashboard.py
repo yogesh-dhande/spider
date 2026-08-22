@@ -278,7 +278,7 @@ def build_action_probe_dashboard(
     by_label: dict[str, dict[str, dict[str, Any]]] = {}
     metrics: dict[str, dict[str, Any]] = {}
     for label, path in prediction_paths.items():
-        records = read_jsonl(path)
+        records = [record for record in read_jsonl(path) if record["task"] == "action"]
         indexed = {str(record["id"]): record for record in records}
         if len(indexed) != len(records):
             raise ValueError(f"Duplicate action IDs in {path}")

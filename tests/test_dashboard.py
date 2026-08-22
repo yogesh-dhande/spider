@@ -191,6 +191,21 @@ def test_build_action_dashboard_keeps_target_and_predictions(tmp_path: Path) -> 
     assert (target_root / "example.jpg").read_bytes() == b"jpeg"
 
 
+def test_build_action_dashboard_filters_mixed_evaluation_records(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline.jsonl"
+    latest = tmp_path / "latest.jsonl"
+    _write_action_predictions(baseline, [80, 80])
+    _write_action_predictions(latest, [15, 30])
+    for path in (baseline, latest):
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"id": "qa", "task": "qa", "prediction": "text"}) + "\n")
+
+    payload = build_action_probe_dashboard({"baseline": baseline, "latest": latest})
+
+    assert payload["meta"]["scored_examples"] == 1
+    assert payload["records"][0]["id"] == "action-1"
+
+
 def test_compact_perception_dashboard_copies_only_displayed_images(tmp_path: Path) -> None:
     records = []
     for index in range(3):
