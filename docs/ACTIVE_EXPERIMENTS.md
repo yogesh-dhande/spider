@@ -1,6 +1,6 @@
 # Active experiment coordination
 
-Last verified: 2026-08-21T23:39:31Z
+Last verified: 2026-08-22T00:23:31Z
 
 This file is the mutable handoff for concurrent experiment work. Update it whenever a run starts,
 stops, changes phase, or changes ownership. Durable working conventions belong in `AGENTS.md`, and
@@ -12,16 +12,17 @@ Status: active.
 
 Corrected shared-corpus run `corpus-v2-0821a` completed and merged with zero missing screenshots.
 The untouched `Qwen/Qwen3.5-2B` baseline `base-all-0821a` completed all twelve evaluation shards
-and three guarded suite merges. All associated VMs are terminated. The next authorized phase is a
-two-node, two-optimizer-step compatibility/speed smoke before any long SFT stage. No EXP005
-training has started. The authoritative research status and receipts are under
-`experiments/exp005_browser_ablation_bed/`.
+and three guarded suite merges. Two- and four-node compatibility tests completed; the nearby
+two-node topology was selected because the dispersed four-node topology was slower. All associated
+VMs are terminated and deleted. No long EXP005 training stage has started. The final gate before
+the first 500-step stage is a registered 20-step, two-node smoke that must show finite post-warmup
+gradient norms, loss, checkpoint state, and adapter tensors. The authoritative research status and
+receipts are under `experiments/exp005_browser_ablation_bed/`.
 
-The baseline monitor exited after verifying shutdown. There is no expected local EXP005 monitor at
-this handoff. Before starting SFT, verify the scaling plan hash
-`5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`, upload the selected job
-configuration, and run the two-node compatibility smoke. Preserve world size across any resumed
-training stages.
+There is no expected local EXP005 monitor at this handoff. Before starting SFT, verify the scaling
+plan hash `5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6`,
+run the 20-step numerical smoke, and inspect its sparse progress plus `adapter_health.json` receipt.
+Preserve world size across any resumed training stages.
 
 Protected EXP005 scope:
 

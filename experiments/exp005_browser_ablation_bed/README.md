@@ -7,8 +7,10 @@ exposed a trajectory image-path decoder bug; the immutable incident receipt is
 eight shards with zero missing screenshots and passed the guarded merge; its receipt is
 `artifacts/materialization_attempt_v2.json`. Untouched-model evaluation `base-all-0821a` completed
 all twelve shards and three guarded merges. Its machine-readable receipt and shard tables are
-`artifacts/baseline_base_all_0821a.json` and `artifacts/baseline_base_all_0821a.md`. No EXP005
-training has started.
+`artifacts/baseline_base_all_0821a.json` and `artifacts/baseline_base_all_0821a.md`. Multinode
+compatibility testing selected two nearby single-L4 nodes over a geographically dispersed
+four-node cluster; the immutable receipt is `artifacts/multinode_smoke_v1.json`. No long EXP005
+training stage has started.
 
 Protocol amendments are immutable, numbered records in this directory. Amendment 001 excludes the
 alphabetically truncated Hugging Face partial Parquet conversion of ScreenshotQA after its domain
@@ -147,3 +149,13 @@ metrics, unweighted shard means, sample standard deviations, signatures, and art
 preserved in the baseline receipt. Two infrastructure-only launch attempts checked out a mistyped
 commit hash and stopped before inference; `artifacts/baseline_launch_incident_v1.json` records the
 incident and the launcher guard added before the successful reruns.
+
+## Multinode training gate
+
+The nearby two-node L4 smoke completed at roughly 33 seconds per optimizer step with effective
+batch size 16. A dispersed four-node run took roughly 63 seconds per step at the same effective
+batch, so the scaling runs use two nodes and resumable stages of at most 500 steps. The initial
+two-step compatibility run produced finite, changed adapter weights, but both steps were still at
+zero learning rate during warmup. A 20-step smoke therefore remains the final numerical-stability
+gate. Every subsequent stage rejects non-finite adapter tensors and publishes an
+`adapter_health.json` receipt before uploading the checkpoint.

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "experiment": "exp005",
+  "status": "two_node_compatible_four_node_rejected_for_throughput",
+  "verified_utc": "2026-08-22T00:23:31Z",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "plan_sha256": "5a79bbb31c53970506dac1b9831d66b24852caa5df32cca4d331d6859417f1a6",
+  "effective_batch_size": 16,
+  "successful_attempts": [
+    {
+      "run_id": "smoke2n-small53-0821a",
+      "job_id": "smoke-small-seed53-50619370ee",
+      "zones": [
+        "northamerica-northeast1-b",
+        "northamerica-northeast2-a"
+      ],
+      "world_size": 2,
+      "gradient_accumulation_steps": 8,
+      "completed_step": 2,
+      "stage_runtime_seconds": 73.53748144900004,
+      "second_step_elapsed_seconds": 33.1,
+      "train_loss": 1.164315402507782,
+      "training_identity_sha256": "09906e10ed259b2e970e9178372575fcdf7cba76f7abc9678b50b5d2af513520",
+      "adapter_health": {
+        "sha256": "722a467b104a6ba4abb2aaa63b10f1858c558d8370de951d8429e228b3737e50",
+        "tensor_count": 372,
+        "value_count": 33638400,
+        "nonfinite_count": 0,
+        "changed_values_from_initial_adapter": 33637464,
+        "relative_l2_delta_from_initial_adapter": 0.00164918,
+        "maximum_absolute_delta": 0.000739
+      }
+    },
+    {
+      "run_id": "smoke4n-small53-0821b",
+      "job_id": "smoke4-small-seed53-50619370ee",
+      "zones": [
+        "northamerica-northeast1-b",
+        "northamerica-northeast2-a",
+        "us-east1-b",
+        "us-west1-c"
+      ],
+      "world_size": 4,
+      "gradient_accumulation_steps": 4,
+      "completed_step": 2,
+      "stage_runtime_seconds": 128.172627691,
+      "average_elapsed_seconds_per_step": 63.45,
+      "train_loss": 1.1596981883049011,
+      "training_identity_sha256": "09906e10ed259b2e970e9178372575fcdf7cba76f7abc9678b50b5d2af513520"
+    }
+  ],
+  "infrastructure_only_attempts": [
+    {
+      "run_id": "smoke4n-small53-0821a",
+      "status": "aborted_before_training",
+      "reason": "regional SSD quota while creating later nodes; launcher stopped and deleted the nodes already created"
+    },
+    {
+      "run_id": "smoke4e-small53-0821a",
+      "status": "aborted_before_training",
+      "reason": "L4 stockout in us-east4; launcher stopped and deleted the three nodes already created"
+    }
+  ],
+  "decision": {
+    "selected_topology": "two single-L4 nodes in nearby regions",
+    "reason": "The two-node topology was about 1.9 times faster per optimizer step than the geographically dispersed four-node topology at the same effective batch size.",
+    "next_gate": "Run the registered 20-step smoke and require finite post-warmup gradient norms, finite loss, exact checkpoint state, and a healthy adapter before the first 500-step stage."
+  },
+  "notes": [
+    "The two compatibility steps both occurred at zero reported learning rate during warmup and reported NaN gradient norm, so they are insufficient as the numerical-stability gate.",
+    "Historical EXP004 logs using the same optimizer show finite gradient norms after warmup.",
+    "All VMs from every attempt were terminated and deleted after artifacts or failure evidence were preserved."
+  ]
+}

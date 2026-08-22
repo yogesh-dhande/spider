@@ -154,6 +154,9 @@ PY
 
   test -f "${OUTPUT_ROOT}/adapter/final/adapter_config.json"
   test -f "${OUTPUT_ROOT}/adapter/final/adapter_model.safetensors"
+  python -m spider.safetensor_health \
+    "${OUTPUT_ROOT}/adapter/final/adapter_model.safetensors" \
+    --output "${OUTPUT_ROOT}/adapter_health.json"
   tar --use-compress-program='zstd -3 -T0' -cf /tmp/output.tar.zst \
     -C "${WORK_ROOT}" output
   tar --use-compress-program='zstd -3 -T0' -cf /tmp/adapter.tar.zst \
@@ -161,4 +164,5 @@ PY
   gcloud storage cp /tmp/output.tar.zst "${STAGE_ROOT}/output.tar.zst"
   gcloud storage cp /tmp/adapter.tar.zst "${STAGE_ROOT}/adapter.tar.zst"
   gcloud storage cp "${OUTPUT_ROOT}/training_state.json" "${STAGE_ROOT}/training_state.json"
+  gcloud storage cp "${OUTPUT_ROOT}/adapter_health.json" "${STAGE_ROOT}/adapter_health.json"
 fi

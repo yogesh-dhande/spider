@@ -335,6 +335,8 @@ def test_multinode_guest_coordinates_and_only_rank_zero_uploads_adapter() -> Non
     assert 'ready_count=' in guest
     assert 'if [[ "${NODE_RANK}" -eq 0 ]]; then' in guest
     assert 'assert state["world_size"] == world_size, state' in guest
+    assert 'python -m spider.safetensor_health' in guest
+    assert '"${STAGE_ROOT}/adapter_health.json"' in guest
 
 
 def test_training_guest_uses_ddp_and_rejects_world_size_changes_between_stages() -> None:
